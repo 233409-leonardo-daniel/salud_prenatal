@@ -1,4 +1,5 @@
 import '../models/appointment_model.dart';
+import '../../domain/entities/appointment.dart';
 
 abstract class AppointmentRemoteDataSource {
   Future<List<AppointmentModel>> getAppointments();
@@ -17,7 +18,7 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
         doctorName: 'Dra. Mendoza',
         patientName: 'Ana García',
         dateTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
-        status: 'pending',
+        status: AppointmentStatus.pending,
         reason: 'Control mensual de embarazo',
       ),
       AppointmentModel(
@@ -25,7 +26,7 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
         doctorName: 'Dr. Pérez',
         patientName: 'Ana García',
         dateTime: DateTime.now().add(const Duration(days: 15, hours: -3)),
-        status: 'pending',
+        status: AppointmentStatus.pending,
         reason: 'Ecografía morfológica',
       ),
       AppointmentModel(
@@ -33,7 +34,7 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
         doctorName: 'Dra. Mendoza',
         patientName: 'Ana García',
         dateTime: DateTime.now().subtract(const Duration(days: 30, hours: 1)),
-        status: 'completed',
+        status: AppointmentStatus.completed,
         reason: 'Primera consulta prenatal',
       ),
     ];

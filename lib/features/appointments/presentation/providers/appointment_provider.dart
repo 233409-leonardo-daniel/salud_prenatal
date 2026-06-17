@@ -1,47 +1,42 @@
 import 'package:flutter/material.dart';
-import '../../data/datasources/appointment_remote_data_source.dart';
-import '../../data/models/appointment_model.dart';
-import '../../data/repositories/appointment_repository_impl.dart';
+import '../pages/appointments_status.dart';
+import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/get_appointments_usecase.dart';
 
-class AppointmentProvider extends ChangeNotifier {
+class AppointmentsProvider extends ChangeNotifier {
   final GetAppointmentsUseCase _getAppointmentsUseCase;
 
-  AppointmentProvider({GetAppointmentsUseCase? getAppointmentsUseCase})
-      : _getAppointmentsUseCase = getAppointmentsUseCase ??
-            GetAppointmentsUseCase(
-              repository: AppointmentRepositoryImpl(
-                remoteDataSource: AppointmentRemoteDataSourceImpl(),
-              ),
-            );
+  AppointmentsProvider({required GetAppointmentsUseCase getAppointmentsUseCase})
+      : _getAppointmentsUseCase = getAppointmentsUseCase;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  AppointmentsListStatus _status = AppointmentsListStatus.loading;
+  AppointmentsListStatus get status => _status;
 
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
+  String? _error;
+  String? get error => _error;
 
-  List<AppointmentModel> _appointments = [];
-  List<AppointmentModel> get appointments => _appointments;
+  List<Appointment> _appointments = [];
+  List<Appointment> get appointments => _appointments;
 
-  Future<void> fetchAppointments() async {
-    _isLoading = true;
-    _errorMessage = null;
+  Future<void> loadAppointments(String userId) async {
+    _status = AppointmentsListStatus.loading;
+    _error = null;
     notifyListeners();
 
     try {
+      // The use case can be updated in the future to receive the userId
       _appointments = await _getAppointmentsUseCase.execute();
-      _isLoading = false;
+      _status = AppointmentsListStatus.success;
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      _isLoading = false;
+      _error = e.toString().replaceAll('Exception: ', '');
+      _status = AppointmentsListStatus.error;
       notifyListeners();
     }
   }
 
   void clearError() {
-    _errorMessage = null;
+    _error = null;
     notifyListeners();
   }
 }

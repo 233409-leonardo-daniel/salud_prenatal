@@ -1,4 +1,4 @@
-import '../../data/models/appointment_model.dart';
+import '../entities/appointment.dart';
 import '../repositories/appointment_repository.dart';
 
 class GetAppointmentsUseCase {
@@ -6,7 +6,7 @@ class GetAppointmentsUseCase {
 
   const GetAppointmentsUseCase({required this.repository});
 
-  Future<List<AppointmentModel>> execute() {
+  Future<List<Appointment>> execute() {
     return repository.getAppointments();
   }
 }

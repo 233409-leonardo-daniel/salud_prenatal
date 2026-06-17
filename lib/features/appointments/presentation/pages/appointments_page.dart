@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../theme/theme.dart';
 import '../providers/appointment_provider.dart';
-import '../../data/models/appointment_model.dart';
+import '../pages/appointments_status.dart';
+import '../../domain/entities/appointment.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -11,21 +13,14 @@ class AppointmentsPage extends StatefulWidget {
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
-  late final AppointmentProvider _appointmentProvider;
-
   @override
   void initState() {
     super.initState();
-    _appointmentProvider = AppointmentProvider();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _appointmentProvider.fetchAppointments();
+      // Mocking user ID for now since LoginProvider doesn't have a user object yet
+      final userId = 'dummy_user_id';
+      context.read<AppointmentsProvider>().loadAppointments(userId);
     });
-  }
-
-  @override
-  void dispose() {
-    _appointmentProvider.dispose();
-    super.dispose();
   }
 
   String _formatDate(DateTime date) {
@@ -40,6 +35,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final provider = context.watch<AppointmentsProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8),
@@ -48,63 +44,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: ListenableBuilder(
-        listenable: _appointmentProvider,
-        builder: (context, _) {
-          if (_appointmentProvider.isLoading && _appointmentProvider.appointments.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            );
-          }
-
-          if (_appointmentProvider.errorMessage != null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      _appointmentProvider.errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => _appointmentProvider.fetchAppointments(),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                      child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final appointments = _appointmentProvider.appointments;
-
-          if (appointments.isEmpty) {
-            return const Center(
-              child: Text('No hay citas programadas'),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _appointmentProvider.fetchAppointments,
-            color: AppColors.primary,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: appointments.length,
-              itemBuilder: (context, index) {
-                final appointment = appointments[index];
-                return _buildAppointmentCard(appointment, theme);
-              },
-            ),
-          );
-        },
-      ),
+      body: _buildBody(provider, theme),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -117,23 +57,72 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     );
   }
 
-  Widget _buildAppointmentCard(AppointmentModel appointment, ThemeData theme) {
+  Widget _buildBody(AppointmentsProvider provider, ThemeData theme) {
+    if (provider.status == AppointmentsListStatus.loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    } else if (provider.status == AppointmentsListStatus.error) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                provider.error ?? 'Error desconocido',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.read<AppointmentsProvider>().loadAppointments('dummy_user_id'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (provider.appointments.isEmpty) {
+      return const Center(
+        child: Text('No hay citas programadas'),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => context.read<AppointmentsProvider>().loadAppointments('dummy_user_id'),
+      color: AppColors.primary,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: provider.appointments.length,
+        itemBuilder: (context, index) {
+          final appointment = provider.appointments[index];
+          return _buildAppointmentCard(appointment, theme);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment, ThemeData theme) {
     Color statusColor;
     IconData statusIcon;
     String statusText;
 
-    switch (appointment.status.toLowerCase()) {
-      case 'completed':
+    switch (appointment.status) {
+      case AppointmentStatus.completed:
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
         statusText = 'COMPLETADA';
         break;
-      case 'cancelled':
+      case AppointmentStatus.cancelled:
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
         statusText = 'CANCELADA';
         break;
-      case 'pending':
+      case AppointmentStatus.pending:
       default:
         statusColor = Colors.orange;
         statusIcon = Icons.schedule;

@@ -1,12 +1,12 @@
 import '../entities/appointment.dart';
 import '../repositories/appointment_repository.dart';
 
-class GetAppointmentsUseCase {
-  final AppointmentRepository repository;
+class GetAppointmentsByUserIdUsecase {
+  final AppointmentRepository _repository;
 
-  const GetAppointmentsUseCase({required this.repository});
+  const GetAppointmentsByUserIdUsecase(this._repository);
 
-  Future<List<Appointment>> execute() {
-    return repository.getAppointments();
+  Future<List<Appointment>> call(String userId) {
+    return _repository.getAppointmentsByUserId(userId);
   }
 }

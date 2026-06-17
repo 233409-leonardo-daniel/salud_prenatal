@@ -1,21 +1,20 @@
-import 'package:flutter/material.dart';
-import '../pages/appointments_status.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/get_appointments_usecase.dart';
 
-class AppointmentsProvider extends ChangeNotifier {
-  final GetAppointmentsUseCase _getAppointmentsUseCase;
+enum AppointmentsListStatus { initial, loading, success, error }
 
-  AppointmentsProvider({required GetAppointmentsUseCase getAppointmentsUseCase})
-      : _getAppointmentsUseCase = getAppointmentsUseCase;
+class AppointmentsProvider with ChangeNotifier {
+  final GetAppointmentsByUserIdUsecase _getAppointmentsByUserIdUsecase;
 
-  AppointmentsListStatus _status = AppointmentsListStatus.loading;
-  AppointmentsListStatus get status => _status;
+  AppointmentsProvider(this._getAppointmentsByUserIdUsecase);
 
+  AppointmentsListStatus _status = AppointmentsListStatus.initial;
   String? _error;
-  String? get error => _error;
-
   List<Appointment> _appointments = [];
+
+  AppointmentsListStatus get status => _status;
+  String? get error => _error;
   List<Appointment> get appointments => _appointments;
 
   Future<void> loadAppointments(String userId) async {
@@ -24,19 +23,20 @@ class AppointmentsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // The use case can be updated in the future to receive the userId
-      _appointments = await _getAppointmentsUseCase.execute();
+      _appointments = await _getAppointmentsByUserIdUsecase.call(userId);
       _status = AppointmentsListStatus.success;
-      notifyListeners();
     } catch (e) {
-      _error = e.toString().replaceAll('Exception: ', '');
       _status = AppointmentsListStatus.error;
+      _error = e.toString();
+    } finally {
       notifyListeners();
     }
   }
 
-  void clearError() {
+  void reset() {
+    _status = AppointmentsListStatus.initial;
     _error = null;
+    _appointments = [];
     notifyListeners();
   }
 }

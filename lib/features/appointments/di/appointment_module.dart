@@ -1,0 +1,29 @@
+import '../data/datasources/appointment_remote_data_source.dart';
+import '../data/repositories/appointment_repository_impl.dart';
+import '../domain/repositories/appointment_repository.dart';
+import '../domain/usecases/get_appointments_usecase.dart';
+import '../domain/usecases/create_appointment_usecase.dart';
+import '../domain/usecases/update_appointment_usecase.dart';
+import '../domain/usecases/delete_appointment_usecase.dart';
+
+class AppointmentModule {
+  late final AppointmentRepository appointmentRepository;
+  late final GetAppointmentsByUserIdUsecase getAppointmentsByUserIdUsecase;
+  late final CreateAppointmentUsecase createAppointmentUsecase;
+  late final UpdateAppointmentUsecase updateAppointmentUsecase;
+  late final DeleteAppointmentUsecase deleteAppointmentUsecase;
+
+  AppointmentModule() {
+    _initDependencies();
+  }
+
+  void _initDependencies() {
+    appointmentRepository = AppointmentRepositoryImpl(
+      remoteDataSource: AppointmentRemoteDataSourceImpl(),
+    );
+    getAppointmentsByUserIdUsecase = GetAppointmentsByUserIdUsecase(appointmentRepository);
+    createAppointmentUsecase = CreateAppointmentUsecase(appointmentRepository);
+    updateAppointmentUsecase = UpdateAppointmentUsecase(appointmentRepository);
+    deleteAppointmentUsecase = DeleteAppointmentUsecase(appointmentRepository);
+  }
+}

@@ -8,9 +8,23 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   const AppointmentRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Appointment>> getAppointments() async {
-    final models = await remoteDataSource.getAppointments();
-    // Return models implicitly casted as their superclass (Appointment entity)
+  Future<List<Appointment>> getAppointmentsByUserId(String userId) async {
+    final models = await remoteDataSource.getAppointmentsByUserId(userId);
     return models;
+  }
+
+  @override
+  Future<void> createAppointment(Appointment appointment) {
+    return remoteDataSource.createAppointment(appointment);
+  }
+
+  @override
+  Future<void> updateAppointment(Appointment appointment) {
+    return remoteDataSource.updateAppointment(appointment);
+  }
+
+  @override
+  Future<void> deleteAppointment(String id) {
+    return remoteDataSource.deleteAppointment(id);
   }
 }

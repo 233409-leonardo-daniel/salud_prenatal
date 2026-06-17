@@ -3,10 +3,11 @@ import 'package:provider/provider.dart';
 import 'features/dashboard/presentation/pages/dashboard_page.dart';
 import 'features/login/presentation/pages/login_page.dart';
 import 'features/register/presentation/pages/register_page.dart';
+import 'features/appointments/di/appointment_module.dart';
 import 'features/appointments/presentation/providers/appointment_provider.dart';
-import 'features/appointments/domain/usecases/get_appointments_usecase.dart';
-import 'features/appointments/data/repositories/appointment_repository_impl.dart';
-import 'features/appointments/data/datasources/appointment_remote_data_source.dart';
+import 'features/appointments/presentation/providers/create_appointment_provider.dart';
+import 'features/appointments/presentation/providers/update_appointment_provider.dart';
+import 'features/appointments/presentation/providers/delete_appointment_provider.dart';
 import 'theme/theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -14,15 +15,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appointmentModule = AppointmentModule();
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => AppointmentsProvider(
-            getAppointmentsUseCase: GetAppointmentsUseCase(
-              repository: AppointmentRepositoryImpl(
-                remoteDataSource: AppointmentRemoteDataSourceImpl(),
-              ),
-            ),
+            appointmentModule.getAppointmentsByUserIdUsecase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => CreateAppointmentProvider(
+            appointmentModule.createAppointmentUsecase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UpdateAppointmentProvider(
+            appointmentModule.updateAppointmentUsecase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DeleteAppointmentProvider(
+            appointmentModule.deleteAppointmentUsecase,
           ),
         ),
       ],

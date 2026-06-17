@@ -2,12 +2,15 @@ import '../models/appointment_model.dart';
 import '../../domain/entities/appointment.dart';
 
 abstract class AppointmentRemoteDataSource {
-  Future<List<AppointmentModel>> getAppointments();
+  Future<List<AppointmentModel>> getAppointmentsByUserId(String userId);
+  Future<void> createAppointment(Appointment appointment);
+  Future<void> updateAppointment(Appointment appointment);
+  Future<void> deleteAppointment(String id);
 }
 
 class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
   @override
-  Future<List<AppointmentModel>> getAppointments() async {
+  Future<List<AppointmentModel>> getAppointmentsByUserId(String userId) async {
     // Simulate API network latency
     await Future.delayed(const Duration(seconds: 1));
 
@@ -25,7 +28,7 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
         id: '2',
         doctorName: 'Dr. Pérez',
         patientName: 'Ana García',
-        dateTime: DateTime.now().add(const Duration(days: 15, hours: -3)),
+        dateTime: DateTime.now().add(const Duration(days: 15)),
         status: AppointmentStatus.pending,
         reason: 'Ecografía morfológica',
       ),
@@ -33,10 +36,28 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
         id: '3',
         doctorName: 'Dra. Mendoza',
         patientName: 'Ana García',
-        dateTime: DateTime.now().subtract(const Duration(days: 30, hours: 1)),
+        dateTime: DateTime.now().subtract(const Duration(days: 30)),
         status: AppointmentStatus.completed,
         reason: 'Primera consulta prenatal',
       ),
     ];
+  }
+
+  @override
+  Future<void> createAppointment(Appointment appointment) async {
+    await Future.delayed(const Duration(seconds: 1));
+    // Mock: no-op for now
+  }
+
+  @override
+  Future<void> updateAppointment(Appointment appointment) async {
+    await Future.delayed(const Duration(seconds: 1));
+    // Mock: no-op for now
+  }
+
+  @override
+  Future<void> deleteAppointment(String id) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Mock: no-op for now
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../theme/theme.dart';
 import '../providers/appointment_provider.dart';
-import '../pages/appointments_status.dart';
 import '../../domain/entities/appointment.dart';
 
 class AppointmentsPage extends StatefulWidget {
@@ -17,9 +16,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Mocking user ID for now since LoginProvider doesn't have a user object yet
-      final userId = 'dummy_user_id';
-      context.read<AppointmentsProvider>().loadAppointments(userId);
+      // TODO: Replace 'dummy_user_id' with actual user ID from LoginProvider when available
+      context.read<AppointmentsProvider>().loadAppointments('dummy_user_id');
     });
   }
 
@@ -40,7 +38,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8),
       appBar: AppBar(
-        title: const Text('Citas Médicas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Citas Médicas',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -58,7 +59,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Widget _buildBody(AppointmentsProvider provider, ThemeData theme) {
-    if (provider.status == AppointmentsListStatus.loading) {
+    if (provider.status == AppointmentsListStatus.loading ||
+        provider.status == AppointmentsListStatus.initial) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
@@ -78,29 +80,31 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.read<AppointmentsProvider>().loadAppointments('dummy_user_id'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+                onPressed: () => context
+                    .read<AppointmentsProvider>()
+                    .loadAppointments('dummy_user_id'),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary),
+                child: const Text('Reintentar',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
         ),
       );
     } else if (provider.appointments.isEmpty) {
-      return const Center(
-        child: Text('No hay citas programadas'),
-      );
+      return const Center(child: Text('No hay citas programadas'));
     }
 
     return RefreshIndicator(
-      onRefresh: () => context.read<AppointmentsProvider>().loadAppointments('dummy_user_id'),
+      onRefresh: () =>
+          context.read<AppointmentsProvider>().loadAppointments('dummy_user_id'),
       color: AppColors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.all(16.0),
         itemCount: provider.appointments.length,
         itemBuilder: (context, index) {
-          final appointment = provider.appointments[index];
-          return _buildAppointmentCard(appointment, theme);
+          return _buildAppointmentCard(provider.appointments[index], theme);
         },
       ),
     );
@@ -206,7 +210,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, size: 18, color: AppColors.primary),
+                  const Icon(Icons.info_outline,
+                      size: 18, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

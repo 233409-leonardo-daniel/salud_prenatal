@@ -192,7 +192,6 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8), // Soft pinkish-white background from mockup
@@ -359,8 +358,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               _buildRoleCard('patient', 'Paciente', Icons.pregnant_woman, AppColors.primary),
                               const SizedBox(width: 12),
                               _buildRoleCard('doctor', 'Doctor(a)', Icons.badge_outlined, AppColors.primary),
-                              const SizedBox(width: 12),
-                              _buildRoleCard('admin', 'Admin', Icons.admin_panel_settings_outlined, AppColors.primary),
                             ],
                           ),
                           const SizedBox(height: 24),

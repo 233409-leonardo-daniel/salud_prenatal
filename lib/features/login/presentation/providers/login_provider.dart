@@ -24,15 +24,21 @@ class LoginProvider extends ChangeNotifier {
   String? _token;
   String? get token => _token;
 
+  String? _role;
+  String? get role => _role;
+
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
     _token = null;
+    _role = null;
     notifyListeners();
 
     try {
       final request = LoginRequest(email: email, password: password);
-      _token = await _loginUseCase.execute(request);
+      final response = await _loginUseCase.execute(request);
+      _token = response.accessToken;
+      _role = response.role;
       _isLoading = false;
       notifyListeners();
       return true;

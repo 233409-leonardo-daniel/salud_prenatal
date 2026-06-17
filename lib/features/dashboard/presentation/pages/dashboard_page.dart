@@ -44,30 +44,6 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: _buildAppBar(),
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavBar(),
-      floatingActionButton: _buildDebugRoleSwitcher(),
-    );
-  }
-
-  // Debug Role Switcher to allow user to toggle views
-  Widget _buildDebugRoleSwitcher() {
-    return FloatingActionButton.small(
-      onPressed: () {
-        setState(() {
-          _userRole = _userRole == 'patient' ? 'doctor' : 'patient';
-          _currentTab = 0; // Reset tab
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vista cambiada a: ${_userRole == 'doctor' ? 'Médico (Dra. Mendoza)' : 'Paciente (Ana García)'}'),
-            duration: const Duration(seconds: 1),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-      },
-      backgroundColor: Colors.white,
-      foregroundColor: AppColors.primary,
-      tooltip: 'Cambiar Rol (Debug)',
-      child: const Icon(Icons.swap_horiz),
     );
   }
 
@@ -202,7 +178,6 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- DOCTOR VIEWS ---
 
   Widget _buildDoctorDashboard() {
-    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -908,7 +883,6 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- PATIENT VIEWS ---
 
   Widget _buildPatientDashboard() {
-    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(

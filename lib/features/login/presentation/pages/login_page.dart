@@ -41,9 +41,8 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         if (success) {
-          // Smart mock role detection: if email contains "doctor", login as doctor.
-          // Otherwise, login as patient.
-          final String role = email.toLowerCase().contains('doctor') ? 'doctor' : 'patient';
+          final String rawRole = _loginProvider.role ?? (email.toLowerCase().contains('doctor') ? 'doctor' : 'paciente');
+          final String role = (rawRole.toLowerCase() == 'doctor' || rawRole.toLowerCase() == 'doctor(a)') ? 'doctor' : 'patient';
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -84,7 +83,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8), // Soft pinkish-white background from mockups

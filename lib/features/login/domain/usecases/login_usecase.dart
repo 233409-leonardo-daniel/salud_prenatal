@@ -1,4 +1,5 @@
 import '../../data/models/login_request.dart';
+import '../../data/models/login_response.dart';
 import '../repositories/login_repository.dart';
 
 class LoginUseCase {
@@ -6,7 +7,7 @@ class LoginUseCase {
 
   const LoginUseCase({required this.repository});
 
-  Future<String> execute(LoginRequest request) {
+  Future<LoginResponse> execute(LoginRequest request) {
     return repository.login(request);
   }
 }

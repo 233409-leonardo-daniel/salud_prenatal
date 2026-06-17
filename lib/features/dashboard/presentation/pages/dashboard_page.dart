@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/theme.dart';
+import '../../appointments/presentation/pages/appointments_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -137,6 +138,8 @@ class _DashboardPageState extends State<DashboardPage> {
           return _buildDoctorDashboard();
         case 1:
           return _buildDoctorPatientsList();
+        case 2:
+          return const AppointmentsPage();
         default:
           return _buildPlaceholderView('Módulo de comunicación y perfil médico.');
       }
@@ -144,6 +147,8 @@ class _DashboardPageState extends State<DashboardPage> {
       switch (_currentTab) {
         case 0:
           return _buildPatientDashboard();
+        case 1:
+          return const AppointmentsPage();
         default:
           return _buildPlaceholderView('Módulo de salud prenatal.');
       }
@@ -1445,6 +1450,11 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
             label: 'Pacientes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today_outlined),
+            activeIcon: Icon(Icons.calendar_today),
+            label: 'Citas',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.message_outlined),

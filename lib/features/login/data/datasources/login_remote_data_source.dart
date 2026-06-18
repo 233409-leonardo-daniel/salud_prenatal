@@ -1,11 +1,13 @@
 import 'dart:convert';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/login_response.dart';
+import '../../domain/entities/user_profile.dart';
 import '../models/login_request.dart';
 
 abstract class LoginRemoteDataSource {
   /// Sends login credentials to the backend. Returns LoginResponse.
   Future<LoginResponse> login(LoginRequest request);
+  Future<UserProfile> getUserProfile(int userId);
 }
 
 class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
@@ -53,6 +55,32 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
           accessToken: 'mock_token_offline_99',
           tokenType: 'bearer',
           userId: 99,
+          role: role,
+        );
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<UserProfile> getUserProfile(int userId) async {
+    try {
+      final response = await _apiClient.get('/users/$userId');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return UserProfile.fromJson(data);
+      }
+      throw Exception('Error al obtener perfil (Status: ${response.statusCode})');
+    } catch (e) {
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Connection refused') || 
+          e.toString().contains('ClientException')) {
+        await Future.delayed(const Duration(seconds: 1));
+        final String role = userId == 99 ? 'doctor' : 'paciente';
+        return UserProfile(
+          name: role == 'doctor' ? 'Lucía' : 'Ana',
+          lastName: role == 'doctor' ? 'Mendoza' : 'García',
+          email: role == 'doctor' ? 'doctor@example.com' : 'paciente@example.com',
           role: role,
         );
       }

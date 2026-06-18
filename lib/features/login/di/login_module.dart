@@ -6,6 +6,7 @@ import '../domain/usecases/login_usecase.dart';
 class LoginModule {
   late final LoginRepository loginRepository;
   late final LoginUseCase loginUseCase;
+  late final GetProfileUseCase getProfileUseCase;
 
   LoginModule() {
     _initDependencies();
@@ -16,5 +17,6 @@ class LoginModule {
       remoteDataSource: LoginRemoteDataSourceImpl(),
     );
     loginUseCase = LoginUseCase(repository: loginRepository);
+    getProfileUseCase = GetProfileUseCase(repository: loginRepository);
   }
 }

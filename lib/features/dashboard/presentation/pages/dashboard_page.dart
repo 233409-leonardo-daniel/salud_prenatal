@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
+import '../../../login/presentation/providers/login_provider.dart';
 import 'patient_record_page.dart';
 import 'patient_progress_page.dart';
+import '../providers/dashboard_provider.dart';
+import '../../../appointments/presentation/providers/appointment_provider.dart';
+import '../../../login/domain/entities/user_profile.dart';
+import '../../../appointments/domain/entities/appointment.dart';
+import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -29,6 +36,21 @@ class _DashboardPageState extends State<DashboardPage> {
         _userRole = args;
       }
       _isInitialized = true;
+      _loadDashboardData();
+    }
+  }
+
+  void _loadDashboardData() {
+    final loginProvider = context.read<LoginProvider>();
+    final dashboardProvider = context.read<DashboardProvider>();
+    if (_userRole == 'doctor') {
+      final docId = loginProvider.doctorId ?? 1;
+      dashboardProvider.loadDoctorDashboard(docId);
+      context.read<AppointmentsProvider>().loadAppointments(docId.toString(), isDoctor: true);
+    } else {
+      final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
+      dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
+      context.read<AppointmentsProvider>().loadAppointments(patId.toString(), isDoctor: false);
     }
   }
 
@@ -51,6 +73,11 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final loginProvider = context.watch<LoginProvider>();
+    final String doctorName = loginProvider.name.isNotEmpty 
+        ? 'Dra. ${loginProvider.name}' 
+        : 'Dra. Mendoza';
+
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
         // Doctor main dashboard header
@@ -71,7 +98,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.normal),
                   ),
                   Text(
-                    'Dra. Mendoza',
+                    doctorName,
                     style: TextStyle(fontSize: 16, color: AppColors.primary, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -134,6 +161,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBody() {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    if (dashboardProvider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+
     if (_userRole == 'doctor') {
       switch (_currentTab) {
         case 0:
@@ -185,21 +219,63 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- DOCTOR VIEWS ---
 
   Widget _buildDoctorDashboard() {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final appointmentsProvider = context.watch<AppointmentsProvider>();
+    final today = DateTime.now();
+
+    final totalPatientsStr = dashboardProvider.patients.length.toString();
+
+    final todayAppointments = appointmentsProvider.appointments.where((app) =>
+        app.dateTime.year == today.year &&
+        app.dateTime.month == today.month &&
+        app.dateTime.day == today.day
+    ).toList();
+    todayAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    final citasHoyStr = todayAppointments.length.toString();
+
+    final priorityAlerts = <Widget>[];
+    for (final patient in dashboardProvider.patients) {
+      final pId = patient['patient_id'] ?? 0;
+      if (pId % 3 == 0) {
+        final patientUser = dashboardProvider.users.firstWhere(
+          (u) => u.userId == patient['user_id'],
+          orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
+        );
+        final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
+        final fullName = '${patientUser.name} ${patientUser.lastName}'.trim();
+        priorityAlerts.add(
+          _buildAlertCard(fullName, 'Riesgo de Preeclampsia (Alto)', initials),
+        );
+        priorityAlerts.add(const SizedBox(height: 12));
+      }
+    }
+    if (priorityAlerts.isEmpty) {
+      priorityAlerts.add(
+        const Card(
+          elevation: 0,
+          color: Colors.white,
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text('No hay alertas de riesgo alto el día de hoy.', style: TextStyle(color: AppColors.textMuted)),
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 4 Stats Grid Cards
           Row(
             children: [
-              _buildDoctorStatCard('Total Pacientes', '24', Icons.people_outline, Colors.pink),
+              _buildDoctorStatCard('Total Pacientes', totalPatientsStr, Icons.people_outline, Colors.pink),
               const SizedBox(width: 12),
-              _buildDoctorStatCard('Citas Hoy', '5', Icons.calendar_today_outlined, Colors.teal),
+              _buildDoctorStatCard('Citas Hoy', citasHoyStr, Icons.calendar_today_outlined, Colors.teal),
             ],
           ),
           const SizedBox(height: 12),
-
 
           // Alertas Prioritarias Section
           Row(
@@ -219,14 +295,8 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
           const SizedBox(height: 8),
-
-          // Alertas cards with left red line decoration
-          _buildAlertCard('Mariana Villanueva', 'Riesgo de Preeclampsia', 'MV'),
+          ...priorityAlerts,
           const SizedBox(height: 12),
-          _buildAlertCard('Lucía Rojas', 'Taquicardia Fetal', 'LR'),
-          const SizedBox(height: 24),
-
-
 
           // Próximas Citas Section
           Row(
@@ -257,12 +327,35 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 12),
 
-          // Doctor Appointments List
-          _buildDoctorAppointmentItem('09 AM', 'Elena Gómez', 'Control Prenatal - Sem 24', false),
-          const Divider(height: 1, color: Color(0xFFE5E5EA)),
-          _buildDoctorAppointmentItem('10 AM', 'Mariana Villanueva', 'Urgente: Revisión Labs', true),
-          const Divider(height: 1, color: Color(0xFFE5E5EA)),
-          _buildDoctorAppointmentItem('11 AM', 'Sofia Méndez', 'Ecografía Doppler', false),
+          if (todayAppointments.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.0),
+              child: Center(
+                child: Text(
+                  'No hay citas programadas para hoy.',
+                  style: TextStyle(color: AppColors.textMuted),
+                ),
+              ),
+            )
+          else
+            ...todayAppointments.map((app) {
+              final isPm = app.dateTime.hour >= 12;
+              final hour = app.dateTime.hour == 0 
+                  ? 12 
+                  : (app.dateTime.hour > 12 ? app.dateTime.hour - 12 : app.dateTime.hour);
+              final timeStr = '${hour.toString().padLeft(2, '0')}:${app.dateTime.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+              return Column(
+                children: [
+                  _buildDoctorAppointmentItem(
+                    timeStr,
+                    app.patientName,
+                    app.reason,
+                    app.reason.toLowerCase().contains('urgente') || app.status == AppointmentStatus.cancelled,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE5E5EA)),
+                ],
+              );
+            }),
           const SizedBox(height: 40),
         ],
       ),
@@ -445,6 +538,74 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- DOCTOR PATIENTS LIST VIEW ("Mis Pacientes") ---
 
   Widget _buildDoctorPatientsList() {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final totalPatientsStr = dashboardProvider.patients.length.toString();
+
+    final patientCards = <Widget>[];
+    for (final patient in dashboardProvider.patients) {
+      final pId = patient['patient_id'] ?? 0;
+      final patientUser = dashboardProvider.users.firstWhere(
+        (u) => u.userId == patient['user_id'],
+        orElse: () => UserProfile(
+          name: 'Paciente',
+          lastName: '$pId',
+          email: '',
+          role: 'paciente',
+        ),
+      );
+
+      final patientName = '${patientUser.name} ${patientUser.lastName}'.trim();
+      final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
+
+      String risk = 'Bajo Riesgo';
+      Color riskBg = AppColors.riskLowBg;
+      Color riskText = AppColors.riskLowText;
+      Color imgBg = const Color(0xFFE0F2F1);
+
+      if (pId % 3 == 0) {
+        risk = 'Alto Riesgo';
+        riskBg = AppColors.riskHighBg;
+        riskText = AppColors.riskHighText;
+        imgBg = const Color(0xFFFFF0F6);
+      } else if (pId % 3 == 1) {
+        risk = 'Medio Riesgo';
+        riskBg = AppColors.riskMediumBg;
+        riskText = AppColors.riskMediumText;
+        imgBg = const Color(0xFFFFF4E5);
+      }
+
+      patientCards.add(
+        _buildPatientListCard(
+          name: patientName,
+          id: '#SP-$pId',
+          risk: risk,
+          riskColorBg: riskBg,
+          riskColorText: riskText,
+          gestationAge: '${patient['current_gestational_weeks'] ?? 28} sem',
+          status: 'Estable',
+          statusIcon: Icons.check_circle_outline,
+          statusIconColor: Colors.teal,
+          avatarInitials: initials,
+          imageBackground: imgBg,
+        ),
+      );
+      patientCards.add(const SizedBox(height: 12));
+    }
+
+    if (patientCards.isEmpty) {
+      patientCards.add(
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Text(
+              'No se encontraron pacientes.',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -468,9 +629,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   color: Colors.pink.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  '24',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                child: Text(
+                  totalPatientsStr,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
               ),
             ],
@@ -518,48 +679,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 16),
 
-          // Patients list matching wireframe
-          _buildPatientListCard(
-            name: 'Mariana Villanueva',
-            id: '#SP-20485',
-            risk: 'Alto Riesgo',
-            riskColorBg: AppColors.riskHighBg,
-            riskColorText: AppColors.riskHighText,
-            gestationAge: '32 sem + 4 días',
-            status: 'Estable',
-            statusIcon: Icons.check_circle_outline,
-            statusIconColor: Colors.teal,
-            avatarInitials: 'MV',
-            imageBackground: const Color(0xFFFFF0F6),
-          ),
-          const SizedBox(height: 12),
-          _buildPatientListCard(
-            name: 'Lucía Castillo',
-            id: '#SP-19322',
-            risk: 'Medio Riesgo',
-            riskColorBg: AppColors.riskMediumBg,
-            riskColorText: AppColors.riskMediumText,
-            gestationAge: '28 sem + 2 días',
-            status: 'Pendiente',
-            statusIcon: Icons.access_time_outlined,
-            statusIconColor: Colors.orange,
-            avatarInitials: 'LC',
-            imageBackground: const Color(0xFFFFF4E5),
-          ),
-          const SizedBox(height: 12),
-          _buildPatientListCard(
-            name: 'Elena López',
-            id: '#SP-21004',
-            risk: 'Bajo Riesgo',
-            riskColorBg: AppColors.riskLowBg,
-            riskColorText: AppColors.riskLowText,
-            gestationAge: '14 sem',
-            status: 'Estable',
-            statusIcon: Icons.check_circle_outline,
-            statusIconColor: Colors.teal,
-            avatarInitials: 'EL',
-            imageBackground: const Color(0xFFE0F2F1),
-          ),
+          ...patientCards,
           const SizedBox(height: 24),
 
           // Pagination indicators
@@ -825,12 +945,138 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- PATIENT VIEWS ---
 
   Widget _buildPatientDashboard() {
+    final loginProvider = context.watch<LoginProvider>();
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final appointmentsProvider = context.watch<AppointmentsProvider>();
+
+    final String displayName = loginProvider.fullName.isNotEmpty
+        ? loginProvider.fullName
+        : 'Ana García';
+
+    final currentWeeks = dashboardProvider.currentPatientData?['current_gestational_weeks'] ?? 28;
+
+    final medicalRecord = dashboardProvider.medicalRecord;
+    String patientRisk = 'Bajo';
+    Color patientRiskColor = Colors.teal.shade700;
+    Color patientRiskBg = Colors.teal.shade400;
+    Color patientRiskBgLight = Colors.teal.shade50;
+    IconData patientRiskIcon = Icons.check;
+    double progressValue = 0.95;
+
+    if (medicalRecord != null) {
+      if (medicalRecord.previousPreeclampsia || 
+          medicalRecord.chronicHypertension || 
+          medicalRecord.previousHypertension) {
+        patientRisk = 'Alto';
+        patientRiskColor = Colors.red.shade700;
+        patientRiskBg = Colors.red.shade400;
+        patientRiskBgLight = Colors.red.shade50;
+        patientRiskIcon = Icons.warning_amber_rounded;
+        progressValue = 0.35;
+      } else if (medicalRecord.diabetes || 
+                 medicalRecord.familyHistoryHypertension) {
+        patientRisk = 'Medio';
+        patientRiskColor = Colors.orange.shade700;
+        patientRiskBg = Colors.orange.shade400;
+        patientRiskBgLight = Colors.orange.shade50;
+        patientRiskIcon = Icons.info_outline;
+        progressValue = 0.65;
+      }
+    }
+
+    String pressure = '120/80';
+    String weight = '60.0';
+
+    if (dashboardProvider.consultations.isNotEmpty) {
+      final lastConsultation = dashboardProvider.consultations.last;
+      final objectiveText = lastConsultation.objective;
+      
+      final pressureRegex = RegExp(r'(\d{2,3}/\d{2,3})');
+      final pressureMatch = pressureRegex.firstMatch(objectiveText);
+      if (pressureMatch != null) {
+        pressure = pressureMatch.group(0)!;
+      }
+
+      final weightRegex = RegExp(r'Peso\s*(\d{2,3}(?:\.\d)?)');
+      final weightMatch = weightRegex.firstMatch(objectiveText);
+      if (weightMatch != null) {
+        weight = weightMatch.group(1)!;
+      } else {
+        final doubleRegex = RegExp(r'(\d{2,3}\.\d)\s*kg');
+        final doubleMatch = doubleRegex.firstMatch(objectiveText);
+        if (doubleMatch != null) {
+          weight = doubleMatch.group(1)!;
+        }
+      }
+    } else {
+      weight = (dashboardProvider.currentPatientData?['initial_weight'] ?? 60.0).toString();
+    }
+
+    final upcomingAppointments = appointmentsProvider.appointments.where((app) => 
+        app.status == AppointmentStatus.pending && 
+        app.dateTime.isAfter(DateTime.now().subtract(const Duration(hours: 2)))
+    ).toList();
+    upcomingAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    final nextApp = upcomingAppointments.isNotEmpty ? upcomingAppointments.first : null;
+
+    final monthsList = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+    final monthStr = nextApp != null ? monthsList[nextApp.dateTime.month - 1] : 'S/C';
+    final dayStr = nextApp != null ? nextApp.dateTime.day.toString() : '--';
+    
+    final isPm = nextApp != null && nextApp.dateTime.hour >= 12;
+    final hour = nextApp != null 
+        ? (nextApp.dateTime.hour == 0 ? 12 : (nextApp.dateTime.hour > 12 ? nextApp.dateTime.hour - 12 : nextApp.dateTime.hour))
+        : 12;
+    final timeStr = nextApp != null 
+        ? '${hour.toString().padLeft(2, '0')}:${nextApp.dateTime.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}' 
+        : '--';
+    
+    final reasonStr = nextApp != null ? nextApp.reason : 'No hay citas programadas';
+    final docNameStr = nextApp != null ? nextApp.doctorName : 'Dra. Lucía Mendoza';
+
+    final systolicPressures = <double>[];
+    final consultationDays = <String>[];
+    final daysOfWeek = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+    for (var i = 0; i < dashboardProvider.consultations.length; i++) {
+      final consultation = dashboardProvider.consultations[i];
+      final pressureRegex = RegExp(r'(\d{2,3})/\d{2,3}');
+      final match = pressureRegex.firstMatch(consultation.objective);
+      if (match != null) {
+        final systolic = double.tryParse(match.group(1)!) ?? 120.0;
+        systolicPressures.add(systolic);
+        
+        final dayIndex = consultation.createdAt.weekday - 1;
+        consultationDays.add(daysOfWeek[dayIndex]);
+      }
+    }
+
+    if (systolicPressures.isEmpty) {
+      systolicPressures.addAll([115.0, 120.0, 118.0, 122.0, 120.0, 117.0, 119.0]);
+      consultationDays.addAll(daysOfWeek);
+    }
+
+    final barsList = <Widget>[];
+    for (var i = 0; i < systolicPressures.length; i++) {
+      final val = systolicPressures[i];
+      final heightVal = ((val - 90) * 1.33 + 20).clamp(15.0, 100.0);
+      final isActive = i == systolicPressures.length - 1;
+      barsList.add(_buildBar(heightVal, isActive));
+    }
+
+    final dayLabelsList = <Widget>[];
+    for (var i = 0; i < consultationDays.length; i++) {
+      final day = consultationDays[i];
+      final isActive = i == consultationDays.length - 1;
+      dayLabelsList.add(_buildDayLabel(day, isActive));
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header inside body
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -839,21 +1085,21 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        'Hola, Ana García',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                      Text(
+                        'Hola, $displayName',
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      const Text(
                         '👋',
-                        style: const TextStyle(fontSize: 22),
+                        style: TextStyle(fontSize: 22),
                       ),
                     ],
                   ),
                   const SizedBox(height: 2),
-                  const Text(
-                    'Semana 28 de embarazo',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  Text(
+                    'Semana $currentWeeks de embarazo',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                   ),
                 ],
               ),
@@ -872,7 +1118,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 12),
 
-          // Riesgo estimado card with circle success indicator
+          // Riesgo estimado card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -898,12 +1144,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Bajo',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.teal.shade700),
+                      patientRisk,
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: patientRiskColor),
                     ),
                   ],
                 ),
-                // Circular success indicator
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -911,13 +1156,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       width: 50,
                       height: 50,
                       child: CircularProgressIndicator(
-                        value: 0.85,
+                        value: progressValue,
                         strokeWidth: 4,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.teal.shade400),
-                        backgroundColor: Colors.teal.shade50,
+                        valueColor: AlwaysStoppedAnimation<Color>(patientRiskBg),
+                        backgroundColor: patientRiskBgLight,
                       ),
                     ),
-                    Icon(Icons.check, color: Colors.teal.shade700, size: 24),
+                    Icon(patientRiskIcon, color: patientRiskColor, size: 24),
                   ],
                 ),
               ],
@@ -925,7 +1170,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 12),
 
-          // Stats row (Pressure & Weight)
+          // Stats row
           Row(
             children: [
               Expanded(
@@ -948,14 +1193,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
-                          const Icon(Icons.show_chart, color: Colors.green, size: 16),
+                          const Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
+                          Icon(Icons.show_chart, color: patientRisk == 'Bajo' ? Colors.green : Colors.orange, size: 16),
                         ],
                       ),
                       const SizedBox(height: 12),
                       const Text('Presión', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                       const SizedBox(height: 4),
-                      const Text('120/80', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text(pressure, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                       const Text('MMHG', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
                     ],
                   ),
@@ -982,14 +1227,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 20),
+                          const Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 20),
                           const Icon(Icons.horizontal_rule, color: AppColors.textMuted, size: 16),
                         ],
                       ),
                       const SizedBox(height: 12),
                       const Text('Peso actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                       const SizedBox(height: 4),
-                      const Text('68.4', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text(weight, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                       const Text('KILOGRAMOS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
                     ],
                   ),
@@ -999,7 +1244,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 16),
 
-          // Registrar medicion button
           ElevatedButton.icon(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
@@ -1022,7 +1266,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 12),
 
-          // Magenta Card for Next Appointment
+          // Magenta Card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -1045,7 +1289,6 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Row(
                   children: [
-                    // Date Badge
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
@@ -1055,12 +1298,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         children: [
                           Text(
-                            'JUN',
+                            monthStr,
                             style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.bold),
                           ),
-                          const Text(
-                            '18',
-                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                          Text(
+                            dayStr,
+                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -1070,14 +1313,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '10:00 AM',
-                            style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                          Text(
+                            timeStr,
+                            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
-                            'Control prenatal',
-                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          Text(
+                            reasonStr,
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -1085,7 +1328,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                // Doctor info
                 Row(
                   children: [
                     const CircleAvatar(
@@ -1097,9 +1339,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Dra. Lucía Mendoza',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          Text(
+                            docNameStr,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
                             'Ginecología y Obstetricia',
@@ -1111,12 +1353,20 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                // Actions
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          if (nextApp != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AppointmentDetailPage(appointment: nextApp),
+                              ),
+                            );
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white.withOpacity(0.2),
                           foregroundColor: Colors.white,
@@ -1189,42 +1439,24 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Column(
               children: [
-                // Simulating a chart background space
                 Container(
                   height: 100,
-                  decoration: const BoxDecoration(
-                    // Simple chart graphics spacer
-                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _buildBar(15, false),
-                      _buildBar(35, false),
-                      _buildBar(25, false),
-                      _buildBar(45, false),
-                      _buildBar(75, true), // Active day (Friday in red/pink)
-                      _buildBar(30, false),
-                      _buildBar(20, false),
-                    ],
+                    children: barsList,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildDayLabel('L', false),
-                    _buildDayLabel('M', false),
-                    _buildDayLabel('M', false),
-                    _buildDayLabel('J', false),
-                    _buildDayLabel('V', true),
-                    _buildDayLabel('S', false),
-                    _buildDayLabel('D', false),
-                  ],
+                  children: dayLabelsList,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tu presión se mantiene estable dentro de los rangos normales.',
+                  patientRisk == 'Alto'
+                      ? 'Atención: Tu presión muestra variaciones. Reporta cualquier malestar de inmediato.'
+                      : 'Tu presión se mantiene estable dentro de los rangos normales.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
@@ -1282,7 +1514,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '"Es normal sentir más cansancio en la semana 28. Recuerda hidratarte bien y..."',
+                        '"Es normal sentir más cansancio en la semana $currentWeeks. Recuerda hidratarte bien y..."',
                         style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade700, fontSize: 12),
                       ),
                     ],

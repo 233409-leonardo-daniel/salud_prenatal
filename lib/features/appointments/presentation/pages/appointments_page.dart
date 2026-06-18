@@ -6,6 +6,10 @@ import '../providers/appointment_provider.dart';
 import 'appointment_state.dart';
 import '../../domain/entities/appointment.dart';
 import 'appointment_detail_page.dart';
+import '../../../login/presentation/providers/login_provider.dart';
+import '../providers/create_appointment_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
+import '../../../login/domain/entities/user_profile.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -23,8 +27,18 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     super.initState();
     _selectedDay = _focusedDay;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppointmentsProvider>().loadAppointments('dummy_user_id');
+      _loadAppointmentsData();
     });
+  }
+
+  void _loadAppointmentsData() {
+    final loginProvider = context.read<LoginProvider>();
+    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+    final idStr = isDoctor 
+        ? (loginProvider.doctorId?.toString() ?? '1')
+        : (loginProvider.patientId?.toString() ?? loginProvider.userId?.toString() ?? '2');
+    
+    context.read<AppointmentsProvider>().loadAppointments(idStr, isDoctor: isDoctor);
   }
 
   String _formatDate(DateTime date) {
@@ -100,7 +114,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AppointmentDetailPage(appointment: app),
+                            builder: (context) => AppointmentDetailPage(
+                              appointment: _resolveAppointmentNames(app, context),
+                            ),
                           ),
                         );
                       },
@@ -120,6 +136,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final provider = context.watch<AppointmentsProvider>();
+    final loginProvider = context.watch<LoginProvider>();
+    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8),
@@ -132,15 +150,231 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _buildBody(provider, theme),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Función de agendar próxima (Mock)')),
+      floatingActionButton: isDoctor
+          ? FloatingActionButton(
+              onPressed: () => _showCreateAppointmentDialog(context),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
+    );
+  }
+
+  Appointment _resolveAppointmentNames(Appointment app, BuildContext context) {
+    try {
+      final dashboardProvider = context.read<DashboardProvider>();
+      
+      String resolvedPatient = app.patientName;
+      final pId = int.tryParse(app.patientName);
+      if (pId != null) {
+        final match = dashboardProvider.patients.firstWhere(
+          (p) => p['patient_id'] == pId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (match.isNotEmpty) {
+          final user = dashboardProvider.users.firstWhere(
+            (u) => u.userId == match['user_id'],
+            orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
           );
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+          resolvedPatient = '${user.name} ${user.lastName}'.trim();
+        }
+      }
+
+      String resolvedDoctor = app.doctorName;
+      final dId = int.tryParse(app.doctorName);
+      if (dId != null) {
+        resolvedDoctor = 'Dra. Lucía Mendoza';
+      }
+
+      return Appointment(
+        id: app.id,
+        doctorName: resolvedDoctor,
+        patientName: resolvedPatient,
+        dateTime: app.dateTime,
+        status: app.status,
+        reason: app.reason,
+      );
+    } catch (_) {
+      return app;
+    }
+  }
+
+  void _showCreateAppointmentDialog(BuildContext context) {
+    final dashboardProvider = context.read<DashboardProvider>();
+    final loginProvider = context.read<LoginProvider>();
+    
+    final patientsList = dashboardProvider.patients;
+    if (patientsList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay pacientes registrados para agendar citas.')),
+      );
+      return;
+    }
+
+    int? selectedPatientId = patientsList[0]['patient_id'] as int?;
+    DateTime selectedDateTime = DateTime.now().add(const Duration(days: 1));
+    final reasonController = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: const Text('Agendar Cita', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Paciente:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<int>(
+                      value: selectedPatientId,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: patientsList.map((patient) {
+                        final pId = patient['patient_id'] as int;
+                        final user = dashboardProvider.users.firstWhere(
+                          (u) => u.userId == patient['user_id'],
+                          orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
+                        );
+                        return DropdownMenuItem<int>(
+                          value: pId,
+                          child: Text('${user.name} ${user.lastName}'.trim()),
+                        );
+                      }).toList(),
+                      onChanged: isSaving ? null : (val) {
+                        setDialogState(() {
+                          selectedPatientId = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Fecha y Hora:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: isSaving ? null : () async {
+                        final date = await showDatePicker(
+                          context: dialogCtx,
+                          initialDate: selectedDateTime,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          final time = await showTimePicker(
+                            context: dialogCtx,
+                            initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                          );
+                          if (time != null) {
+                            setDialogState(() {
+                              selectedDateTime = DateTime(
+                                date.year,
+                                date.month,
+                                date.day,
+                                time.hour,
+                                time.minute,
+                              );
+                            });
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today, color: AppColors.primary),
+                      label: Text(
+                        '${selectedDateTime.day}/${selectedDateTime.month}/${selectedDateTime.year} - ${selectedDateTime.hour.toString().padLeft(2, '0')}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
+                        style: const TextStyle(color: AppColors.textDark),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Motivo de la Cita:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: reasonController,
+                      enabled: !isSaving,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Ej. Control de tercer trimestre...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : () async {
+                    if (reasonController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                        const SnackBar(content: Text('Por favor, ingresa el motivo de la cita.')),
+                      );
+                      return;
+                    }
+
+                    setDialogState(() {
+                      isSaving = true;
+                    });
+
+                    final newApp = Appointment(
+                      id: '',
+                      doctorName: (loginProvider.doctorId ?? 1).toString(),
+                      patientName: selectedPatientId.toString(),
+                      dateTime: selectedDateTime,
+                      status: AppointmentStatus.pending,
+                      reason: reasonController.text.trim(),
+                    );
+
+                    final createProvider = dialogCtx.read<CreateAppointmentProvider>();
+                    await createProvider.createAppointment(newApp);
+
+                    if (!dialogCtx.mounted) return;
+
+                    if (createProvider.status == CreateAppointmentStatus.success) {
+                      Navigator.pop(dialogCtx); // Close dialog
+                      _loadAppointmentsData(); // Reload
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cita agendada exitosamente.'), backgroundColor: Colors.green),
+                      );
+                    } else {
+                      setDialogState(() {
+                        isSaving = false;
+                      });
+                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al crear la cita: ${createProvider.error ?? "Error desconocido"}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text('Agendar', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -166,9 +400,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context
-                    .read<AppointmentsProvider>()
-                    .loadAppointments('dummy_user_id'),
+                onPressed: _loadAppointmentsData,
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary),
                 child: const Text('Reintentar',
@@ -183,8 +415,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final allAppointments = provider.appointments;
 
     return RefreshIndicator(
-      onRefresh: () =>
-          context.read<AppointmentsProvider>().loadAppointments('dummy_user_id'),
+      onRefresh: () async => _loadAppointmentsData(),
       color: AppColors.primary,
       child: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -256,11 +487,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Widget _buildAppointmentCard(Appointment appointment, ThemeData theme, {bool isCompact = false}) {
+    final app = _resolveAppointmentNames(appointment, context);
     Color statusColor;
     IconData statusIcon;
     String statusText;
 
-    switch (appointment.status) {
+    switch (app.status) {
       case AppointmentStatus.completed:
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
@@ -306,7 +538,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   ],
                 ),
                 Text(
-                  _formatDate(appointment.dateTime),
+                  _formatDate(app.dateTime),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.textMuted,
                     fontWeight: FontWeight.w600,
@@ -329,7 +561,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        appointment.reason,
+                        app.reason,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.textDark,
@@ -340,7 +572,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Paciente: ${appointment.patientName}',
+                        'Paciente: ${app.patientName}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: AppColors.textMuted,
                           fontSize: isCompact ? 12 : 14,

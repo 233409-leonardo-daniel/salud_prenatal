@@ -1,19 +1,122 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/theme.dart';
+import '../providers/dashboard_provider.dart';
+import '../../../login/presentation/providers/login_provider.dart';
 
-class PatientProgressPage extends StatelessWidget {
+class PatientProgressPage extends StatefulWidget {
   final String patientName;
+  final String? patientId;
 
-  const PatientProgressPage({super.key, required this.patientName});
+  const PatientProgressPage({
+    super.key,
+    required this.patientName,
+    this.patientId,
+  });
+
+  @override
+  State<PatientProgressPage> createState() => _PatientProgressPageState();
+}
+
+class _PatientProgressPageState extends State<PatientProgressPage> {
+  int _parsedPatientId = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    final pIdStr = widget.patientId;
+    if (pIdStr != null) {
+      _parsedPatientId = int.tryParse(pIdStr.replaceAll('#SP-', '').trim()) ?? 1;
+    } else {
+      _parsedPatientId = context.read<LoginProvider>().patientId ?? 1;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final dashboardProvider = context.watch<DashboardProvider>();
+
+    if (dashboardProvider.isDetailsLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Progreso: ${widget.patientName}',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: AppColors.primary,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+
+    final consultations = dashboardProvider.activeConsultations;
+
+    final pressureSpotsSystolic = <FlSpot>[];
+    final pressureSpotsDiastolic = <FlSpot>[];
+    final weightSpots = <FlSpot>[];
+    final symptomsWidgets = <Widget>[];
+
+    for (var i = 0; i < consultations.length; i++) {
+      final c = consultations[i];
+      final xVal = (i + 1).toDouble();
+
+      final pressureRegex = RegExp(r'(\d{2,3})/(\d{2,3})');
+      final pressureMatch = pressureRegex.firstMatch(c.objective);
+      if (pressureMatch != null) {
+        final sys = double.tryParse(pressureMatch.group(1)!) ?? 120.0;
+        final dia = double.tryParse(pressureMatch.group(2)!) ?? 80.0;
+        pressureSpotsSystolic.add(FlSpot(xVal, sys));
+        pressureSpotsDiastolic.add(FlSpot(xVal, dia));
+      }
+
+      final weightRegex = RegExp(r'Peso\s*(\d{2,3}(?:\.\d)?)');
+      final weightMatch = weightRegex.firstMatch(c.objective);
+      if (weightMatch != null) {
+        final w = double.tryParse(weightMatch.group(1)!) ?? 60.0;
+        weightSpots.add(FlSpot(xVal, w));
+      } else {
+        final doubleRegex = RegExp(r'(\d{2,3}\.\d)\s*kg');
+        final doubleMatch = doubleRegex.firstMatch(c.objective);
+        if (doubleMatch != null) {
+          final w = double.tryParse(doubleMatch.group(1)!) ?? 60.0;
+          weightSpots.add(FlSpot(xVal, w));
+        }
+      }
+
+      if (c.reportedFacts.isNotEmpty && c.reportedFacts != 'None' && c.reportedFacts != 'Ninguno') {
+        final formattedDate = '${c.createdAt.day}/${c.createdAt.month}';
+        symptomsWidgets.add(
+          _buildSymptomItem(
+            c.reportedFacts,
+            'Consulta #${c.consultationId} - $formattedDate',
+            c.reportedFacts.toLowerCase().contains('dolor') ? Colors.redAccent : Colors.orange,
+          ),
+        );
+        symptomsWidgets.add(const SizedBox(height: 8));
+      }
+    }
+
+    if (pressureSpotsSystolic.isEmpty) {
+      pressureSpotsSystolic.addAll([const FlSpot(1, 120), const FlSpot(2, 122), const FlSpot(3, 118)]);
+      pressureSpotsDiastolic.addAll([const FlSpot(1, 80), const FlSpot(2, 82), const FlSpot(3, 78)]);
+    }
+    if (weightSpots.isEmpty) {
+      weightSpots.addAll([const FlSpot(1, 60.0), const FlSpot(2, 60.5), const FlSpot(3, 61.2)]);
+    }
+    if (symptomsWidgets.isEmpty) {
+      symptomsWidgets.add(const Text('Sin síntomas reportados recientemente.', style: TextStyle(color: AppColors.textMuted)));
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: Text(
-          'Progreso: $patientName',
+          'Progreso: ${widget.patientName}',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
@@ -31,12 +134,12 @@ class PatientProgressPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildChartCard(
               title: 'Presión Arterial (Sistólica/Diastólica)',
-              chart: _buildPressureChart(),
+              chart: _buildPressureChart(pressureSpotsSystolic, pressureSpotsDiastolic),
             ),
             const SizedBox(height: 16),
             _buildChartCard(
               title: 'Evolución de Peso (kg)',
-              chart: _buildWeightChart(),
+              chart: _buildWeightChart(weightSpots),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -44,7 +147,10 @@ class PatientProgressPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
             const SizedBox(height: 12),
-            _buildSymptomsList(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: symptomsWidgets,
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -83,7 +189,7 @@ class PatientProgressPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPressureChart() {
+  Widget _buildPressureChart(List<FlSpot> systolic, List<FlSpot> diastolic) {
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
@@ -96,29 +202,15 @@ class PatientProgressPage extends StatelessWidget {
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
-          // Sistólica
           LineChartBarData(
-            spots: const [
-              FlSpot(1, 120),
-              FlSpot(2, 122),
-              FlSpot(3, 125),
-              FlSpot(4, 130),
-              FlSpot(5, 135),
-            ],
+            spots: systolic,
             isCurved: true,
             color: Colors.redAccent,
             barWidth: 3,
             dotData: const FlDotData(show: true),
           ),
-          // Diastólica
           LineChartBarData(
-            spots: const [
-              FlSpot(1, 80),
-              FlSpot(2, 82),
-              FlSpot(3, 85),
-              FlSpot(4, 88),
-              FlSpot(5, 90),
-            ],
+            spots: diastolic,
             isCurved: true,
             color: Colors.blueAccent,
             barWidth: 3,
@@ -129,7 +221,7 @@ class PatientProgressPage extends StatelessWidget {
     );
   }
 
-  Widget _buildWeightChart() {
+  Widget _buildWeightChart(List<FlSpot> spots) {
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
@@ -143,13 +235,7 @@ class PatientProgressPage extends StatelessWidget {
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: const [
-              FlSpot(1, 60.5),
-              FlSpot(2, 61.2),
-              FlSpot(3, 62.0),
-              FlSpot(4, 63.5),
-              FlSpot(5, 64.1),
-            ],
+            spots: spots,
             isCurved: true,
             color: Colors.green,
             barWidth: 3,
@@ -157,18 +243,6 @@ class PatientProgressPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSymptomsList() {
-    return Column(
-      children: [
-        _buildSymptomItem('Dolor de cabeza leve', 'Hace 2 días', Colors.orange),
-        const SizedBox(height: 8),
-        _buildSymptomItem('Náuseas matutinas', 'Hace 4 días', Colors.yellow.shade700),
-        const SizedBox(height: 8),
-        _buildSymptomItem('Hinchazón en los pies', 'Hace 1 semana', Colors.redAccent),
-      ],
     );
   }
 
@@ -190,7 +264,12 @@ class PatientProgressPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(symptom, style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textDark)),
+          Expanded(
+            child: Text(
+              symptom,
+              style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textDark),
+            ),
+          ),
           Text(time, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
         ],
       ),

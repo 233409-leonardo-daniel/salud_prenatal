@@ -11,27 +11,37 @@ class AppointmentModel extends Appointment {
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
+    final rawStatus = (json['status'] ?? '').toString().toLowerCase();
+    AppointmentStatus statusVal = AppointmentStatus.pending;
+    if (rawStatus == 'completada' || rawStatus == 'completed') {
+      statusVal = AppointmentStatus.completed;
+    } else if (rawStatus == 'cancelada' || rawStatus == 'cancelled') {
+      statusVal = AppointmentStatus.cancelled;
+    }
+
     return AppointmentModel(
-      id: json['id'],
-      doctorName: json['doctorName'],
-      patientName: json['patientName'],
-      dateTime: DateTime.parse(json['dateTime']),
-      status: AppointmentStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
-        orElse: () => AppointmentStatus.pending,
-      ),
-      reason: json['reason'],
+      id: (json['appointment_id'] ?? json['id'] ?? '').toString(),
+      doctorName: (json['doctorName'] ?? json['doctor_id'] ?? '').toString(),
+      patientName: (json['patientName'] ?? json['patient_id'] ?? '').toString(),
+      dateTime: DateTime.parse(json['appointment_date'] ?? json['dateTime'] ?? DateTime.now().toIso8601String()),
+      status: statusVal,
+      reason: json['reason'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
+    String statusStr = 'pendiente';
+    if (status == AppointmentStatus.completed) {
+      statusStr = 'completada';
+    } else if (status == AppointmentStatus.cancelled) {
+      statusStr = 'cancelada';
+    }
+
     return {
-      'id': id,
-      'doctorName': doctorName,
-      'patientName': patientName,
-      'dateTime': dateTime.toIso8601String(),
-      'status': status.toString().split('.').last,
+      'appointment_id': int.tryParse(id) ?? 0,
+      'status': statusStr,
       'reason': reason,
+      'appointment_date': dateTime.toIso8601String(),
     };
   }
 }

@@ -8,8 +8,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   const AppointmentRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Appointment>> getAppointmentsByUserId(String userId) async {
-    final models = await remoteDataSource.getAppointmentsByUserId(userId);
+  Future<List<Appointment>> getAppointmentsByUserId(String userId, {bool isDoctor = false}) async {
+    final models = await remoteDataSource.getAppointmentsByUserId(userId, isDoctor: isDoctor);
     return models;
   }
 

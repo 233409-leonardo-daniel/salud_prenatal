@@ -26,8 +26,18 @@ class ApiClient {
     return headers;
   }
 
+  Uri _buildUrl(String endpoint) {
+    String base = ApiConfig.baseUrl;
+    if (base.endsWith('/') && endpoint.startsWith('/')) {
+      endpoint = endpoint.substring(1);
+    } else if (!base.endsWith('/') && !endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+    return Uri.parse('$base$endpoint');
+  }
+
   Future<http.Response> get(String endpoint) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    final url = _buildUrl(endpoint);
     final response = await _client.get(url, headers: _headers);
     return response;
   }
@@ -37,7 +47,7 @@ class ApiClient {
   }
 
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    final url = _buildUrl(endpoint);
     final response = await _client.post(
       url,
       headers: _headers,
@@ -47,7 +57,7 @@ class ApiClient {
   }
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    final url = _buildUrl(endpoint);
     final response = await _client.put(
       url,
       headers: _headers,
@@ -57,7 +67,7 @@ class ApiClient {
   }
 
   Future<http.Response> delete(String endpoint) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    final url = _buildUrl(endpoint);
     final response = await _client.delete(url, headers: _headers);
     return response;
   }

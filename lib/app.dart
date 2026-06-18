@@ -8,6 +8,11 @@ import 'features/appointments/presentation/providers/appointment_provider.dart';
 import 'features/appointments/presentation/providers/create_appointment_provider.dart';
 import 'features/appointments/presentation/providers/update_appointment_provider.dart';
 import 'features/appointments/presentation/providers/delete_appointment_provider.dart';
+import 'features/login/di/login_module.dart';
+import 'features/login/presentation/providers/login_provider.dart';
+import 'features/register/di/register_module.dart';
+import 'features/register/presentation/providers/register_provider.dart';
+import 'features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'core/theme/theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -17,6 +22,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appointmentModule = AppointmentModule();
+    final loginModule = LoginModule();
+    final registerModule = RegisterModule();
 
     return MultiProvider(
       providers: [
@@ -39,6 +46,21 @@ class MyApp extends StatelessWidget {
           create: (_) => DeleteAppointmentProvider(
             appointmentModule.deleteAppointmentUsecase,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LoginProvider(
+            loginUseCase: loginModule.loginUseCase,
+            getProfileUseCase: loginModule.getProfileUseCase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RegisterProvider(
+            registerPatientUseCase: registerModule.registerPatientUseCase,
+            registerDoctorUseCase: registerModule.registerDoctorUseCase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DashboardProvider(),
         ),
       ],
       child: MaterialApp(

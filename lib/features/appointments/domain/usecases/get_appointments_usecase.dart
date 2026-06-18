@@ -6,7 +6,7 @@ class GetAppointmentsByUserIdUsecase {
 
   const GetAppointmentsByUserIdUsecase(this._repository);
 
-  Future<List<Appointment>> call(String userId) {
-    return _repository.getAppointmentsByUserId(userId);
+  Future<List<Appointment>> call(String userId, {bool isDoctor = false}) {
+    return _repository.getAppointmentsByUserId(userId, isDoctor: isDoctor);
   }
 }

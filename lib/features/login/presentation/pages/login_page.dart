@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../theme/theme.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/theme/theme.dart';
 import '../providers/login_provider.dart';
+import 'login_state.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,63 +15,64 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  late final LoginProvider _loginProvider;
 
   bool _isPasswordVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loginProvider = LoginProvider();
-  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _loginProvider.dispose();
     super.dispose();
   }
 
   void _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
+      final loginProvider = context.read<LoginProvider>();
       final email = _emailController.text.trim();
-      final success = await _loginProvider.login(
+      final success = await loginProvider.login(
         email,
         _passwordController.text,
       );
 
       if (mounted) {
         if (success) {
-          final String rawRole = _loginProvider.role ?? (email.toLowerCase().contains('doctor') ? 'doctor' : 'paciente');
-          final String role = (rawRole.toLowerCase() == 'doctor' || rawRole.toLowerCase() == 'doctor(a)') ? 'doctor' : 'patient';
-          
+          final String rawRole = loginProvider.role ??
+              (email.toLowerCase().contains('doctor') ? 'doctor' : 'paciente');
+          final String role =
+              (rawRole.toLowerCase() == 'doctor' ||
+                      rawRole.toLowerCase() == 'doctor(a)')
+                  ? 'doctor'
+                  : 'patient';
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
                   const Icon(Icons.check_circle, color: Colors.white),
                   const SizedBox(width: 8),
-                  Text('¡Sesión Iniciada! Rol: ${role == 'doctor' ? 'Médico' : 'Paciente'}'),
+                  Text(
+                      '¡Sesión Iniciada! Rol: ${role == 'doctor' ? 'Médico' : 'Paciente'}'),
                 ],
               ),
               backgroundColor: Colors.green,
             ),
           );
-          
+
           Navigator.pushReplacementNamed(
-            context, 
-            '/dashboard', 
+            context,
+            '/dashboard',
             arguments: role,
           );
         } else {
+          final errMsg =
+              context.read<LoginProvider>().errorMessage ?? 'Error desconocido';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
                   const Icon(Icons.error, color: Colors.white),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(_loginProvider.errorMessage ?? 'Error desconocido')),
+                  Expanded(child: Text(errMsg)),
                 ],
               ),
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -83,13 +86,16 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loginProvider = context.watch<LoginProvider>();
+    final isLoading = loginProvider.status == LoginStatus.loading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F8), // Soft pinkish-white background from mockups
+      backgroundColor: const Color(0xFFFAF6F8),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -179,7 +185,8 @@ class _LoginPageState extends State<LoginPage> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Ingresa tu correo';
                             }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim())) {
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                .hasMatch(value.trim())) {
                               return 'Ingresa un correo electrónico válido';
                             }
                             return null;
@@ -202,7 +209,8 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () {},
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                tapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
                               ),
                               child: const Text(
                                 '¿Olvidaste tu contraseña?',
@@ -224,7 +232,9 @@ class _LoginPageState extends State<LoginPage> {
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                _isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -243,53 +253,55 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 24),
 
                         // Submit button
-                        ListenableBuilder(
-                          listenable: _loginProvider,
-                          builder: (context, _) {
-                            return ElevatedButton(
-                              onPressed: _loginProvider.isLoading ? null : _submitForm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              child: _loginProvider.isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ElevatedButton(
+                          onPressed: isLoading ? null : _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(
+                                            Colors.white),
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Ingresar',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Ingresar',
-                                          style: TextStyle(
-                                            fontSize: 16, 
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Icon(Icons.arrow_forward, color: Colors.white),
-                                      ],
                                     ),
-                            );
-                          },
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward,
+                                        color: Colors.white),
+                                  ],
+                                ),
                         ),
                         const SizedBox(height: 24),
 
                         // Divider
                         Row(
                           children: [
-                            const Expanded(child: Divider(color: Color(0xFFE5E5EA))),
+                            const Expanded(
+                                child: Divider(color: Color(0xFFE5E5EA))),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0),
                               child: Text(
                                 'O CONTINUAR CON',
                                 style: theme.textTheme.labelSmall?.copyWith(
@@ -298,7 +310,8 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const Expanded(child: Divider(color: Color(0xFFE5E5EA))),
+                            const Expanded(
+                                child: Divider(color: Color(0xFFE5E5EA))),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -307,11 +320,13 @@ class _LoginPageState extends State<LoginPage> {
                         OutlinedButton(
                           onPressed: () {},
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
-                            side: const BorderSide(color: Color(0xFFE5E5EA)),
+                            side: const BorderSide(
+                                color: Color(0xFFE5E5EA)),
                             backgroundColor: Colors.white,
                           ),
                           child: Row(
@@ -322,7 +337,8 @@ class _LoginPageState extends State<LoginPage> {
                                 height: 20,
                                 width: 20,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.g_mobiledata, color: Colors.blue);
+                                  return const Icon(Icons.g_mobiledata,
+                                      color: Colors.blue);
                                 },
                               ),
                               const SizedBox(width: 12),
@@ -364,7 +380,8 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/register');
+                          Navigator.pushReplacementNamed(
+                              context, '/register');
                         },
                         child: const Text(
                           'Regístrate ahora',

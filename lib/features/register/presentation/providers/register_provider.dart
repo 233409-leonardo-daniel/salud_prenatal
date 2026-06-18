@@ -1,40 +1,32 @@
-import 'package:flutter/material.dart';
-import '../../data/datasources/register_remote_data_source.dart';
+import 'package:flutter/foundation.dart';
 import '../../data/models/register_request.dart';
-import '../../data/repositories/register_repository_impl.dart';
 import '../../domain/usecases/register_usecase.dart';
+import '../pages/register_state.dart';
 
-class RegisterProvider extends ChangeNotifier {
+class RegisterProvider with ChangeNotifier {
   final RegisterPatientUseCase _registerPatientUseCase;
   final RegisterDoctorUseCase _registerDoctorUseCase;
 
   RegisterProvider({
-    RegisterPatientUseCase? registerPatientUseCase,
-    RegisterDoctorUseCase? registerDoctorUseCase,
-  })  : _registerPatientUseCase = registerPatientUseCase ??
-            RegisterPatientUseCase(
-              repository: RegisterRepositoryImpl(
-                remoteDataSource: RegisterRemoteDataSourceImpl(),
-              ),
-            ),
-        _registerDoctorUseCase = registerDoctorUseCase ??
-            RegisterDoctorUseCase(
-              repository: RegisterRepositoryImpl(
-                remoteDataSource: RegisterRemoteDataSourceImpl(),
-              ),
-            );
+    required RegisterPatientUseCase registerPatientUseCase,
+    required RegisterDoctorUseCase registerDoctorUseCase,
+  })  : _registerPatientUseCase = registerPatientUseCase,
+        _registerDoctorUseCase = registerDoctorUseCase;
 
-  String _selectedRole = 'patient'; // 'patient', 'doctor', 'admin'
+  String _selectedRole = 'patient'; // 'patient' | 'doctor'
   String get selectedRole => _selectedRole;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  RegisterStatus _status = RegisterStatus.initial;
+  RegisterStatus get status => _status;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
   String? _token;
   String? get token => _token;
+
+  /// Compatibilidad con código que usa [isLoading] directamente.
+  bool get isLoading => _status == RegisterStatus.loading;
 
   void setRole(String role) {
     if (_selectedRole != role) {
@@ -55,7 +47,7 @@ class RegisterProvider extends ChangeNotifier {
     required int weeksAtRegistration,
     required String lastMenstrualPeriod,
   }) async {
-    _isLoading = true;
+    _status = RegisterStatus.loading;
     _errorMessage = null;
     _token = null;
     notifyListeners();
@@ -73,12 +65,12 @@ class RegisterProvider extends ChangeNotifier {
         lastMenstrualPeriod: lastMenstrualPeriod,
       );
       _token = await _registerPatientUseCase.execute(request);
-      _isLoading = false;
+      _status = RegisterStatus.success;
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
-      _isLoading = false;
+      _status = RegisterStatus.error;
       notifyListeners();
       return false;
     }
@@ -94,7 +86,7 @@ class RegisterProvider extends ChangeNotifier {
     required String specialty,
     required String office,
   }) async {
-    _isLoading = true;
+    _status = RegisterStatus.loading;
     _errorMessage = null;
     _token = null;
     notifyListeners();
@@ -111,12 +103,12 @@ class RegisterProvider extends ChangeNotifier {
         office: office,
       );
       _token = await _registerDoctorUseCase.execute(request);
-      _isLoading = false;
+      _status = RegisterStatus.success;
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
-      _isLoading = false;
+      _status = RegisterStatus.error;
       notifyListeners();
       return false;
     }
@@ -129,24 +121,31 @@ class RegisterProvider extends ChangeNotifier {
     required String phone,
     required String password,
   }) async {
-    _isLoading = true;
+    _status = RegisterStatus.loading;
     _errorMessage = null;
     _token = null;
     notifyListeners();
 
     try {
-      // Admin is general user registration
+      // Admin registration not yet backed by API
       await Future.delayed(const Duration(seconds: 2));
       _token = 'mock_admin_token_xyz123';
-      _isLoading = false;
+      _status = RegisterStatus.success;
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _status = RegisterStatus.error;
       notifyListeners();
       return false;
     }
+  }
+
+  void reset() {
+    _status = RegisterStatus.initial;
+    _errorMessage = null;
+    _token = null;
+    notifyListeners();
   }
 
   void clearError() {

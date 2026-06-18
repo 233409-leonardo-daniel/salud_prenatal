@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/login_response.dart';
 import '../models/login_request.dart';
-import '../models/login_response.dart';
 
 abstract class LoginRemoteDataSource {
   /// Sends login credentials to the backend. Returns LoginResponse.
@@ -10,43 +9,28 @@ abstract class LoginRemoteDataSource {
 }
 
 class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
+  final ApiClient _apiClient;
+
+  LoginRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+
   @override
   Future<LoginResponse> login(LoginRequest request) async {
-    final url = Uri.parse('${ApiClient.baseUrl}/users/login');
-    
     try {
-      // 1. Intentar enviar JSON
-      final jsonResponse = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final response = await _apiClient.post(
+        '/users/login',
+        {
           'email': request.email,
-          'password': request.password,
-        }),
-      );
-
-      if (jsonResponse.statusCode == 200) {
-        final data = jsonDecode(jsonResponse.body);
-        return LoginResponse.fromJson(data);
-      }
-      
-      // 2. Intentar x-www-form-urlencoded (FastAPI OAuth2 standard form-data expects username & password)
-      final formResponse = await http.post(
-        url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'username': request.email,
           'password': request.password,
         },
       );
 
-      if (formResponse.statusCode == 200) {
-        final data = jsonDecode(formResponse.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         return LoginResponse.fromJson(data);
       }
-
+      
       // Procesar mensajes de error si falló la conexión pero el server respondió
-      final errorBody = jsonResponse.body.isNotEmpty ? jsonResponse.body : formResponse.body;
+      final errorBody = response.body;
       try {
         final errorJson = jsonDecode(errorBody);
         final detail = errorJson['detail'];

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/usecases/delete_appointment_usecase.dart';
-
-enum DeleteAppointmentStatus { initial, loading, success, error }
+import '../pages/appointment_state.dart';
 
 class DeleteAppointmentProvider with ChangeNotifier {
   final DeleteAppointmentUsecase _deleteAppointmentUsecase;

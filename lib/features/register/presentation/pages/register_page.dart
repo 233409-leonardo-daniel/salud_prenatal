@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../theme/theme.dart';
+import '../../../../core/theme/theme.dart';
 import '../providers/register_provider.dart';
+import 'package:provider/provider.dart';
+import 'register_state.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -28,14 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _specialtyController = TextEditingController();
   final _officeController = TextEditingController();
 
-  late final RegisterProvider _registerProvider;
   bool _isPasswordVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _registerProvider = RegisterProvider();
-  }
 
   @override
   void dispose() {
@@ -50,7 +45,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _licenseController.dispose();
     _specialtyController.dispose();
     _officeController.dispose();
-    _registerProvider.dispose();
     super.dispose();
   }
 
@@ -83,10 +77,11 @@ class _RegisterPageState extends State<RegisterPage> {
   void _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
       bool success = false;
-      final role = _registerProvider.selectedRole;
+      final registerProvider = context.read<RegisterProvider>();
+      final role = registerProvider.selectedRole;
 
       if (role == 'patient') {
-        success = await _registerProvider.registerPatient(
+        success = await registerProvider.registerPatient(
           name: _nameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -98,7 +93,7 @@ class _RegisterPageState extends State<RegisterPage> {
           lastMenstrualPeriod: _lmpController.text,
         );
       } else if (role == 'doctor') {
-        success = await _registerProvider.registerDoctor(
+        success = await registerProvider.registerDoctor(
           name: _nameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -109,7 +104,7 @@ class _RegisterPageState extends State<RegisterPage> {
           office: _officeController.text.trim(),
         );
       } else {
-        success = await _registerProvider.registerAdmin(
+        success = await registerProvider.registerAdmin(
           name: _nameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -140,7 +135,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   const Icon(Icons.error, color: Colors.white),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(_registerProvider.errorMessage ?? 'Error al registrar')),
+                  Expanded(child: Text(registerProvider.errorMessage ?? 'Error al registrar')),
                 ],
               ),
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -152,10 +147,11 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildRoleCard(String role, String title, IconData icon, Color activeColor) {
-    final isSelected = _registerProvider.selectedRole == role;
+    final registerProvider = context.watch<RegisterProvider>();
+    final isSelected = registerProvider.selectedRole == role;
     return Expanded(
       child: GestureDetector(
-        onTap: () => _registerProvider.setRole(role),
+        onTap: () => context.read<RegisterProvider>().setRole(role),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
@@ -198,9 +194,9 @@ class _RegisterPageState extends State<RegisterPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: ListenableBuilder(
-            listenable: _registerProvider,
-            builder: (context, _) {
+          child: Builder(
+            builder: (context) {
+              final registerProvider = context.watch<RegisterProvider>();
               return Form(
                 key: _formKey,
                 child: Column(
@@ -363,7 +359,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           const SizedBox(height: 24),
 
                           // Dynamic fields based on role
-                          if (_registerProvider.selectedRole == 'patient') ...[
+                          if (registerProvider.selectedRole == 'patient') ...[
                             Text(
                               'Información de Paciente',
                               style: theme.textTheme.titleSmall?.copyWith(
@@ -417,7 +413,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               onTap: () => _selectDate(context, _lmpController),
                               validator: (value) => value == null || value.isEmpty ? 'Selecciona la fecha FUM' : null,
                             ),
-                          ] else if (_registerProvider.selectedRole == 'doctor') ...[
+                          ] else if (registerProvider.selectedRole == 'doctor') ...[
                             Text(
                               'Información Médica',
                               style: theme.textTheme.titleSmall?.copyWith(
@@ -457,14 +453,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           // Submit button
                           ElevatedButton(
-                            onPressed: _registerProvider.isLoading ? null : _submitForm,
+                            onPressed: registerProvider.isLoading ? null : _submitForm,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            child: _registerProvider.isLoading
+                            child: registerProvider.isLoading
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,

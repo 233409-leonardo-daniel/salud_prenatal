@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/get_appointments_usecase.dart';
-
-enum AppointmentsListStatus { initial, loading, success, error }
+import '../pages/appointment_state.dart';
 
 class AppointmentsProvider with ChangeNotifier {
   final GetAppointmentsByUserIdUsecase _getAppointmentsByUserIdUsecase;

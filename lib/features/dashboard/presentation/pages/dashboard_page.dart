@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../theme/theme.dart';
-import '../../appointments/presentation/pages/appointments_page.dart';
+import '../../../../core/theme/theme.dart';
+import '../../../appointments/presentation/pages/appointments_page.dart';
+import 'patient_record_page.dart';
+import 'patient_progress_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -197,40 +199,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildDoctorStatCard('Seguimiento', '8', Icons.trending_up, Colors.indigo),
-              const SizedBox(width: 12),
-              // Alertas card has a red warning border in mockup
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.red.shade400, width: 1.5),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 28),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Alertas Riesgo',
-                        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '2',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red.shade700),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+
 
           // Alertas Prioritarias Section
           Row(
@@ -257,58 +226,7 @@ class _DashboardPageState extends State<DashboardPage> {
           _buildAlertCard('Lucía Rojas', 'Taquicardia Fetal', 'LR'),
           const SizedBox(height: 24),
 
-          // Resumen IA Card (Pink background card)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F6), // Soft pink background
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.pink.shade50),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.psychology_outlined, color: AppColors.primary, size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Resumen IA',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 15),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-                      child: const Text(
-                        'GENERADO POR IA',
-                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  '"La tendencia de presión arterial en las últimas 48h para las pacientes de alto riesgo muestra una leve mejoría. Se recomienda priorizar la revisión de laboratorio de Mariana Villanueva agendada para las 10:30 AM."',
-                  style: TextStyle(
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.textDark,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+
 
           // Próximas Citas Section
           Row(
@@ -824,7 +742,17 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientRecordPage(
+                          patientName: name,
+                          patientId: id,
+                        ),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -838,7 +766,16 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientProgressPage(
+                          patientName: name,
+                        ),
+                      ),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(

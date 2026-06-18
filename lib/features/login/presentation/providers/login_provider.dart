@@ -1,34 +1,28 @@
-import 'package:flutter/material.dart';
-import '../../data/datasources/login_remote_data_source.dart';
+import 'package:flutter/foundation.dart';
 import '../../data/models/login_request.dart';
-import '../../data/repositories/login_repository_impl.dart';
 import '../../domain/usecases/login_usecase.dart';
+import '../pages/login_state.dart';
 
-class LoginProvider extends ChangeNotifier {
+class LoginProvider with ChangeNotifier {
   final LoginUseCase _loginUseCase;
 
-  LoginProvider({LoginUseCase? loginUseCase})
-      : _loginUseCase = loginUseCase ??
-            LoginUseCase(
-              repository: LoginRepositoryImpl(
-                remoteDataSource: LoginRemoteDataSourceImpl(),
-              ),
-            );
+  LoginProvider(this._loginUseCase);
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
+  LoginStatus _status = LoginStatus.initial;
   String? _errorMessage;
-  String? get errorMessage => _errorMessage;
-
   String? _token;
-  String? get token => _token;
-
   String? _role;
+
+  LoginStatus get status => _status;
+  String? get errorMessage => _errorMessage;
+  String? get token => _token;
   String? get role => _role;
 
+  /// Compatibilidad con código que usa [isLoading] directamente.
+  bool get isLoading => _status == LoginStatus.loading;
+
   Future<bool> login(String email, String password) async {
-    _isLoading = true;
+    _status = LoginStatus.loading;
     _errorMessage = null;
     _token = null;
     _role = null;
@@ -39,15 +33,23 @@ class LoginProvider extends ChangeNotifier {
       final response = await _loginUseCase.execute(request);
       _token = response.accessToken;
       _role = response.role;
-      _isLoading = false;
+      _status = LoginStatus.success;
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
-      _isLoading = false;
+      _status = LoginStatus.error;
       notifyListeners();
       return false;
     }
+  }
+
+  void reset() {
+    _status = LoginStatus.initial;
+    _errorMessage = null;
+    _token = null;
+    _role = null;
+    notifyListeners();
   }
 
   void clearError() {

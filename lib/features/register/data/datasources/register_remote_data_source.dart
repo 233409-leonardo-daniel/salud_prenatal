@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../../../../core/network/api_client.dart';
 import '../models/register_request.dart';
 
@@ -9,10 +8,12 @@ abstract class RegisterRemoteDataSource {
 }
 
 class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
+  final ApiClient _apiClient;
+
+  RegisterRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+
   @override
   Future<String> registerPatient(PatientRegisterRequest request) async {
-    final url = Uri.parse('${ApiClient.baseUrl}/patients/register');
-
     try {
       final userMap = {
         'name': request.name,
@@ -50,10 +51,9 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
         ...userMap,
       };
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+      final response = await _apiClient.post(
+        '/patients/register',
+        payload,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -98,8 +98,6 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
 
   @override
   Future<String> registerDoctor(DoctorRegisterRequest request) async {
-    final url = Uri.parse('${ApiClient.baseUrl}/doctors/register');
-
     try {
       final userMap = {
         'name': request.name,
@@ -117,10 +115,9 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
         ...userMap,
       };
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+      final response = await _apiClient.post(
+        '/doctors/register',
+        payload,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

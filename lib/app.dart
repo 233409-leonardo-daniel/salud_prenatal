@@ -8,11 +8,12 @@ import 'features/appointments/presentation/providers/appointment_provider.dart';
 import 'features/appointments/presentation/providers/create_appointment_provider.dart';
 import 'features/appointments/presentation/providers/update_appointment_provider.dart';
 import 'features/appointments/presentation/providers/delete_appointment_provider.dart';
-import 'theme/theme.dart';
+import 'core/theme/theme.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  
   @override
   Widget build(BuildContext context) {
     final appointmentModule = AppointmentModule();

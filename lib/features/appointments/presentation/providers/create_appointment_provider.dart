@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/create_appointment_usecase.dart';
-
-enum CreateAppointmentStatus { initial, loading, success, error }
+import '../pages/appointment_state.dart';
 
 class CreateAppointmentProvider with ChangeNotifier {
   final CreateAppointmentUsecase _createAppointmentUsecase;

@@ -33,6 +33,11 @@ class LoginProvider with ChangeNotifier {
   int? get doctorId => _doctorId;
   UserProfile? get userProfile => _userProfile;
 
+  void setPatientId(int id) {
+    _patientId = id;
+    notifyListeners();
+  }
+
   String get name => _userProfile?.name ?? '';
   String get lastName => _userProfile?.lastName ?? '';
   String get fullName => '$name $lastName'.trim();
@@ -41,12 +46,14 @@ class LoginProvider with ChangeNotifier {
   bool get isLoading => _status == LoginStatus.loading;
 
   Future<bool> login(String email, String password) async {
+    // Guardar patientId previo (del registro) antes de resetear
+    final savedPatientId = _patientId;
     _status = LoginStatus.loading;
     _errorMessage = null;
     _token = null;
     _role = null;
     _userId = null;
-    _patientId = null;
+    _patientId = savedPatientId; // Conservar si viene del registro
     _doctorId = null;
     _userProfile = null;
     notifyListeners();
@@ -63,21 +70,66 @@ class LoginProvider with ChangeNotifier {
       if (isDoctor) {
         _doctorId = 1; // Default doctor ID
       } else {
-        try {
-          final dashboardDS = DashboardRemoteDataSourceImpl();
-          final patients = await dashboardDS.getPatientsByDoctor(1);
-          final match = patients.firstWhere(
-            (p) => p['user_id'] == _userId,
-            orElse: () => <String, dynamic>{},
-          );
-          if (match.isNotEmpty) {
-            _patientId = match['patient_id'] as int?;
-          } else {
+        // Si ya tenemos un patientId (e.g. del registro), conservarlo
+        final previousPatientId = _patientId;
+        if (previousPatientId != null) {
+          _patientId = previousPatientId;
+        } else {
+          try {
+            final dashboardDS = DashboardRemoteDataSourceImpl();
+            // Buscar en todos los doctores disponibles (1..10)
+            bool found = false;
+            for (int doctorId = 1; doctorId <= 10 && !found; doctorId++) {
+              try {
+                final patients = await dashboardDS.getPatientsByDoctor(doctorId);
+                final match = patients.firstWhere(
+                  (p) => p['user_id'] == _userId,
+                  orElse: () => <String, dynamic>{},
+                );
+                if (match.isNotEmpty) {
+                  _patientId = match['patient_id'] as int?;
+                  found = true;
+                }
+              } catch (_) {
+                // Doctor no existe o error, continuar al siguiente
+              }
+            }
+            if (!found) {
+              // Si no tiene doctor asignado, inferimos el patient_id contando los pacientes creados antes que él.
+              // Dado que user_id y patient_id son auto-incrementales en la BD,
+              // el N-ésimo usuario con rol paciente tendrá el patient_id = N.
+              try {
+                final allUsers = await dashboardDS.getAllUsers();
+                final patientsOnly = allUsers
+                    .where((u) => u.role.toLowerCase() == 'patient' || u.role.toLowerCase() == 'paciente')
+                    .toList();
+                
+                // Ordenar por userId para respetar el orden de creación
+                patientsOnly.sort((a, b) => (a.userId ?? 0).compareTo(b.userId ?? 0));
+                
+                int inferredPatientId = -1;
+                for (int i = 0; i < patientsOnly.length; i++) {
+                  if (patientsOnly[i].userId == _userId) {
+                    inferredPatientId = i + 1; // 1-based index
+                    break;
+                  }
+                }
+                
+                if (inferredPatientId != -1) {
+                  _patientId = inferredPatientId;
+                  print('Inferido patientId = $_patientId para userId = $_userId');
+                } else {
+                  _patientId = _userId; // Fallback extremo
+                }
+              } catch (e) {
+                print('Error al inferir patientId: $e');
+                _patientId = _userId;
+              }
+            }
+          } catch (e) {
+            print('Error al resolver patientId: $e');
             _patientId = _userId; // Fallback to user_id
           }
-        } catch (e) {
-          print('Error al resolver patientId: $e');
-          _patientId = _userId; // Fallback to user_id
         }
       }
 

@@ -25,6 +25,9 @@ class RegisterProvider with ChangeNotifier {
   String? _token;
   String? get token => _token;
 
+  int? _lastRegisteredPatientId;
+  int? get lastRegisteredPatientId => _lastRegisteredPatientId;
+
   /// Compatibilidad con código que usa [isLoading] directamente.
   bool get isLoading => _status == RegisterStatus.loading;
 
@@ -46,10 +49,12 @@ class RegisterProvider with ChangeNotifier {
     required String bloodType,
     required int weeksAtRegistration,
     required String lastMenstrualPeriod,
+    required String residence,
   }) async {
     _status = RegisterStatus.loading;
     _errorMessage = null;
     _token = null;
+    _lastRegisteredPatientId = null;
     notifyListeners();
 
     try {
@@ -63,8 +68,11 @@ class RegisterProvider with ChangeNotifier {
         bloodType: bloodType,
         weeksAtRegistration: weeksAtRegistration,
         lastMenstrualPeriod: lastMenstrualPeriod,
+        residence: residence,
       );
-      _token = await _registerPatientUseCase.execute(request);
+      final result = await _registerPatientUseCase.execute(request);
+      _token = result['access_token']?.toString() ?? result['token']?.toString() ?? 'success';
+      _lastRegisteredPatientId = result['patient_id'] as int?;
       _status = RegisterStatus.success;
       notifyListeners();
       return true;

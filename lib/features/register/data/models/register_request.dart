@@ -8,6 +8,7 @@ class PatientRegisterRequest {
   final String bloodType;
   final int weeksAtRegistration;
   final String lastMenstrualPeriod;
+  final String residence;
 
   const PatientRegisterRequest({
     required this.name,
@@ -19,6 +20,7 @@ class PatientRegisterRequest {
     required this.bloodType,
     required this.weeksAtRegistration,
     required this.lastMenstrualPeriod,
+    required this.residence,
   });
 
   Map<String, dynamic> toJson() {
@@ -32,6 +34,7 @@ class PatientRegisterRequest {
       'blood_type': bloodType,
       'weeks_at_registration': weeksAtRegistration,
       'last_menstrual_period': lastMenstrualPeriod,
+      'residence': residence,
     };
   }
 }

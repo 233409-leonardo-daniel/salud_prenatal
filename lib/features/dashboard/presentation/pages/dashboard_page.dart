@@ -11,6 +11,7 @@ import '../../../login/domain/entities/user_profile.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
+import '../../../patients/presentation/pages/invitation_code_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -141,7 +142,12 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const InvitationCodePage()),
+                );
+              },
             ),
             IconButton(
               icon: const Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
@@ -866,7 +872,21 @@ class _DashboardPageState extends State<DashboardPage> {
         : '--';
     
     final reasonStr = nextApp != null ? nextApp.reason : 'No hay citas programadas';
-    final docNameStr = nextApp != null ? nextApp.doctorName : 'Dra. Lucía Mendoza';
+    
+    String docNameStr = 'S/D';
+    if (nextApp != null) {
+      docNameStr = nextApp.doctorName;
+    } else if (dashboardProvider.currentPatientData?['doctor_id'] != null) {
+      final docId = dashboardProvider.currentPatientData!['doctor_id'];
+      try {
+        final docUser = dashboardProvider.users.firstWhere((u) => u.userId == docId);
+        docNameStr = 'Dr(a). ${docUser.name} ${docUser.lastName}'.trim();
+      } catch (_) {
+        docNameStr = 'Médico asignado';
+      }
+    } else {
+      docNameStr = 'Sin médico';
+    }
 
     final systolicPressures = <double>[];
     final consultationDays = <String>[];
@@ -943,6 +963,67 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
           const SizedBox(height: 28),
+
+          // Banner de vinculación si no tiene doctor
+          if (dashboardProvider.currentPatientData?['doctor_id'] == null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF0F6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.pink.shade100, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.medical_services_outlined, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Aún no tienes un médico',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Vincúlate usando el código de invitación.',
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const InvitationCodePage()),
+                      );
+                      if (result == true && mounted) {
+                        final loginProvider = context.read<LoginProvider>();
+                        context.read<DashboardProvider>().loadPatientDashboard(loginProvider.patientId ?? 0, loginProvider.userId ?? 0);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: const Text('Vincular', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
 
           // MI ESTADO DE HOY Section
           const Text(

@@ -16,6 +16,9 @@ import 'features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'features/patients/di/patients_module.dart';
 import 'features/patients/presentation/providers/patients_list_provider.dart';
 import 'features/patients/presentation/providers/patient_detail_provider.dart';
+import 'features/patients/presentation/providers/invitation_provider.dart';
+import 'core/di/core_module.dart';
+import 'core/services/qr_service.dart';
 import 'core/theme/theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -28,9 +31,11 @@ class MyApp extends StatelessWidget {
     final loginModule = LoginModule();
     final registerModule = RegisterModule();
     final patientsModule = PatientsModule();
+    final coreModule = CoreModule();
 
     return MultiProvider(
       providers: [
+        Provider<QrService>(create: (_) => coreModule.qrService),
         ChangeNotifierProvider(
           create: (_) => AppointmentsProvider(
             appointmentModule.getAppointmentsByUserIdUsecase,
@@ -75,6 +80,9 @@ class MyApp extends StatelessWidget {
           create: (_) => PatientDetailProvider(
             patientsModule.getPatientDetailsUseCase,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => InvitationProvider(),
         ),
       ],
       child: MaterialApp(

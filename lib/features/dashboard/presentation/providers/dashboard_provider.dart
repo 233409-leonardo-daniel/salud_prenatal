@@ -56,6 +56,7 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      _users = await _remoteDataSource.getAllUsers();
       _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId);
 
       final patientsList = await _remoteDataSource.getPatientsByDoctor(1);

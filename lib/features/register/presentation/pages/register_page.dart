@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/register_provider.dart';
 import 'package:provider/provider.dart';
+import '../../../login/presentation/providers/login_provider.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -90,6 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
           bloodType: _selectedBloodType,
           weeksAtRegistration: int.tryParse(_weeksController.text) ?? 0,
           lastMenstrualPeriod: _lmpController.text,
+          residence: "",
         );
       } else if (role == 'doctor') {
         success = await registerProvider.registerDoctor(
@@ -114,6 +116,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (mounted) {
         if (success) {
+          // Si se registró como paciente, guardar el patient_id para usarlo después
+          if (role == 'patient') {
+            final registeredPatientId = registerProvider.lastRegisteredPatientId;
+            if (registeredPatientId != null) {
+              context.read<LoginProvider>().setPatientId(registeredPatientId);
+            }
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(

@@ -1078,7 +1078,9 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 16),
 
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/patient-diaries');
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -1483,9 +1485,7 @@ class _DashboardPageState extends State<DashboardPage> {
             // Central floating circular add button
             GestureDetector(
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Añadir nueva medición o registro')),
-                );
+                Navigator.pushNamed(context, '/patient-diaries');
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),

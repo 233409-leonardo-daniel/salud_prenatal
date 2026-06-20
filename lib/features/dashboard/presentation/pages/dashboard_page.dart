@@ -10,6 +10,7 @@ import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
+import '../../../patients/presentation/pages/patients_list_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -173,7 +174,7 @@ class _DashboardPageState extends State<DashboardPage> {
         case 0:
           return _buildDoctorDashboard();
         case 1:
-          return _buildDoctorPatientsList();
+          return const PatientsListPage();
         case 2:
           return const AppointmentsPage();
         default:
@@ -535,175 +536,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // --- DOCTOR PATIENTS LIST VIEW ("Mis Pacientes") ---
-
-  Widget _buildDoctorPatientsList() {
-    final dashboardProvider = context.watch<DashboardProvider>();
-    final totalPatientsStr = dashboardProvider.patients.length.toString();
-
-    final patientCards = <Widget>[];
-    for (final patient in dashboardProvider.patients) {
-      final pId = patient['patient_id'] ?? 0;
-      final patientUser = dashboardProvider.users.firstWhere(
-        (u) => u.userId == patient['user_id'],
-        orElse: () => UserProfile(
-          name: 'Paciente',
-          lastName: '$pId',
-          email: '',
-          role: 'paciente',
-        ),
-      );
-
-      final patientName = '${patientUser.name} ${patientUser.lastName}'.trim();
-      final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
-
-      String risk = 'Bajo Riesgo';
-      Color riskBg = AppColors.riskLowBg;
-      Color riskText = AppColors.riskLowText;
-      Color imgBg = const Color(0xFFE0F2F1);
-
-      if (pId % 3 == 0) {
-        risk = 'Alto Riesgo';
-        riskBg = AppColors.riskHighBg;
-        riskText = AppColors.riskHighText;
-        imgBg = const Color(0xFFFFF0F6);
-      } else if (pId % 3 == 1) {
-        risk = 'Medio Riesgo';
-        riskBg = AppColors.riskMediumBg;
-        riskText = AppColors.riskMediumText;
-        imgBg = const Color(0xFFFFF4E5);
-      }
-
-      patientCards.add(
-        _buildPatientListCard(
-          name: patientName,
-          id: '#SP-$pId',
-          risk: risk,
-          riskColorBg: riskBg,
-          riskColorText: riskText,
-          gestationAge: '${patient['current_gestational_weeks'] ?? 28} sem',
-          status: 'Estable',
-          statusIcon: Icons.check_circle_outline,
-          statusIconColor: Colors.teal,
-          avatarInitials: initials,
-          imageBackground: imgBg,
-        ),
-      );
-      patientCards.add(const SizedBox(height: 12));
-    }
-
-    if (patientCards.isEmpty) {
-      patientCards.add(
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: Center(
-            child: Text(
-              'No se encontraron pacientes.',
-              style: TextStyle(color: AppColors.textMuted),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Mis Pacientes',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Text(
-                'Gestión activa de cuidados prenatales.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  totalPatientsStr,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Search patient bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              hintText: 'Buscar paciente por nombre o ID...',
-              prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.pink.shade50),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.pink.shade50),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            onChanged: (val) {
-              setState(() {}); // Redraw list on search query
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Scrollable Filter Tags
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('Todas'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Riesgo Alto'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Riesgo Medio'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Riesgo Bajo'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          ...patientCards,
-          const SizedBox(height: 24),
-
-          // Pagination indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left, color: AppColors.textMuted),
-                onPressed: () {},
-              ),
-              _buildPageDot(1, true),
-              _buildPageDot(2, false),
-              _buildPageDot(3, false),
-              IconButton(
-                icon: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                onPressed: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
+  // --- OLD METHODS REMOVED ---
 
   Widget _buildFilterChip(String label) {
     final isSelected = _activeFilter == label;

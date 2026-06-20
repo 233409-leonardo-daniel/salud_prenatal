@@ -36,7 +36,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
     final idStr = isDoctor 
         ? (loginProvider.doctorId?.toString() ?? '1')
-        : (loginProvider.patientId?.toString() ?? loginProvider.userId?.toString() ?? '2');
+        : (loginProvider.userId?.toString() ?? '2');
     
     context.read<AppointmentsProvider>().loadAppointments(idStr, isDoctor: isDoctor);
   }

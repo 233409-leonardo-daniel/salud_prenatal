@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../domain/entities/appointment.dart';
+import '../../../login/presentation/providers/login_provider.dart';
 
 class AppointmentDetailPage extends StatelessWidget {
   final Appointment appointment;
@@ -18,6 +20,9 @@ class AppointmentDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loginProvider = context.watch<LoginProvider>();
+    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
@@ -68,8 +73,10 @@ class AppointmentDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoCard('Paciente', appointment.patientName, Icons.person_outline),
-            const SizedBox(height: 12),
+            if (isDoctor) ...[
+              _buildInfoCard('Paciente', appointment.patientName, Icons.person_outline),
+              const SizedBox(height: 12),
+            ],
             _buildInfoCard('Médico', appointment.doctorName, Icons.medical_services_outlined),
             const SizedBox(height: 12),
             _buildInfoCard('Estado', _statusToString(appointment.status), Icons.info_outline),

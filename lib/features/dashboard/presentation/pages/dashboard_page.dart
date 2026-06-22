@@ -14,6 +14,7 @@ import '../../../patients/presentation/pages/patients_list_page.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -188,6 +189,8 @@ class _DashboardPageState extends State<DashboardPage> {
           return const PatientsListPage();
         case 2:
           return const AppointmentsPage();
+        case 4:
+          return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de comunicación y perfil médico.');
       }
@@ -197,6 +200,8 @@ class _DashboardPageState extends State<DashboardPage> {
           return _buildPatientDashboard();
         case 1:
           return const AppointmentsPage();
+        case 3:
+          return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de salud prenatal.');
       }

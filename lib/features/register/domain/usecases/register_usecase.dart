@@ -6,7 +6,7 @@ class RegisterPatientUseCase {
 
   const RegisterPatientUseCase({required this.repository});
 
-  Future<String> execute(PatientRegisterRequest request) {
+  Future<Map<String, dynamic>> execute(PatientRegisterRequest request) {
     return repository.registerPatient(request);
   }
 }

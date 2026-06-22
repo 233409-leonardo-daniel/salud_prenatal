@@ -9,6 +9,7 @@ abstract class DashboardRemoteDataSource {
   Future<List<Map<String, dynamic>>> getPatientsByDoctor(int doctorId);
   Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId);
   Future<List<ConsultationResponse>> getConsultationsByMedicalRecord(int medicalRecordId);
+  Future<Map<String, dynamic>> getPatientDashboard(int patientId);
 }
 
 class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
@@ -173,6 +174,31 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
             updatedAt: DateTime.now(),
           )
         ];
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getPatientDashboard(int patientId) async {
+    try {
+      final response = await _apiClient.get('/patients/$patientId/dashboard');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception('Error al obtener dashboard (Status: ${response.statusCode})');
+    } catch (e) {
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Connection refused') || 
+          e.toString().contains('ClientException')) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        return {
+          "full_name": "Ana García",
+          "current_gestational_weeks": 28,
+          "current_doctor": "Dra. Lucía Mendoza",
+          "current_doctor_specialty": "Ginecología y Obstetricia",
+          "upcoming_appointments": []
+        };
       }
       rethrow;
     }

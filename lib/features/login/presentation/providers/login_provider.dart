@@ -33,6 +33,11 @@ class LoginProvider with ChangeNotifier {
   int? get doctorId => _doctorId;
   UserProfile? get userProfile => _userProfile;
 
+  void setPatientId(int id) {
+    _patientId = id;
+    notifyListeners();
+  }
+
   String get name => _userProfile?.name ?? '';
   String get lastName => _userProfile?.lastName ?? '';
   String get fullName => '$name $lastName'.trim();
@@ -41,12 +46,14 @@ class LoginProvider with ChangeNotifier {
   bool get isLoading => _status == LoginStatus.loading;
 
   Future<bool> login(String email, String password) async {
+    // Guardar patientId previo (del registro) antes de resetear
+    final savedPatientId = _patientId;
     _status = LoginStatus.loading;
     _errorMessage = null;
     _token = null;
     _role = null;
     _userId = null;
-    _patientId = null;
+    _patientId = savedPatientId; // Conservar si viene del registro
     _doctorId = null;
     _userProfile = null;
     notifyListeners();
@@ -58,27 +65,14 @@ class LoginProvider with ChangeNotifier {
       _role = response.role;
       _userId = response.userId;
 
-      // Resolve patientId or doctorId
       final isDoctor = _role == 'doctor' || _role == 'doctor(a)';
       if (isDoctor) {
-        _doctorId = 1; // Default doctor ID
+        _doctorId = response.doctorId ?? 1; // Default doctor ID fallback
       } else {
-        try {
-          final dashboardDS = DashboardRemoteDataSourceImpl();
-          final patients = await dashboardDS.getPatientsByDoctor(1);
-          final match = patients.firstWhere(
-            (p) => p['user_id'] == _userId,
-            orElse: () => <String, dynamic>{},
-          );
-          if (match.isNotEmpty) {
-            _patientId = match['patient_id'] as int?;
-          } else {
-            _patientId = _userId; // Fallback to user_id
-          }
-        } catch (e) {
-          print('Error al resolver patientId: $e');
-          _patientId = _userId; // Fallback to user_id
-        }
+        // Assign patientId from response directly.
+        // Also keep previousPatientId logic if we came from registration and the API login doesn't have it yet, 
+        // though the new backend should return it.
+        _patientId = response.patientId ?? _patientId ?? _userId; 
       }
 
       try {

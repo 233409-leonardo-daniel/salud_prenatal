@@ -3,7 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../models/register_request.dart';
 
 abstract class RegisterRemoteDataSource {
-  Future<String> registerPatient(PatientRegisterRequest request);
+  Future<Map<String, dynamic>> registerPatient(PatientRegisterRequest request);
   Future<String> registerDoctor(DoctorRegisterRequest request);
 }
 
@@ -13,7 +13,7 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
   RegisterRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   @override
-  Future<String> registerPatient(PatientRegisterRequest request) async {
+  Future<Map<String, dynamic>> registerPatient(PatientRegisterRequest request) async {
     try {
       final userMap = {
         'name': request.name,
@@ -30,6 +30,7 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
         'blood_type': request.bloodType,
         'weeks_at_registration': request.weeksAtRegistration,
         'last_menstrual_period': request.lastMenstrualPeriod,
+        'residence': request.residence,
         
         // Historial clínico requerido (por defecto false para el cascarón)
         'previous_hypertension': false,
@@ -58,7 +59,7 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        return data['access_token'] ?? data['token'] ?? 'success';
+        return data is Map<String, dynamic> ? data : <String, dynamic>{'token': data.toString()};
       }
 
       // Procesar y formatear errores detallados de validación (FastAPI/Pydantic style)
@@ -90,7 +91,7 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
           e.toString().contains('Connection refused') || 
           e.toString().contains('ClientException')) {
         await Future.delayed(const Duration(seconds: 1));
-        return 'mock_patient_token_offline';
+        return <String, dynamic>{'token': 'mock_patient_token_offline', 'patient_id': 99};
       }
       rethrow;
     }

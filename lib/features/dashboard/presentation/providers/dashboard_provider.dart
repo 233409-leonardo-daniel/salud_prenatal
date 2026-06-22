@@ -18,6 +18,7 @@ class DashboardProvider with ChangeNotifier {
   MedicalRecordResponse? _medicalRecord;
   List<ConsultationResponse> _consultations = [];
   Map<String, dynamic>? _currentPatientData;
+  Map<String, dynamic>? _dashboardData;
 
   MedicalRecordResponse? _activeMedicalRecord;
   List<ConsultationResponse> _activeConsultations = [];
@@ -30,6 +31,7 @@ class DashboardProvider with ChangeNotifier {
   MedicalRecordResponse? get medicalRecord => _medicalRecord;
   List<ConsultationResponse> get consultations => _consultations;
   Map<String, dynamic>? get currentPatientData => _currentPatientData;
+  Map<String, dynamic>? get dashboardData => _dashboardData;
 
   MedicalRecordResponse? get activeMedicalRecord => _activeMedicalRecord;
   List<ConsultationResponse> get activeConsultations => _activeConsultations;
@@ -56,21 +58,29 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId);
+      _users = await _remoteDataSource.getAllUsers();
 
-      final patientsList = await _remoteDataSource.getPatientsByDoctor(1);
-      final match = patientsList.firstWhere(
-        (p) => p['patient_id'] == patientId || p['user_id'] == userId,
-        orElse: () => <String, dynamic>{},
-      );
-      if (match.isNotEmpty) {
-        _currentPatientData = match;
-      } else {
+      try {
+        _dashboardData = await _remoteDataSource.getPatientDashboard(patientId);
         _currentPatientData = {
           'patient_id': patientId,
           'user_id': userId,
-          'current_gestational_weeks': 28, // Default fallback
+          'current_gestational_weeks': _dashboardData?['current_gestational_weeks'] ?? 28,
         };
+      } catch (e) {
+        print('Error fetching patient dashboard: $e');
+        _currentPatientData = {
+          'patient_id': patientId,
+          'user_id': userId,
+          'current_gestational_weeks': 28,
+        };
+      }
+
+      try {
+        _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId);
+      } catch (e) {
+        print('Error fetching medical record: $e');
+        _medicalRecord = null;
       }
 
       if (_medicalRecord != null) {

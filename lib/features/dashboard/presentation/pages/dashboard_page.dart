@@ -11,6 +11,9 @@ import '../../../login/domain/entities/user_profile.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
+import '../../../patients/presentation/pages/invitation_code_page.dart';
+import '../../../../core/widgets/latest_diary_record_card.dart';
+import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -41,17 +44,20 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  void _loadDashboardData() {
+  Future<void> _loadDashboardData() async {
     final loginProvider = context.read<LoginProvider>();
     final dashboardProvider = context.read<DashboardProvider>();
     if (_userRole == 'doctor') {
       final docId = loginProvider.doctorId ?? 1;
-      dashboardProvider.loadDoctorDashboard(docId);
+      await dashboardProvider.loadDoctorDashboard(docId);
       context.read<AppointmentsProvider>().loadAppointments(docId.toString(), isDoctor: true);
     } else {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
+      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
       context.read<AppointmentsProvider>().loadAppointments(patId.toString(), isDoctor: false);
+      
+      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
+      context.read<PatientDiariesProvider>().loadDiaries(medicalRecordId);
     }
   }
 
@@ -141,7 +147,12 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const InvitationCodePage()),
+                );
+              },
             ),
             IconButton(
               icon: const Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
@@ -781,6 +792,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final loginProvider = context.watch<LoginProvider>();
     final dashboardProvider = context.watch<DashboardProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
+    final diariesProvider = context.watch<PatientDiariesProvider>();
 
     final String displayName = loginProvider.fullName.isNotEmpty
         ? loginProvider.fullName
@@ -866,7 +878,18 @@ class _DashboardPageState extends State<DashboardPage> {
         : '--';
     
     final reasonStr = nextApp != null ? nextApp.reason : 'No hay citas programadas';
-    final docNameStr = nextApp != null ? nextApp.doctorName : 'Dra. Lucía Mendoza';
+    
+    String docNameStr = 'Sin médico';
+    String docSpecialtyStr = 'Especialidad no especificada';
+    String? docImageStr;
+
+    if (dashboardProvider.dashboardData?['current_doctor'] != null) {
+      docNameStr = dashboardProvider.dashboardData!['current_doctor'];
+      docSpecialtyStr = dashboardProvider.dashboardData?['current_doctor_specialty'] ?? docSpecialtyStr;
+      docImageStr = dashboardProvider.dashboardData?['current_doctor_image'];
+    } else if (nextApp != null) {
+      docNameStr = nextApp.doctorName;
+    }
 
     final systolicPressures = <double>[];
     final consultationDays = <String>[];
@@ -944,6 +967,67 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 28),
 
+          // Banner de vinculación si no tiene doctor
+          if (dashboardProvider.dashboardData?['current_doctor'] == null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF0F6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.pink.shade100, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.medical_services_outlined, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Aún no tienes un médico',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Vincúlate usando el código de invitación.',
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const InvitationCodePage()),
+                      );
+                      if (result == true && mounted) {
+                        final loginProvider = context.read<LoginProvider>();
+                        context.read<DashboardProvider>().loadPatientDashboard(loginProvider.patientId ?? 0, loginProvider.userId ?? 0);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: const Text('Vincular', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+
           // MI ESTADO DE HOY Section
           const Text(
             'MI ESTADO DE HOY',
@@ -951,134 +1035,35 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 12),
 
-          // Riesgo estimado card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.015),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
+          if (diariesProvider.isLoading)
+            const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          else if (diariesProvider.diaries.isNotEmpty)
+            LatestDiaryRecordCard(
+              systolic: diariesProvider.diaries.first.systolic,
+              diastolic: diariesProvider.diaries.first.diastolic,
+              weightKg: diariesProvider.diaries.first.weightKg,
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: const Text(
+                'Aún no tienes registros en tu bitácora.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textMuted),
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Riesgo estimado',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      patientRisk,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: patientRiskColor),
-                    ),
-                  ],
-                ),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: CircularProgressIndicator(
-                        value: progressValue,
-                        strokeWidth: 4,
-                        valueColor: AlwaysStoppedAnimation<Color>(patientRiskBg),
-                        backgroundColor: patientRiskBgLight,
-                      ),
-                    ),
-                    Icon(patientRiskIcon, color: patientRiskColor, size: 24),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
 
-          // Stats row
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.01),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
-                          Icon(Icons.show_chart, color: patientRisk == 'Bajo' ? Colors.green : Colors.orange, size: 16),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('Presión', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 4),
-                      Text(pressure, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                      const Text('MMHG', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.01),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 20),
-                          const Icon(Icons.horizontal_rule, color: AppColors.textMuted, size: 16),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('Peso actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 4),
-                      Text(weight, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                      const Text('KILOGRAMOS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
 
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/patient-diaries');
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -1163,9 +1148,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 18,
-                      backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                      backgroundImage: docImageStr != null 
+                        ? NetworkImage(docImageStr)
+                        : const NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -1177,7 +1164,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
-                            'Ginecología y Obstetricia',
+                            docSpecialtyStr,
                             style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11),
                           ),
                         ],
@@ -1483,9 +1470,7 @@ class _DashboardPageState extends State<DashboardPage> {
             // Central floating circular add button
             GestureDetector(
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Añadir nueva medición o registro')),
-                );
+                Navigator.pushNamed(context, '/patient-diaries');
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),

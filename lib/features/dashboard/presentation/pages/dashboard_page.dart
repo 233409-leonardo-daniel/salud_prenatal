@@ -11,7 +11,6 @@ import '../../../login/domain/entities/user_profile.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
-import '../../../patients/presentation/pages/patients_list_page.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';

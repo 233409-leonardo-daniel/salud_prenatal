@@ -56,7 +56,8 @@ class PatientDiaryRemoteDataSourceImpl implements PatientDiaryRemoteDataSource {
       final response = await _apiClient.get('/patient-diaries/medical-record/$medicalRecordId');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data.map((item) => PatientDiaryModel.fromJson(item)).toList();
+        final list = data.map((item) => PatientDiaryModel.fromJson(item)).toList();
+        return list.where((item) => item.medicalRecordId == medicalRecordId).toList();
       }
       throw Exception('Error al obtener bitácoras (Status: ${response.statusCode})');
     } catch (e) {

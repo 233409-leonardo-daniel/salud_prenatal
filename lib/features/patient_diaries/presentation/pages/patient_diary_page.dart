@@ -493,7 +493,6 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
     // Header showing the summary of the last reading
     final latest = provider.diaries.first;
-    final riskEval = _evaluatePressureRisk(latest.systolic, latest.diastolic);
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -545,21 +544,22 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                               fontSize: 12,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: itemRisk['bgColor'] as Color,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              itemRisk['label'] as String,
-                              style: TextStyle(
-                                color: itemRisk['color'] as Color,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                          if (itemRisk['label'] != 'Normal')
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: itemRisk['bgColor'] as Color,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                itemRisk['label'] as String,
+                                style: TextStyle(
+                                  color: itemRisk['color'] as Color,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -622,7 +622,9 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                       const SizedBox(height: 12),
                       const Divider(height: 1, color: Color(0xFFF2F2F7)),
                       const SizedBox(height: 12),
-                      if (item.symptoms.isNotEmpty && item.symptoms != 'Ninguno') ...[
+                      if (item.symptoms.isNotEmpty &&
+                          item.symptoms.toLowerCase() != 'ninguno' &&
+                          item.symptoms.toLowerCase() != 'normal') ...[
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -640,7 +642,9 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (item.notes.isNotEmpty && item.notes != 'Sin notas adicionales') ...[
+                      if (item.notes.isNotEmpty &&
+                          item.notes.toLowerCase() != 'sin notas adicionales' &&
+                          item.notes.toLowerCase() != 'normal') ...[
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

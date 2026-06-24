@@ -4,6 +4,8 @@ import '../../../../core/theme/theme.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../appointments/domain/entities/appointment.dart';
+import '../../../login/presentation/providers/login_provider.dart';
+import 'create_medical_record_page.dart';
 
 class PatientRecordPage extends StatefulWidget {
   final String patientName;
@@ -155,6 +157,9 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     // 5. Patient Plan
     final planText = consultations.isNotEmpty ? consultations.last.plan : 'Continuar con las indicaciones médicas generales.';
 
+    final loginProvider = context.watch<LoginProvider>();
+    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
@@ -170,8 +175,13 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildResumenIA(record),
-            const SizedBox(height: 16),
+            if (record == null) ...[
+              _buildNoRecordBanner(context, isDoctor),
+              const SizedBox(height: 16),
+            ] else ...[
+              _buildResumenIA(record),
+              const SizedBox(height: 16),
+            ],
             _buildExpansionSection(
               title: 'Detalles del paciente',
               icon: Icons.person_outline,
@@ -360,5 +370,95 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildNoRecordBanner(BuildContext context, bool isDoctor) {
+    if (isDoctor) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF9DB),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFFEC99)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  'Sin Expediente Clínico',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Esta paciente no cuenta con un expediente clínico registrado en el sistema. Es necesario crearlo para registrar antecedentes y factores de riesgo.',
+              style: TextStyle(color: AppColors.textDark, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateMedicalRecordPage(
+                      patientId: _parsedPatientId,
+                      patientName: widget.patientName,
+                    ),
+                  ),
+                );
+                if (result == true) {
+                  if (context.mounted) {
+                    context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
+                  }
+                }
+              },
+              icon: const Icon(Icons.add_moderator, size: 18),
+              label: const Text('Crear Expediente Médico'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F3F5),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.textMuted, size: 24),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Tu expediente clínico no está registrado en el sistema. Tu médico lo creará en tu próxima consulta.',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

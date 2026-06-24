@@ -12,6 +12,7 @@ class DashboardProvider with ChangeNotifier {
 
   bool _isLoading = false;
   bool _isDetailsLoading = false;
+  bool _isSavingRecord = false;
   String? _errorMessage;
   List<UserProfile> _users = [];
   List<Map<String, dynamic>> _patients = [];
@@ -25,6 +26,7 @@ class DashboardProvider with ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isDetailsLoading => _isDetailsLoading;
+  bool get isSavingRecord => _isSavingRecord;
   String? get errorMessage => _errorMessage;
   List<UserProfile> get users => _users;
   List<Map<String, dynamic>> get patients => _patients;
@@ -115,6 +117,27 @@ class DashboardProvider with ChangeNotifier {
       print('Error al cargar detalles de paciente: $e');
     } finally {
       _isDetailsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createMedicalRecord(Map<String, dynamic> recordData) async {
+    _isSavingRecord = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final record = await _remoteDataSource.createMedicalRecord(recordData);
+      _activeMedicalRecord = record;
+      _activeConsultations = [];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    } finally {
+      _isSavingRecord = false;
       notifyListeners();
     }
   }

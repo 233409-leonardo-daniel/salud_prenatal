@@ -3,6 +3,7 @@ import '../../../../core/theme/theme.dart';
 import '../providers/register_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
+import '../../../privacy_policy/presentation/pages/privacy_policy_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -31,6 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _officeController = TextEditingController();
 
   bool _isPasswordVisible = false;
+  bool _privacyAccepted = false;
 
   @override
   void dispose() {
@@ -74,7 +76,23 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  Future<void> _showPrivacyPolicy() async {
+    final email = _emailController.text.trim();
+    final accepted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => PrivacyPolicyPage(userEmail: email)),
+    );
+    if (accepted == true) {
+      setState(() => _privacyAccepted = true);
+      _submitForm();
+    }
+  }
+
   void _submitForm() async {
+    if (!_privacyAccepted) {
+      _showPrivacyPolicy();
+      return;
+    }
     if (_formKey.currentState?.validate() ?? false) {
       bool success = false;
       final registerProvider = context.read<RegisterProvider>();
@@ -461,7 +479,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           // Submit button
                           ElevatedButton(
-                            onPressed: registerProvider.isLoading ? null : _submitForm,
+                            onPressed: registerProvider.isLoading
+                                ? null
+                                : (_privacyAccepted ? _submitForm : _showPrivacyPolicy),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
@@ -490,12 +510,28 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'Al unirte, aceptas nuestros Términos de Servicio y Política de Privacidad.',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: AppColors.textMuted,
+                          GestureDetector(
+                            onTap: _showPrivacyPolicy,
+                            child: RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                                children: const [
+                                  TextSpan(text: 'Al unirte, aceptas nuestra '),
+                                  TextSpan(
+                                    text: 'Política de Privacidad',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  TextSpan(text: ' y consientes el tratamiento de tus datos.'),
+                                ],
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

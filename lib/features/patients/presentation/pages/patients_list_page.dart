@@ -8,7 +8,7 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../dashboard/presentation/pages/patient_progress_page.dart';
-import 'patient_detail_page.dart';
+import '../../../dashboard/presentation/pages/patient_record_page.dart';
 
 class PatientsListPage extends StatefulWidget {
   const PatientsListPage({super.key});
@@ -403,11 +403,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PatientDetailPage(
+                        builder: (context) => PatientRecordPage(
                           patientName: name,
-                          patientId: patientEntity.patientId.toString(),
-                          userId: userId.toString(),
-                          patientEntity: patientEntity,
+                          patientId: id,
                         ),
                       ),
                     );

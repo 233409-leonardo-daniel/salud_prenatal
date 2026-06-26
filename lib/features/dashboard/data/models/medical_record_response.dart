@@ -1,13 +1,14 @@
 class MedicalRecordResponse {
   final int medicalRecordId;
   final int patientId;
+  final int doctorId;
   final bool previousHypertension;
   final bool diabetes;
   final bool familyHistoryHypertension;
-  final bool previousPregnancies;
-  final bool previousDeliveries;
-  final bool previousMiscarriages;
-  final bool previousCesareans;
+  final int previousPregnancies;
+  final int previousDeliveries;
+  final int previousMiscarriages;
+  final int previousCesareans;
   final bool previousPreeclampsia;
   final bool chronicKidneyDisease;
   final bool chronicHypertension;
@@ -15,10 +16,12 @@ class MedicalRecordResponse {
   final bool fetalDeath;
   final bool fetalGrowthRestriction;
   final bool familyHistoryHeartDisease;
+  final bool activeSmoking;
 
   MedicalRecordResponse({
     required this.medicalRecordId,
     required this.patientId,
+    required this.doctorId,
     required this.previousHypertension,
     required this.diabetes,
     required this.familyHistoryHypertension,
@@ -33,6 +36,7 @@ class MedicalRecordResponse {
     required this.fetalDeath,
     required this.fetalGrowthRestriction,
     required this.familyHistoryHeartDisease,
+    required this.activeSmoking,
   });
 
   factory MedicalRecordResponse.fromJson(Map<String, dynamic> json) {
@@ -43,13 +47,22 @@ class MedicalRecordResponse {
     return MedicalRecordResponse(
       medicalRecordId: recordJson['medical_record_id'] ?? 0,
       patientId: recordJson['patient_id'] ?? 0,
+      doctorId: recordJson['doctor_id'] ?? 0,
       previousHypertension: recordJson['previous_hypertension'] ?? false,
       diabetes: recordJson['diabetes'] ?? false,
       familyHistoryHypertension: recordJson['family_history_hypertension'] ?? false,
-      previousPregnancies: recordJson['previous_pregnancies'] ?? false,
-      previousDeliveries: recordJson['previous_deliveries'] ?? false,
-      previousMiscarriages: recordJson['previous_miscarriages'] ?? false,
-      previousCesareans: recordJson['previous_cesareans'] ?? false,
+      previousPregnancies: recordJson['previous_pregnancies'] is int
+          ? recordJson['previous_pregnancies'] as int
+          : (recordJson['previous_pregnancies'] == true ? 1 : 0),
+      previousDeliveries: recordJson['previous_deliveries'] is int
+          ? recordJson['previous_deliveries'] as int
+          : (recordJson['previous_deliveries'] == true ? 1 : 0),
+      previousMiscarriages: recordJson['previous_miscarriages'] is int
+          ? recordJson['previous_miscarriages'] as int
+          : (recordJson['previous_miscarriages'] == true ? 1 : 0),
+      previousCesareans: recordJson['previous_cesareans'] is int
+          ? recordJson['previous_cesareans'] as int
+          : (recordJson['previous_cesareans'] == true ? 1 : 0),
       previousPreeclampsia: recordJson['previous_preeclampsia'] ?? false,
       chronicKidneyDisease: recordJson['chronic_kidney_disease'] ?? false,
       chronicHypertension: recordJson['chronic_hypertension'] ?? false,
@@ -57,6 +70,7 @@ class MedicalRecordResponse {
       fetalDeath: recordJson['fetal_death'] ?? false,
       fetalGrowthRestriction: recordJson['fetal_growth_restriction'] ?? false,
       familyHistoryHeartDisease: recordJson['family_history_heart_disease'] ?? false,
+      activeSmoking: recordJson['active_smoking'] ?? false,
     );
   }
 
@@ -64,6 +78,7 @@ class MedicalRecordResponse {
     return {
       'medical_record_id': medicalRecordId,
       'patient_id': patientId,
+      'doctor_id': doctorId,
       'previous_hypertension': previousHypertension,
       'diabetes': diabetes,
       'family_history_hypertension': familyHistoryHypertension,
@@ -78,6 +93,7 @@ class MedicalRecordResponse {
       'fetal_death': fetalDeath,
       'fetal_growth_restriction': fetalGrowthRestriction,
       'family_history_heart_disease': familyHistoryHeartDisease,
+      'active_smoking': activeSmoking,
     };
   }
 }

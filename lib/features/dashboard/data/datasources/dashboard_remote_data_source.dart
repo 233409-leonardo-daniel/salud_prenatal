@@ -10,6 +10,7 @@ abstract class DashboardRemoteDataSource {
   Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId);
   Future<List<ConsultationResponse>> getConsultationsByMedicalRecord(int medicalRecordId);
   Future<Map<String, dynamic>> getPatientDashboard(int patientId);
+  Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
 }
 
 class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
@@ -117,13 +118,14 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         return MedicalRecordResponse(
           medicalRecordId: 1,
           patientId: patientId,
+          doctorId: 1,
           previousHypertension: false,
           diabetes: false,
           familyHistoryHypertension: false,
-          previousPregnancies: false,
-          previousDeliveries: false,
-          previousMiscarriages: false,
-          previousCesareans: false,
+          previousPregnancies: 0,
+          previousDeliveries: 0,
+          previousMiscarriages: 0,
+          previousCesareans: 0,
           previousPreeclampsia: false,
           chronicKidneyDisease: false,
           chronicHypertension: false,
@@ -131,6 +133,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           fetalDeath: false,
           fetalGrowthRestriction: false,
           familyHistoryHeartDisease: false,
+          activeSmoking: false,
         );
       }
       rethrow;
@@ -199,6 +202,48 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           "current_doctor_specialty": "Ginecología y Obstetricia",
           "upcoming_appointments": []
         };
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData) async {
+    try {
+      final response = await _apiClient.post('/medical-records/', recordData);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return MedicalRecordResponse.fromJson(data);
+      }
+      
+      String errorMsg = 'Error al crear expediente (Status: ${response.statusCode})';
+      try {
+        final errorJson = jsonDecode(response.body);
+        final detail = errorJson['detail'];
+        if (detail is String) {
+          errorMsg = detail;
+        } else if (detail is List && detail.isNotEmpty) {
+          errorMsg = detail.map((e) {
+            final loc = e['loc'] is List ? e['loc'].join('.') : 'campo';
+            final msg = e['msg'] ?? 'inválido';
+            return "$loc: $msg";
+          }).join('\n');
+        } else if (errorJson['message'] != null) {
+          errorMsg = errorJson['message'];
+        } else {
+          errorMsg = response.body;
+        }
+      } catch (_) {
+        errorMsg = response.body;
+      }
+      throw Exception(errorMsg);
+    } catch (e) {
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Connection refused') || 
+          e.toString().contains('ClientException')) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        // Fallback offline mock response using the inputs
+        return MedicalRecordResponse.fromJson(recordData);
       }
       rethrow;
     }

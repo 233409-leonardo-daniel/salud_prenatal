@@ -22,6 +22,8 @@ import 'core/services/qr_service.dart';
 import 'features/patient_diaries/di/patient_diaries_module.dart';
 import 'features/patient_diaries/presentation/providers/patient_diaries_provider.dart';
 import 'features/patient_diaries/presentation/pages/patient_diary_page.dart';
+import 'features/privacy_policy/di/privacy_policy_module.dart';
+import 'features/privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import 'core/theme/theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -36,6 +38,7 @@ class MyApp extends StatelessWidget {
     final patientsModule = PatientsModule();
     final coreModule = CoreModule();
     final patientDiariesModule = PatientDiariesModule();
+    final privacyPolicyModule = PrivacyPolicyModule();
 
     return MultiProvider(
       providers: [
@@ -94,6 +97,12 @@ class MyApp extends StatelessWidget {
             createDiaryUseCase: patientDiariesModule.createDiaryUseCase,
             updateDiaryUseCase: patientDiariesModule.updateDiaryUseCase,
             deleteDiaryUseCase: patientDiariesModule.deleteDiaryUseCase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PrivacyPolicyProvider(
+            saveAcceptedPoliciesUseCase: privacyPolicyModule.saveAcceptedPoliciesUseCase,
+            getAcceptedPoliciesUseCase: privacyPolicyModule.getAcceptedPoliciesUseCase,
           ),
         ),
       ],

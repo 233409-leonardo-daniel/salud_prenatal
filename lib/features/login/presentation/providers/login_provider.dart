@@ -3,7 +3,7 @@ import '../../data/models/login_request.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../pages/login_state.dart';
-import '../../../dashboard/data/datasources/dashboard_remote_data_source.dart';
+import '../../../../core/network/api_client.dart';
 
 class LoginProvider with ChangeNotifier {
   final LoginUseCase _loginUseCase;
@@ -62,6 +62,7 @@ class LoginProvider with ChangeNotifier {
       final request = LoginRequest(email: email, password: password);
       final response = await _loginUseCase.execute(request);
       _token = response.accessToken;
+      ApiClient().setAuthToken(response.accessToken);
       _role = response.role;
       _userId = response.userId;
 
@@ -108,6 +109,7 @@ class LoginProvider with ChangeNotifier {
     _patientId = null;
     _doctorId = null;
     _userProfile = null;
+    ApiClient().clearAuthToken();
     notifyListeners();
   }
 

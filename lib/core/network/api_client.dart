@@ -4,7 +4,7 @@ import '../config/api_config.dart';
 
 class ApiClient {
   final http.Client _client;
-  String? _authToken;
+  static String? _authToken;
 
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 

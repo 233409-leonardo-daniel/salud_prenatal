@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
-import '../../../appointments/domain/entities/appointment.dart';
 import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/enums/appointment_status.dart';
 import 'create_medical_record_page.dart';
 
 class PatientRecordPage extends StatefulWidget {

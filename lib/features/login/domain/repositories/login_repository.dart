@@ -5,4 +5,5 @@ import '../entities/user_profile.dart';
 abstract class LoginRepository {
   Future<LoginResponse> login(LoginRequest request);
   Future<UserProfile> getUserProfile(int userId);
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile);
 }

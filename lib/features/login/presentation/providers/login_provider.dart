@@ -2,18 +2,22 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/login_request.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/usecases/login_usecase.dart';
+import '../../domain/usecases/update_profile_usecase.dart';
 import '../pages/login_state.dart';
-import '../../../dashboard/data/datasources/dashboard_remote_data_source.dart';
+import '../../../../core/network/api_client.dart';
 
 class LoginProvider with ChangeNotifier {
   final LoginUseCase _loginUseCase;
   final GetProfileUseCase _getProfileUseCase;
+  final UpdateProfileUseCase _updateProfileUseCase;
 
   LoginProvider({
     required LoginUseCase loginUseCase,
     required GetProfileUseCase getProfileUseCase,
+    required UpdateProfileUseCase updateProfileUseCase,
   })  : _loginUseCase = loginUseCase,
-        _getProfileUseCase = getProfileUseCase;
+        _getProfileUseCase = getProfileUseCase,
+        _updateProfileUseCase = updateProfileUseCase;
 
   LoginStatus _status = LoginStatus.initial;
   String? _errorMessage;
@@ -23,6 +27,7 @@ class LoginProvider with ChangeNotifier {
   int? _patientId;
   int? _doctorId;
   UserProfile? _userProfile;
+  String? _userPassword;
 
   LoginStatus get status => _status;
   String? get errorMessage => _errorMessage;
@@ -56,12 +61,14 @@ class LoginProvider with ChangeNotifier {
     _patientId = savedPatientId; // Conservar si viene del registro
     _doctorId = null;
     _userProfile = null;
+    _userPassword = password;
     notifyListeners();
 
     try {
       final request = LoginRequest(email: email, password: password);
       final response = await _loginUseCase.execute(request);
       _token = response.accessToken;
+      ApiClient().setAuthToken(response.accessToken);
       _role = response.role;
       _userId = response.userId;
 
@@ -109,11 +116,56 @@ class LoginProvider with ChangeNotifier {
     _patientId = null;
     _doctorId = null;
     _userProfile = null;
+    _userPassword = null;
+    ApiClient().clearAuthToken();
     notifyListeners();
   }
 
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  Future<bool> updateProfile({
+    required String name,
+    required String lastName,
+    required String phone,
+    String? email,
+    String? imageUrl,
+  }) async {
+    if (_userId == null) {
+      _errorMessage = 'Usuario no autenticado';
+      notifyListeners();
+      return false;
+    }
+    _status = LoginStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final updatedProfile = UserProfile(
+        userId: _userId,
+        name: name,
+        lastName: lastName,
+        email: email ?? _userProfile?.email ?? '',
+        role: _userProfile?.role ?? 'paciente',
+        phone: phone,
+        imageUrl: imageUrl ?? _userProfile?.imageUrl ?? '',
+        isActive: _userProfile?.isActive ?? true,
+        createdAt: _userProfile?.createdAt ?? '',
+        updatedAt: _userProfile?.updatedAt ?? '',
+        password: _userPassword,
+      );
+      
+      _userProfile = await _updateProfileUseCase.execute(_userId!, updatedProfile);
+      _status = LoginStatus.success;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _status = LoginStatus.error;
+      notifyListeners();
+      return false;
+    }
   }
 }

@@ -8,6 +8,7 @@ abstract class LoginRemoteDataSource {
   /// Sends login credentials to the backend. Returns LoginResponse.
   Future<LoginResponse> login(LoginRequest request);
   Future<UserProfile> getUserProfile(int userId);
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile);
 }
 
 class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
@@ -78,11 +79,55 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
         await Future.delayed(const Duration(seconds: 1));
         final String role = userId == 99 ? 'doctor' : 'paciente';
         return UserProfile(
+          userId: userId,
           name: role == 'doctor' ? 'Lucía' : 'Ana',
           lastName: role == 'doctor' ? 'Mendoza' : 'García',
           email: role == 'doctor' ? 'doctor@example.com' : 'paciente@example.com',
           role: role,
+          phone: role == 'doctor' ? '9611234567' : '9617654321',
+          imageUrl: '',
         );
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile) async {
+    try {
+      final response = await _apiClient.put(
+        '/users/$userId',
+        profile.toJson(),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return UserProfile.fromJson(data);
+      }
+
+      String errorMsg = 'Error al actualizar perfil (Status: ${response.statusCode})';
+      try {
+        final errorJson = jsonDecode(response.body);
+        final detail = errorJson['detail'];
+        if (detail is String) {
+          errorMsg = detail;
+        } else if (detail is List && detail.isNotEmpty) {
+          errorMsg = detail.map((e) {
+            final loc = e['loc'] is List ? e['loc'].join('.') : 'campo';
+            final msg = e['msg'] ?? 'inválido';
+            return "$loc: $msg";
+          }).join('\n');
+        } else if (errorJson['message'] != null) {
+          errorMsg = errorJson['message'];
+        }
+      } catch (_) {}
+
+      throw Exception(errorMsg);
+    } catch (e) {
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Connection refused') || 
+          e.toString().contains('ClientException')) {
+        await Future.delayed(const Duration(seconds: 1));
+        return profile;
       }
       rethrow;
     }

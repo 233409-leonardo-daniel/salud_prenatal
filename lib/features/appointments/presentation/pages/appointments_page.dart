@@ -10,6 +10,7 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../providers/create_appointment_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -188,6 +189,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
       return Appointment(
         id: app.id,
+        doctorId: app.doctorId,
+        patientId: app.patientId,
         doctorName: resolvedDoctor,
         patientName: resolvedPatient,
         dateTime: app.dateTime,
@@ -327,7 +330,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     });
 
                     final newApp = Appointment(
-                      id: '',
+                      id: 0,
+                      doctorId: loginProvider.doctorId ?? 1,
+                      patientId: selectedPatientId ?? 0,
                       doctorName: (loginProvider.doctorId ?? 1).toString(),
                       patientName: selectedPatientId.toString(),
                       dateTime: selectedDateTime,
@@ -502,6 +507,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
         statusText = 'CANCELADA';
+        break;
+      case AppointmentStatus.confirmed:
+        statusColor = Colors.blue;
+        statusIcon = Icons.check;
+        statusText = 'CONFIRMADA';
+        break;
+      case AppointmentStatus.in_progress:
+        statusColor = Colors.teal;
+        statusIcon = Icons.timelapse;
+        statusText = 'EN CURSO';
         break;
       case AppointmentStatus.pending:
         statusColor = Colors.orange;

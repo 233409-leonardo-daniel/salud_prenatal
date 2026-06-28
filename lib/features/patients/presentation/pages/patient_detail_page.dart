@@ -5,7 +5,8 @@ import '../providers/patient_detail_provider.dart';
 import 'patient_state.dart';
 import '../../domain/entities/patient.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
-import '../../../appointments/domain/entities/appointment.dart';
+import '../../../chat/presentation/pages/chat_room_page.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class PatientDetailPage extends StatefulWidget {
   final String patientName;
@@ -255,6 +256,23 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatRoomPage(
+                otherUserId: int.tryParse(widget.userId) ?? widget.patientEntity.userId,
+                otherUserName: widget.patientName,
+                otherUserRole: 'paciente',
+              ),
+            ),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.chat_bubble_outline),
+      ),
     );
   }
 
@@ -269,7 +287,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withAlpha(5),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

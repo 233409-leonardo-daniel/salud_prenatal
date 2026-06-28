@@ -1,0 +1,93 @@
+# Guía de Integración de WebSockets (Chat) para Frontend
+
+Esta documentación está diseñada para el equipo de Frontend (React/Next.js/etc.) para integrar exitosamente el nuevo módulo de chat en tiempo real del sistema de Salud Prenatal.
+
+> [!WARNING]  
+> **Aviso de Seguridad Temporal:**  
+> Actualmente, para facilitar la integración inicial y no retrasar el desarrollo, **las validaciones por JWT (Tokens) en las rutas del Chat están temporalmente deshabilitadas**. Esto significa que por ahora el backend confía ciegamente en el ID de usuario que el Frontend envíe. En el futuro cercano, implementaremos la validación de JWT, por lo que requeriremos enviar el Token en los Headers (para peticiones HTTP) o a través de los query parameters/protocolos de inicio (para el WebSocket).
+
+---
+
+## 1. Cargar el Historial de Mensajes
+
+Al momento de abrir la pantalla de chat con un usuario específico (por ejemplo, cuando un Paciente abre el chat de un Doctor), lo primero que debe hacer el Frontend es cargar la conversación previa almacenada en la base de datos (PostgreSQL).
+
+**Endpoint HTTP (GET)**
+```http
+GET /api/v1/chat/history/{other_user_id}?current_user_id={your_user_id}
+```
+* **`other_user_id`**: Es el ID de la persona con la que quieres chatear.
+* **`current_user_id`**: Es el ID del usuario actual que está navegando la App. *(Nota: Pronto esto se eliminará y el backend lo deducirá a partir del JWT Bearer Token).*
+
+**Ejemplo de Respuesta JSON:**
+```json
+[
+  {
+    "message_id": 1,
+    "sender_id": 1,
+    "receiver_id": 2,
+    "content": "Buenas tardes doctor.",
+    "created_at": "2026-06-23T17:22:15.126460",
+    "is_read": true
+  },
+  {
+    "message_id": 2,
+    "sender_id": 2,
+    "receiver_id": 1,
+    "content": "¡Hola! ¿Cómo te sientes hoy?",
+    "created_at": "2026-06-23T17:23:00.126460",
+    "is_read": false
+  }
+]
+```
+
+---
+
+## 2. Conectarse al WebSocket
+
+Para recibir y enviar mensajes en tiempo real sin recargar la página, debes inicializar una conexión WebSocket.
+
+**URL de Conexión:**
+```javascript
+const CURRENT_USER_ID = 1; // Tu ID local (ej. recuperado de tu estado de Auth)
+const socket = new WebSocket(`ws://localhost:8000/api/v1/chat/ws/${CURRENT_USER_ID}`);
+```
+*(Asegúrate de cambiar `localhost:8000` por la URL de producción proporcionada en Render, usando el protocolo `wss://`).*
+
+### A. Escuchar Mensajes (Recibir)
+
+El servidor emitirá un evento JSON hacia el WebSocket cada vez que el usuario conectado reciba un mensaje de alguien más, **e incluso también enviará de vuelta (como un eco de confirmación)** los mensajes que el propio usuario haya emitido correctamente al servidor.
+
+```javascript
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    
+    // Aquí puedes actualizar el estado de tus componentes (ej. setMessages)
+    console.log("Nuevo Mensaje Entrante:", data);
+    
+    /* El objeto data será idéntico a la estructura mostrada arriba:
+       { message_id, sender_id, receiver_id, content, created_at, is_read }
+    */
+};
+```
+
+### B. Enviar Mensajes
+
+Para emitir un mensaje, debes enviarlo en formato JSON a través de la misma conexión abierta:
+
+```javascript
+const sendMessage = (text, destinationUserId) => {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+            receiver_id: destinationUserId,
+            content: text
+        }));
+    } else {
+        console.error("El WebSocket no está conectado.");
+    }
+}
+```
+
+> [!TIP]
+> **Mejores Prácticas (Manejo de Desconexiones):**  
+> Las conexiones de WebSocket pueden caerse por micro-cortes de internet del usuario. Asegúrate de implementar eventos como `socket.onclose` o librerías que soporten *Reconnection* (como ReconnectingWebSocket) para volver a intentar conectarse automáticamente tras una pérdida de red.

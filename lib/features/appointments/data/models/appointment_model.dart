@@ -1,10 +1,13 @@
 import '../../domain/entities/appointment.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class AppointmentModel extends Appointment {
   AppointmentModel({
     required super.id,
-    required super.doctorName,
-    required super.patientName,
+    required super.doctorId,
+    required super.patientId,
+    super.doctorName = '',
+    super.patientName = '',
     required super.dateTime,
     super.status = AppointmentStatus.pending,
     required super.reason,
@@ -12,34 +15,32 @@ class AppointmentModel extends Appointment {
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
     final rawStatus = (json['status'] ?? '').toString().toLowerCase();
-    AppointmentStatus statusVal = AppointmentStatus.pending;
-    if (rawStatus == 'completada' || rawStatus == 'completed') {
-      statusVal = AppointmentStatus.completed;
-    } else if (rawStatus == 'cancelada' || rawStatus == 'cancelled') {
-      statusVal = AppointmentStatus.cancelled;
-    }
+    final statusVal = AppointmentStatusExtension.fromString(rawStatus);
 
     return AppointmentModel(
-      id: (json['appointment_id'] ?? json['id'] ?? '').toString(),
-      doctorName: (json['doctorName'] ?? json['doctor_id'] ?? '').toString(),
-      patientName: (json['patientName'] ?? json['patient_id'] ?? '').toString(),
-      dateTime: DateTime.parse(json['appointment_date'] ?? json['dateTime'] ?? DateTime.now().toIso8601String()),
+      id: (json['appointment_id'] ?? json['id'] ?? 0) is int
+          ? (json['appointment_id'] ?? json['id'] ?? 0) as int
+          : int.tryParse((json['appointment_id'] ?? json['id'] ?? '0').toString()) ?? 0,
+      doctorId: (json['doctor_id'] ?? 0) is int
+          ? json['doctor_id'] ?? 0
+          : int.tryParse(json['doctor_id'].toString()) ?? 0,
+      patientId: (json['patient_id'] ?? 0) is int
+          ? json['patient_id'] ?? 0
+          : int.tryParse(json['patient_id'].toString()) ?? 0,
+      doctorName: (json['doctorName'] ?? json['doctor_name'] ?? '').toString(),
+      patientName: (json['patientName'] ?? json['patient_name'] ?? '').toString(),
+      dateTime: DateTime.tryParse(json['appointment_date'] ?? json['dateTime'] ?? '') ?? DateTime.now(),
       status: statusVal,
       reason: json['reason'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
-    String statusStr = 'pendiente';
-    if (status == AppointmentStatus.completed) {
-      statusStr = 'completada';
-    } else if (status == AppointmentStatus.cancelled) {
-      statusStr = 'cancelada';
-    }
-
     return {
-      'appointment_id': int.tryParse(id) ?? 0,
-      'status': statusStr,
+      'appointment_id': id,
+      'doctor_id': doctorId,
+      'patient_id': patientId,
+      'status': status.value,
       'reason': reason,
       'appointment_date': dateTime.toIso8601String(),
     };

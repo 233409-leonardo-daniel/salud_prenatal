@@ -3,18 +3,19 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
 import '../../../login/presentation/providers/login_provider.dart';
-import 'patient_record_page.dart';
-import 'patient_progress_page.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
-import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../chat/presentation/pages/chat_list_page.dart';
+import '../../../chat/presentation/pages/chat_room_page.dart';
+import 'receptionist_dashboard_page.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -30,7 +31,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // Search and filter query for the doctor's patient list page
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'Todas';
 
   @override
   void didChangeDependencies() {
@@ -48,17 +48,24 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _loadDashboardData() async {
     final loginProvider = context.read<LoginProvider>();
     final dashboardProvider = context.read<DashboardProvider>();
+    final appointmentsProvider = context.read<AppointmentsProvider>();
+    final diariesProvider = context.read<PatientDiariesProvider>();
+
     if (_userRole == 'doctor') {
       final docId = loginProvider.doctorId ?? 1;
       await dashboardProvider.loadDoctorDashboard(docId);
-      context.read<AppointmentsProvider>().loadAppointments(docId.toString(), isDoctor: true);
+      if (!mounted) return;
+      appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
     } else {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
       final docId = loginProvider.doctorId;
       await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: docId);
       context.read<AppointmentsProvider>().loadAppointments(patId.toString(), isDoctor: false);
+      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
+      if (!mounted) return;
+      appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
       
-      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 0;
+      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
       context.read<PatientDiariesProvider>().loadDiaries(medicalRecordId);
     }
   }
@@ -73,6 +80,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_userRole == 'receptionist') {
+      return const ReceptionistDashboardPage();
+    }
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: _buildAppBar(),
@@ -86,6 +97,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final String doctorName = loginProvider.name.isNotEmpty 
         ? 'Dra. ${loginProvider.name}' 
         : 'Dra. Mendoza';
+    final String doctorInitial = loginProvider.name.isNotEmpty
+        ? loginProvider.name[0].toUpperCase()
+        : 'M';
 
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
@@ -94,9 +108,13 @@ class _DashboardPageState extends State<DashboardPage> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  doctorInitial,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -135,9 +153,13 @@ class _DashboardPageState extends State<DashboardPage> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  doctorInitial,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -175,13 +197,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBody() {
-    final dashboardProvider = context.watch<DashboardProvider>();
-    if (dashboardProvider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
-
     if (_userRole == 'doctor') {
       switch (_currentTab) {
         case 0:
@@ -192,6 +207,8 @@ class _DashboardPageState extends State<DashboardPage> {
           return const AppointmentsPage();
         case 4:
           return const ProfilePage();
+        case 3:
+          return const ChatListPage();
         default:
           return _buildPlaceholderView('Módulo de comunicación y perfil médico.');
       }
@@ -203,6 +220,8 @@ class _DashboardPageState extends State<DashboardPage> {
           return const AppointmentsPage();
         case 3:
           return const ProfilePage();
+        case 2:
+          return const ChatListPage();
         default:
           return _buildPlaceholderView('Módulo de salud prenatal.');
       }
@@ -238,6 +257,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildDoctorDashboard() {
     final dashboardProvider = context.watch<DashboardProvider>();
+    if (dashboardProvider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
     final appointmentsProvider = context.watch<AppointmentsProvider>();
     final today = DateTime.now();
 
@@ -389,7 +413,7 @@ class _DashboardPageState extends State<DashboardPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withAlpha(5),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -423,7 +447,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
+            color: Colors.black.withAlpha(3),
             blurRadius: 8,
             offset: const Offset(0, 3),
           )
@@ -555,248 +579,16 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // --- OLD METHODS REMOVED ---
 
-  Widget _buildFilterChip(String label) {
-    final isSelected = _activeFilter == label;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activeFilter = label;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : const Color(0xFFEFEFF4),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPatientListCard({
-    required String name,
-    required String id,
-    required String risk,
-    required Color riskColorBg,
-    required Color riskColorText,
-    required String gestationAge,
-    required String status,
-    required IconData statusIcon,
-    required Color statusIconColor,
-    required String avatarInitials,
-    required Color imageBackground,
-  }) {
-    // Basic search filtering
-    if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text.toLowerCase();
-      if (!name.toLowerCase().contains(query) && !id.toLowerCase().contains(query)) {
-        return const SizedBox.shrink();
-      }
-    }
-
-    // Risk filtering
-    if (_activeFilter != 'Todas') {
-      if (_activeFilter == 'Riesgo Alto' && risk != 'Alto Riesgo') return const SizedBox.shrink();
-      if (_activeFilter == 'Riesgo Medio' && risk != 'Medio Riesgo') return const SizedBox.shrink();
-      if (_activeFilter == 'Riesgo Bajo' && risk != 'Bajo Riesgo') return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: imageBackground,
-                radius: 24,
-                child: Text(
-                  avatarInitials,
-                  style: TextStyle(color: riskColorText, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'ID: $id',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: riskColorBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  risk,
-                  style: TextStyle(color: riskColorText, fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Details row
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Text(gestationAge, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusIconColor),
-                          const SizedBox(width: 4),
-                          Text(status, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: statusIconColor)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PatientRecordPage(
-                          patientName: name,
-                          patientId: id,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text('Ver Detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PatientProgressPage(
-                          patientName: name,
-                        ),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    side: const BorderSide(color: Colors.pinkAccent, width: 1),
-                    backgroundColor: const Color(0xFFFFF0F6),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.trending_up, size: 16, color: AppColors.primary),
-                      const SizedBox(width: 6),
-                      Text('Progreso', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageDot(int pageNum, bool isSelected) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          pageNum.toString(),
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
   // --- PATIENT VIEWS ---
 
   Widget _buildPatientDashboard() {
-    final loginProvider = context.watch<LoginProvider>();
     final dashboardProvider = context.watch<DashboardProvider>();
+    if (dashboardProvider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+    final loginProvider = context.watch<LoginProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
     final diariesProvider = context.watch<PatientDiariesProvider>();
 
@@ -808,59 +600,16 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final medicalRecord = dashboardProvider.medicalRecord;
     String patientRisk = 'Bajo';
-    Color patientRiskColor = Colors.teal.shade700;
-    Color patientRiskBg = Colors.teal.shade400;
-    Color patientRiskBgLight = Colors.teal.shade50;
-    IconData patientRiskIcon = Icons.check;
-    double progressValue = 0.95;
 
     if (medicalRecord != null) {
       if (medicalRecord.previousPreeclampsia || 
           medicalRecord.chronicHypertension || 
           medicalRecord.previousHypertension) {
         patientRisk = 'Alto';
-        patientRiskColor = Colors.red.shade700;
-        patientRiskBg = Colors.red.shade400;
-        patientRiskBgLight = Colors.red.shade50;
-        patientRiskIcon = Icons.warning_amber_rounded;
-        progressValue = 0.35;
       } else if (medicalRecord.diabetes || 
                  medicalRecord.familyHistoryHypertension) {
         patientRisk = 'Medio';
-        patientRiskColor = Colors.orange.shade700;
-        patientRiskBg = Colors.orange.shade400;
-        patientRiskBgLight = Colors.orange.shade50;
-        patientRiskIcon = Icons.info_outline;
-        progressValue = 0.65;
       }
-    }
-
-    String pressure = '120/80';
-    String weight = '60.0';
-
-    if (dashboardProvider.consultations.isNotEmpty) {
-      final lastConsultation = dashboardProvider.consultations.last;
-      final objectiveText = lastConsultation.objective;
-      
-      final pressureRegex = RegExp(r'(\d{2,3}/\d{2,3})');
-      final pressureMatch = pressureRegex.firstMatch(objectiveText);
-      if (pressureMatch != null) {
-        pressure = pressureMatch.group(0)!;
-      }
-
-      final weightRegex = RegExp(r'Peso\s*(\d{2,3}(?:\.\d)?)');
-      final weightMatch = weightRegex.firstMatch(objectiveText);
-      if (weightMatch != null) {
-        weight = weightMatch.group(1)!;
-      } else {
-        final doubleRegex = RegExp(r'(\d{2,3}\.\d)\s*kg');
-        final doubleMatch = doubleRegex.firstMatch(objectiveText);
-        if (doubleMatch != null) {
-          weight = doubleMatch.group(1)!;
-        }
-      }
-    } else {
-      weight = (dashboardProvider.currentPatientData?['initial_weight'] ?? 60.0).toString();
     }
 
     final upcomingAppointments = appointmentsProvider.appointments.where((app) => 
@@ -965,9 +714,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 22,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'P',
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ],
           ),
@@ -1102,7 +855,7 @@ class _DashboardPageState extends State<DashboardPage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withAlpha(51),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 )
@@ -1116,14 +869,14 @@ class _DashboardPageState extends State<DashboardPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withAlpha(51),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
                         children: [
                           Text(
                             monthStr,
-                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white.withAlpha(204), fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             dayStr,
@@ -1156,9 +909,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundImage: docImageStr != null 
-                        ? NetworkImage(docImageStr)
-                        : const NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        docNameStr.isNotEmpty
+                            ? docNameStr.replaceAll(RegExp(r'^(Dr\.|Dra\.)\s*', caseSensitive: false), '')[0].toUpperCase()
+                            : 'D',
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -1171,7 +928,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           Text(
                             docSpecialtyStr,
-                            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11),
+                            style: TextStyle(color: Colors.white.withAlpha(179), fontSize: 11),
                           ),
                         ],
                       ),
@@ -1194,7 +951,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: Colors.white.withAlpha(51),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1205,7 +962,30 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          int docUserId = 1; // Default mock doctor ID
+                          if (dashboardProvider.users.isNotEmpty) {
+                            final matchedDoc = dashboardProvider.users.firstWhere(
+                              (u) => u.role.toLowerCase().contains('doctor') && 
+                                     docNameStr.toLowerCase().contains(u.name.toLowerCase()),
+                              orElse: () => dashboardProvider.users.firstWhere(
+                                (u) => u.role.toLowerCase().contains('doctor'),
+                                orElse: () => UserProfile(userId: 1, name: 'Pedro', lastName: 'Gomez', email: '', role: 'doctor'),
+                              ),
+                            );
+                            docUserId = matchedDoc.userId ?? 1;
+                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatRoomPage(
+                                otherUserId: docUserId,
+                                otherUserName: docNameStr,
+                                otherUserRole: 'doctor',
+                              ),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primary,
@@ -1257,7 +1037,7 @@ class _DashboardPageState extends State<DashboardPage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.015),
+                  color: Colors.black.withAlpha(4),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -1265,7 +1045,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Column(
               children: [
-                Container(
+                SizedBox(
                   height: 100,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,

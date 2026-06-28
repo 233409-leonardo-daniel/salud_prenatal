@@ -37,12 +37,14 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         if (success) {
           final String rawRole = loginProvider.role ??
-              (email.toLowerCase().contains('doctor') ? 'doctor' : 'paciente');
+              (email.toLowerCase().contains('doctor') ? 'doctor' : (email.toLowerCase().contains('recepcionista') ? 'recepcionista' : 'paciente'));
           final String role =
               (rawRole.toLowerCase() == 'doctor' ||
                       rawRole.toLowerCase() == 'doctor(a)')
                   ? 'doctor'
-                  : 'patient';
+                  : (rawRole.toLowerCase() == 'recepcionista' || rawRole.toLowerCase() == 'receptionist')
+                      ? 'receptionist'
+                      : 'patient';
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -51,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
                   const Icon(Icons.check_circle, color: Colors.white),
                   const SizedBox(width: 8),
                   Text(
-                      '¡Sesión Iniciada! Rol: ${role == 'doctor' ? 'Médico' : 'Paciente'}'),
+                      '¡Sesión Iniciada! Rol: ${role == 'doctor' ? 'Médico' : (role == 'receptionist' ? 'Recepcionista' : 'Paciente')}'),
                 ],
               ),
               backgroundColor: Colors.green,
@@ -104,26 +106,12 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   // App Brand Logo Circle
                   Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          )
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.pregnant_woman,
-                          size: 50,
-                          color: AppColors.primary,
-                        ),
+                    child: SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: Image.asset(
+                        'assets/logo_integrador-removebg-preview.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),

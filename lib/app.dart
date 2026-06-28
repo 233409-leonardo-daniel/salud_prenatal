@@ -25,8 +25,17 @@ import 'features/patient_diaries/presentation/pages/patient_diary_page.dart';
 import 'features/privacy_policy/di/privacy_policy_module.dart';
 import 'features/privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import 'core/theme/theme.dart';
+import 'features/users/di/user_module.dart';
+import 'features/users/presentation/providers/user_provider.dart';
+import 'features/chat/di/chat_module.dart';
+import 'features/chat/presentation/providers/chat_provider.dart';
+import 'features/chat/presentation/providers/conversations_provider.dart';
+
+import 'core/widgets/session_timeout_listener.dart';
 
 class MyApp extends StatelessWidget {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   const MyApp({super.key});
 
   
@@ -39,6 +48,8 @@ class MyApp extends StatelessWidget {
     final coreModule = CoreModule();
     final patientDiariesModule = PatientDiariesModule();
     final privacyPolicyModule = PrivacyPolicyModule();
+    final userModule = UserModule();
+    final chatModule = ChatModule();
 
     return MultiProvider(
       providers: [
@@ -46,6 +57,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => AppointmentsProvider(
             appointmentModule.getAppointmentsByUserIdUsecase,
+            appointmentModule.getAppointmentsUseCase,
+            appointmentModule.updateAppointmentStatusUseCase,
+            appointmentModule.checkAvailabilityUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -67,6 +81,7 @@ class MyApp extends StatelessWidget {
           create: (_) => LoginProvider(
             loginUseCase: loginModule.loginUseCase,
             getProfileUseCase: loginModule.getProfileUseCase,
+            updateProfileUseCase: loginModule.updateProfileUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -105,14 +120,32 @@ class MyApp extends StatelessWidget {
             getAcceptedPoliciesUseCase: privacyPolicyModule.getAcceptedPoliciesUseCase,
           ),
         ),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider(
+            userModule.getDoctorsUseCase,
+            userModule.getPatientsUseCase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(
+            chatModule.repository,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ConversationsProvider(
+            chatModule.getConversationsUseCase,
+          ),
+        ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Salud Prenatal',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         initialRoute: '/login',
+        builder: (context, child) => SessionTimeoutListener(child: child!),
         routes: {
           '/login': (context) => const LoginPage(),
           '/register': (context) => const RegisterPage(),

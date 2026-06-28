@@ -108,7 +108,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     debugPrint('Intentando conectar WebSocket a: $socketUrl');
     
     try {
-      _webSocket = await WebSocket.connect(socketUrl).timeout(const Duration(seconds: 5));
+      Map<String, dynamic>? wsHeaders;
+      final token = ApiClient().authToken;
+      if (token != null) {
+        wsHeaders = {
+          'Authorization': 'Bearer $token',
+        };
+      }
+      _webSocket = await WebSocket.connect(socketUrl, headers: wsHeaders).timeout(const Duration(seconds: 5));
       _isOfflineMode = false;
       _isConnected = true;
       _connectionController.add(true);

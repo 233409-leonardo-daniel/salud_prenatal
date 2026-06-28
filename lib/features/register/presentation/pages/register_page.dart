@@ -232,20 +232,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 32), // Spacer to balance
+                        const SizedBox(width: 48), // Spacer to balance
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.pregnant_woman,
-                                color: Colors.white,
-                                size: 18,
-                              ),
+                            Image.asset(
+                              'assets/logo_integrador-removebg-preview.png',
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.contain,
                             ),
                             const SizedBox(width: 8),
                             Text(

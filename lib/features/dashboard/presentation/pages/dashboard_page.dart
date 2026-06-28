@@ -89,6 +89,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final String doctorName = loginProvider.name.isNotEmpty 
         ? 'Dra. ${loginProvider.name}' 
         : 'Dra. Mendoza';
+    final String doctorInitial = loginProvider.name.isNotEmpty
+        ? loginProvider.name[0].toUpperCase()
+        : 'M';
 
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
@@ -97,9 +100,13 @@ class _DashboardPageState extends State<DashboardPage> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  doctorInitial,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -138,9 +145,13 @@ class _DashboardPageState extends State<DashboardPage> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  doctorInitial,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -695,9 +706,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 22,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'P',
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ],
           ),
@@ -886,9 +901,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundImage: docImageStr != null 
-                        ? NetworkImage(docImageStr)
-                        : const NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        docNameStr.isNotEmpty
+                            ? docNameStr.replaceAll(RegExp(r'^(Dr\.|Dra\.)\s*', caseSensitive: false), '')[0].toUpperCase()
+                            : 'D',
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(

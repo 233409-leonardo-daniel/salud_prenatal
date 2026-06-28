@@ -104,26 +104,12 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   // App Brand Logo Circle
                   Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          )
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.pregnant_woman,
-                          size: 50,
-                          color: AppColors.primary,
-                        ),
+                    child: SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: Image.asset(
+                        'assets/logo_integrador-removebg-preview.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),

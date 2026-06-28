@@ -26,7 +26,11 @@ import 'features/privacy_policy/di/privacy_policy_module.dart';
 import 'features/privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import 'core/theme/theme.dart';
 
+import 'core/widgets/session_timeout_listener.dart';
+
 class MyApp extends StatelessWidget {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   const MyApp({super.key});
 
   
@@ -67,6 +71,7 @@ class MyApp extends StatelessWidget {
           create: (_) => LoginProvider(
             loginUseCase: loginModule.loginUseCase,
             getProfileUseCase: loginModule.getProfileUseCase,
+            updateProfileUseCase: loginModule.updateProfileUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -107,12 +112,14 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Salud Prenatal',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         initialRoute: '/login',
+        builder: (context, child) => SessionTimeoutListener(child: child!),
         routes: {
           '/login': (context) => const LoginPage(),
           '/register': (context) => const RegisterPage(),

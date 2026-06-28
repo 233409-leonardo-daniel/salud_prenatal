@@ -7,7 +7,7 @@ import '../models/consultation_response.dart';
 abstract class DashboardRemoteDataSource {
   Future<List<UserProfile>> getAllUsers();
   Future<List<Map<String, dynamic>>> getPatientsByDoctor(int doctorId);
-  Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId);
+  Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId, {int? doctorId});
   Future<List<ConsultationResponse>> getConsultationsByMedicalRecord(int medicalRecordId);
   Future<Map<String, dynamic>> getPatientDashboard(int patientId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
@@ -101,9 +101,10 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   }
 
   @override
-  Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId) async {
+  Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId, {int? doctorId}) async {
     try {
-      final response = await _apiClient.get('/medical-records/patient/$patientId');
+      final String queryParam = doctorId != null ? '?doctor_id=$doctorId' : '';
+      final response = await _apiClient.get('/medical-records/patient/$patientId$queryParam');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return MedicalRecordResponse.fromJson(data);

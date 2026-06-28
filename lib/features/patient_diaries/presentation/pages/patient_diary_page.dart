@@ -249,6 +249,16 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                   onPressed: isSubmitting ? null : () async {
                     if (!formKey.currentState!.validate()) return;
 
+                    if (medicalRecordId <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Error: No se ha cargado tu expediente médico. Intenta recargar la página.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
                     setDialogState(() {
                       isSubmitting = true;
                     });

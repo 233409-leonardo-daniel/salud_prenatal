@@ -73,6 +73,7 @@ class LoginProvider with ChangeNotifier {
         // Also keep previousPatientId logic if we came from registration and the API login doesn't have it yet, 
         // though the new backend should return it.
         _patientId = response.patientId ?? _patientId ?? _userId; 
+        _doctorId = response.doctorId;
       }
 
       try {

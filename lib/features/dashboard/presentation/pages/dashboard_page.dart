@@ -54,10 +54,11 @@ class _DashboardPageState extends State<DashboardPage> {
       context.read<AppointmentsProvider>().loadAppointments(docId.toString(), isDoctor: true);
     } else {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
+      final docId = loginProvider.doctorId;
+      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: docId);
       context.read<AppointmentsProvider>().loadAppointments(patId.toString(), isDoctor: false);
       
-      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
+      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 0;
       context.read<PatientDiariesProvider>().loadDiaries(medicalRecordId);
     }
   }

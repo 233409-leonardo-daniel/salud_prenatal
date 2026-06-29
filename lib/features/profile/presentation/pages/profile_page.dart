@@ -138,6 +138,29 @@ class ProfilePage extends StatelessWidget {
 
           // Account deletion section (expandable)
           _AccountDeletionTile(),
+          const SizedBox(height: 24),
+
+          // Logout Button
+          ElevatedButton.icon(
+            onPressed: () {
+              final loginProvider = context.read<LoginProvider>();
+              loginProvider.reset();
+              Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+            },
+            icon: const Icon(Icons.logout_rounded, size: 18, color: Colors.white),
+            label: const Text(
+              'Cerrar Sesión',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.shade200,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 0,
+            ),
+          ),
         ],
       ),
     );

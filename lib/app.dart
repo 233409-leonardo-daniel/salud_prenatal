@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:salud_prenatal/core/network/api_client.dart';
 import 'features/dashboard/presentation/pages/dashboard_page.dart';
 import 'features/login/presentation/pages/login_page.dart';
 import 'features/register/presentation/pages/register_page.dart';
@@ -17,6 +18,7 @@ import 'features/patients/di/patients_module.dart';
 import 'features/patients/presentation/providers/patients_list_provider.dart';
 import 'features/patients/presentation/providers/patient_detail_provider.dart';
 import 'features/patients/presentation/providers/invitation_provider.dart';
+import 'features/dashboard/di/dashboard_module.dart';
 import 'core/di/core_module.dart';
 import 'core/services/qr_service.dart';
 import 'features/patient_diaries/di/patient_diaries_module.dart';
@@ -34,25 +36,29 @@ import 'features/chat/presentation/providers/conversations_provider.dart';
 import 'core/widgets/session_timeout_listener.dart';
 
 class MyApp extends StatelessWidget {
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   const MyApp({super.key});
 
-  
   @override
   Widget build(BuildContext context) {
-    final appointmentModule = AppointmentModule();
-    final loginModule = LoginModule();
-    final registerModule = RegisterModule();
-    final patientsModule = PatientsModule();
     final coreModule = CoreModule();
-    final patientDiariesModule = PatientDiariesModule();
+    final apiClient = coreModule.apiClient;
+
+    final appointmentModule = AppointmentModule(apiClient);
+    final loginModule = LoginModule(apiClient);
+    final registerModule = RegisterModule(apiClient);
+    final patientsModule = PatientsModule(apiClient);
+    final patientDiariesModule = PatientDiariesModule(apiClient);
     final privacyPolicyModule = PrivacyPolicyModule();
-    final userModule = UserModule();
-    final chatModule = ChatModule();
+    final userModule = UserModule(apiClient);
+    final chatModule = ChatModule(apiClient);
+    final dashboardModule = DashboardModule(apiClient);
 
     return MultiProvider(
       providers: [
+        Provider<ApiClient>(create: (_) => apiClient),
         Provider<QrService>(create: (_) => coreModule.qrService),
         ChangeNotifierProvider(
           create: (_) => AppointmentsProvider(
@@ -91,20 +97,22 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => DashboardProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => PatientsListProvider(
-            patientsModule.getDoctorPatientsUseCase,
+          create: (_) => DashboardProvider(
+            remoteDataSource: dashboardModule.remoteDataSource,
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => PatientDetailProvider(
-            patientsModule.getPatientDetailsUseCase,
-          ),
+          create: (_) =>
+              PatientsListProvider(patientsModule.getDoctorPatientsUseCase),
         ),
         ChangeNotifierProvider(
-          create: (_) => InvitationProvider(),
+          create: (_) =>
+              PatientDetailProvider(patientsModule.getPatientDetailsUseCase),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => InvitationProvider(
+            dataSource: patientsModule.invitationRemoteDataSource,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => PatientDiariesProvider(
@@ -116,8 +124,10 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => PrivacyPolicyProvider(
-            saveAcceptedPoliciesUseCase: privacyPolicyModule.saveAcceptedPoliciesUseCase,
-            getAcceptedPoliciesUseCase: privacyPolicyModule.getAcceptedPoliciesUseCase,
+            saveAcceptedPoliciesUseCase:
+                privacyPolicyModule.saveAcceptedPoliciesUseCase,
+            getAcceptedPoliciesUseCase:
+                privacyPolicyModule.getAcceptedPoliciesUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -127,14 +137,11 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => ChatProvider(
-            chatModule.repository,
-          ),
+          create: (_) => ChatProvider(chatModule.repository),
         ),
         ChangeNotifierProvider(
-          create: (_) => ConversationsProvider(
-            chatModule.getConversationsUseCase,
-          ),
+          create: (_) =>
+              ConversationsProvider(chatModule.getConversationsUseCase),
         ),
       ],
       child: MaterialApp(

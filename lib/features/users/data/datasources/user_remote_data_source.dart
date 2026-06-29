@@ -11,7 +11,7 @@ abstract class UserRemoteDataSource {
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   final ApiClient _apiClient;
 
-  UserRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  UserRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
   @override
   Future<List<UserDto>> getDoctors() async {

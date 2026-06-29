@@ -31,7 +31,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Timer? _reconnectTimer;
   bool _isDisposed = false;
 
-  ChatRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ChatRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
   @override
   Stream<ChatMessageModel> get messageStream => _messageController.stream;

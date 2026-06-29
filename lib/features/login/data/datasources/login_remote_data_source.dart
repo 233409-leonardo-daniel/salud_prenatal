@@ -14,7 +14,7 @@ abstract class LoginRemoteDataSource {
 class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
   final ApiClient _apiClient;
 
-  LoginRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  LoginRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
   @override
   Future<LoginResponse> login(LoginRequest request) async {

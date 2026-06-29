@@ -36,29 +36,31 @@ class _PatientsListPageState extends State<PatientsListPage> {
     final patientsProvider = context.watch<PatientsListProvider>();
     final dashboardProvider = context.watch<DashboardProvider>();
 
-    if (patientsProvider.status == PatientsListStatus.loading || patientsProvider.status == PatientsListStatus.initial) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-    }
-
-    if (patientsProvider.status == PatientsListStatus.error) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(patientsProvider.error ?? 'Error', style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                final doctorId = context.read<LoginProvider>().doctorId?.toString() ?? '1';
-                context.read<PatientsListProvider>().loadPatients(doctorId);
-              },
-              child: const Text('Reintentar'),
-            )
-          ],
-        ),
-      );
+    switch (patientsProvider.status) {
+      case PatientsListStatus.initial:
+      case PatientsListStatus.loading:
+        return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      case PatientsListStatus.error:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(patientsProvider.error ?? 'Error', style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  final doctorId = context.read<LoginProvider>().doctorId?.toString() ?? '1';
+                  context.read<PatientsListProvider>().loadPatients(doctorId);
+                },
+                child: const Text('Reintentar'),
+              )
+            ],
+          ),
+        );
+      case PatientsListStatus.success:
+        break;
     }
 
     final totalPatientsStr = patientsProvider.patients.length.toString();

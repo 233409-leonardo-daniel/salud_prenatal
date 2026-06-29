@@ -11,8 +11,8 @@ abstract class PatientsRemoteDataSource {
 class PatientsRemoteDataSourceImpl implements PatientsRemoteDataSource {
   final ApiClient _apiClient;
 
-  PatientsRemoteDataSourceImpl({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  PatientsRemoteDataSourceImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   @override
   Future<List<PatientModel>> getPatientsByDoctor(String doctorId) async {

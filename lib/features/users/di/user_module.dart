@@ -4,6 +4,7 @@ import '../domain/repositories/user_repository.dart';
 import '../domain/usecases/get_doctors_use_case.dart';
 import '../domain/usecases/get_patients_use_case.dart';
 import '../domain/usecases/get_user_by_id_use_case.dart';
+import '../../../../core/network/api_client.dart';
 
 class UserModule {
   late final UserRemoteDataSource remoteDataSource;
@@ -13,8 +14,8 @@ class UserModule {
   late final GetPatientsUseCase getPatientsUseCase;
   late final GetUserByIdUseCase getUserByIdUseCase;
 
-  UserModule() {
-    remoteDataSource = UserRemoteDataSourceImpl();
+  UserModule(ApiClient apiClient) {
+    remoteDataSource = UserRemoteDataSourceImpl(apiClient: apiClient);
     repository = UserRepositoryImpl(remoteDataSource);
     
     getDoctorsUseCase = GetDoctorsUseCase(repository);

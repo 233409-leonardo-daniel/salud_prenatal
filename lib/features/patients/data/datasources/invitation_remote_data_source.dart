@@ -9,8 +9,8 @@ abstract class InvitationRemoteDataSource {
 class InvitationRemoteDataSourceImpl implements InvitationRemoteDataSource {
   final ApiClient _apiClient;
 
-  InvitationRemoteDataSourceImpl({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  InvitationRemoteDataSourceImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   @override
   Future<Map<String, dynamic>> generateInvitationCode(int doctorId) async {

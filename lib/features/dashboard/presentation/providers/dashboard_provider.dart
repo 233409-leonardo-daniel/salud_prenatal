@@ -7,8 +7,8 @@ import '../../../login/domain/entities/user_profile.dart';
 class DashboardProvider with ChangeNotifier {
   final DashboardRemoteDataSource _remoteDataSource;
 
-  DashboardProvider({DashboardRemoteDataSource? remoteDataSource})
-      : _remoteDataSource = remoteDataSource ?? DashboardRemoteDataSourceImpl();
+  DashboardProvider({required DashboardRemoteDataSource remoteDataSource})
+      : _remoteDataSource = remoteDataSource;
 
   bool _isLoading = false;
   bool _isDetailsLoading = false;

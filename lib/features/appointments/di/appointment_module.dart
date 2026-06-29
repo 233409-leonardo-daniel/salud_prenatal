@@ -9,6 +9,7 @@ import '../domain/usecases/get_appointments_use_case.dart';
 import '../domain/usecases/get_appointment_by_id_use_case.dart';
 import '../domain/usecases/update_appointment_status_use_case.dart';
 import '../domain/usecases/check_availability_use_case.dart';
+import '../../../../core/network/api_client.dart';
 
 class AppointmentModule {
   late final AppointmentRepository appointmentRepository;
@@ -22,13 +23,13 @@ class AppointmentModule {
   late final UpdateAppointmentStatusUseCase updateAppointmentStatusUseCase;
   late final CheckAvailabilityUseCase checkAvailabilityUseCase;
 
-  AppointmentModule() {
-    _initDependencies();
+  AppointmentModule(ApiClient apiClient) {
+    _initDependencies(apiClient);
   }
 
-  void _initDependencies() {
+  void _initDependencies(ApiClient apiClient) {
     appointmentRepository = AppointmentRepositoryImpl(
-      AppointmentRemoteDataSourceImpl(),
+      AppointmentRemoteDataSourceImpl(apiClient: apiClient),
     );
     getAppointmentsByUserIdUsecase = GetAppointmentsByUserIdUsecase(appointmentRepository);
     createAppointmentUsecase = CreateAppointmentUsecase(appointmentRepository);

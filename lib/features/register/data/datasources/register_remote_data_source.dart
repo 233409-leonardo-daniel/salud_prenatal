@@ -10,7 +10,7 @@ abstract class RegisterRemoteDataSource {
 class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
   final ApiClient _apiClient;
 
-  RegisterRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  RegisterRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
   @override
   Future<Map<String, dynamic>> registerPatient(PatientRegisterRequest request) async {

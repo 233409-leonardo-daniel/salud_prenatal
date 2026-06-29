@@ -21,8 +21,8 @@ abstract class PatientDiaryRemoteDataSource {
 class PatientDiaryRemoteDataSourceImpl implements PatientDiaryRemoteDataSource {
   final ApiClient _apiClient;
 
-  PatientDiaryRemoteDataSourceImpl({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  PatientDiaryRemoteDataSourceImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   // Local fallback storage for mock offline mode
   static final List<PatientDiaryModel> _offlineDiaries = [

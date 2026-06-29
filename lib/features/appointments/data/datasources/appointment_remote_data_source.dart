@@ -16,8 +16,8 @@ abstract class AppointmentRemoteDataSource {
 class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
   final ApiClient _apiClient;
 
-  AppointmentRemoteDataSourceImpl({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  AppointmentRemoteDataSourceImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   @override
   Future<List<AppointmentDto>> getAppointmentsByUserId(String userId, {bool isDoctor = false}) async {

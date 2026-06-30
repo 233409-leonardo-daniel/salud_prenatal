@@ -5,6 +5,7 @@ class LoginResponse {
   final String role;
   final int? patientId;
   final int? doctorId;
+  final int? medicalRecordId;
 
   LoginResponse({
     required this.accessToken,
@@ -13,6 +14,7 @@ class LoginResponse {
     required this.role,
     this.patientId,
     this.doctorId,
+    this.medicalRecordId,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class LoginResponse {
       role: json['role'] ?? 'patient',
       patientId: json['patient_id'] ?? json['patientId'],
       doctorId: json['doctor_id'] ?? json['doctorId'],
+      medicalRecordId: json['medical_record_id'] ?? json['medicalRecordId'],
     );
   }
 }

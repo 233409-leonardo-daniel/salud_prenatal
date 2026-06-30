@@ -10,6 +10,7 @@ class UserMapper {
       role: dto.role,
       phoneNumber: dto.phoneNumber,
       profilePicture: dto.profilePicture,
+      doctorId: dto.doctorId,
     );
   }
 
@@ -21,6 +22,7 @@ class UserMapper {
       role: entity.role,
       phoneNumber: entity.phoneNumber,
       profilePicture: entity.profilePicture,
+      doctorId: entity.doctorId,
     );
   }
 }

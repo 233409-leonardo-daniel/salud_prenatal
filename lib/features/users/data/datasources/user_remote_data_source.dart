@@ -4,7 +4,7 @@ import '../models/user_dto.dart';
 
 abstract class UserRemoteDataSource {
   Future<List<UserDto>> getDoctors();
-  Future<List<UserDto>> getPatients();
+  Future<List<UserDto>> getPatients({int? doctorId});
   Future<UserDto> getUserById(int id);
 }
 
@@ -25,8 +25,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
-  Future<List<UserDto>> getPatients() async {
-    final response = await _apiClient.get('/users');
+  Future<List<UserDto>> getPatients({int? doctorId}) async {
+    final url = doctorId != null ? '/doctors/$doctorId/patients' : '/users';
+    final response = await _apiClient.get(url);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       final list = data.map((e) => UserDto.fromJson(e)).toList();

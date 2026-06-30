@@ -5,6 +5,7 @@ class UserDto {
   final String role;
   final String? phoneNumber;
   final String? profilePicture;
+  final int? doctorId;
 
   UserDto({
     required this.id,
@@ -13,6 +14,7 @@ class UserDto {
     required this.role,
     this.phoneNumber,
     this.profilePicture,
+    this.doctorId,
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class UserDto {
       role: json['role'] ?? '',
       phoneNumber: json['phone'] ?? json['phone_number'],
       profilePicture: json['image_url'] ?? json['profile_picture'],
+      doctorId: json['doctor_id'],
     );
   }
 
@@ -37,6 +40,7 @@ class UserDto {
       'role': role,
       'phone_number': phoneNumber,
       'profile_picture': profilePicture,
+      'doctor_id': doctorId,
     };
   }
 }

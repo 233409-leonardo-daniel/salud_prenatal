@@ -26,6 +26,7 @@ class LoginProvider with ChangeNotifier {
   int? _userId;
   int? _patientId;
   int? _doctorId;
+  int? _medicalRecordId;
   UserProfile? _userProfile;
   String? _userPassword;
 
@@ -36,6 +37,7 @@ class LoginProvider with ChangeNotifier {
   int? get userId => _userId;
   int? get patientId => _patientId;
   int? get doctorId => _doctorId;
+  int? get medicalRecordId => _medicalRecordId;
   UserProfile? get userProfile => _userProfile;
 
   void setPatientId(int id) {
@@ -60,6 +62,7 @@ class LoginProvider with ChangeNotifier {
     _userId = null;
     _patientId = savedPatientId; // Conservar si viene del registro
     _doctorId = null;
+    _medicalRecordId = null;
     _userProfile = null;
     _userPassword = password;
     notifyListeners();
@@ -81,6 +84,7 @@ class LoginProvider with ChangeNotifier {
         // though the new backend should return it.
         _patientId = response.patientId ?? _patientId ?? _userId; 
         _doctorId = response.doctorId;
+        _medicalRecordId = response.medicalRecordId;
       }
 
       try {
@@ -115,6 +119,7 @@ class LoginProvider with ChangeNotifier {
     _userId = null;
     _patientId = null;
     _doctorId = null;
+    _medicalRecordId = null;
     _userProfile = null;
     _userPassword = null;
     ApiClient().clearAuthToken();

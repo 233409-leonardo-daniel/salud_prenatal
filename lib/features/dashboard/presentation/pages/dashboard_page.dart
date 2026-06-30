@@ -805,45 +805,84 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           SizedBox(height: 12),
 
-          if (diariesProvider.isLoading)
-            Center(child: CircularProgressIndicator(color: AppColors.primary))
-          else if (diariesProvider.diaries.isNotEmpty)
-            LatestDiaryRecordCard(
-              systolic: diariesProvider.diaries.first.systolic,
-              diastolic: diariesProvider.diaries.first.diastolic,
-              weightKg: diariesProvider.diaries.first.weightKg,
-            )
-          else
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Text(
-                'Aún no tienes registros en tu bitácora.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textMuted),
-              ),
-            ),
+          Builder(
+            builder: (context) {
+              final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
+              
+              if (medicalRecordId == null || medicalRecordId <= 0) {
+                return Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.red.shade100),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.folder_off_outlined, color: Colors.red.shade400, size: 32),
+                      SizedBox(height: 12),
+                      Text(
+                        'Tu médico no te ha creado un expediente aún',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                      ),
+                      if (loginProvider.doctorId == null) ...[
+                        SizedBox(height: 4),
+                        Text(
+                          'Aún no estás vinculado a un médico.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }
 
-          SizedBox(height: 16),
-
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pushNamed(context, '/patient-diaries');
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (diariesProvider.isLoading)
+                    Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  else if (diariesProvider.diaries.isNotEmpty)
+                    LatestDiaryRecordCard(
+                      systolic: diariesProvider.diaries.first.systolic,
+                      diastolic: diariesProvider.diaries.first.diastolic,
+                      weightKg: diariesProvider.diaries.first.weightKg,
+                    )
+                  else
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Text(
+                        'Aún no tienes registros en tu bitácora.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/patient-diaries');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    icon: Icon(Icons.add_circle_outline, color: Colors.white),
+                    label: Text(
+                      'Registrar medición',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    ),
+                  ),
+                ],
+              );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              padding: EdgeInsets.symmetric(vertical: 14),
-            ),
-            icon: Icon(Icons.add_circle_outline, color: Colors.white),
-            label: Text(
-              'Registrar medición',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
-            ),
           ),
           SizedBox(height: 28),
 

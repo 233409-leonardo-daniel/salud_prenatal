@@ -3,6 +3,7 @@ import '../../data/datasources/dashboard_remote_data_source.dart';
 import '../../data/models/medical_record_response.dart';
 import '../../data/models/consultation_response.dart';
 import '../../../login/domain/entities/user_profile.dart';
+import '../pages/dashboard_state.dart';
 
 class DashboardProvider with ChangeNotifier {
   final DashboardRemoteDataSource _remoteDataSource;
@@ -10,9 +11,9 @@ class DashboardProvider with ChangeNotifier {
   DashboardProvider({required DashboardRemoteDataSource remoteDataSource})
       : _remoteDataSource = remoteDataSource;
 
-  bool _isLoading = false;
-  bool _isDetailsLoading = false;
-  bool _isSavingRecord = false;
+  DashboardStatus _status = DashboardStatus.initial;
+  DashboardDetailsStatus _detailsStatus = DashboardDetailsStatus.initial;
+  SaveRecordStatus _saveStatus = SaveRecordStatus.initial;
   String? _errorMessage;
   List<UserProfile> _users = [];
   List<Map<String, dynamic>> _patients = [];
@@ -24,9 +25,13 @@ class DashboardProvider with ChangeNotifier {
   MedicalRecordResponse? _activeMedicalRecord;
   List<ConsultationResponse> _activeConsultations = [];
 
-  bool get isLoading => _isLoading;
-  bool get isDetailsLoading => _isDetailsLoading;
-  bool get isSavingRecord => _isSavingRecord;
+  DashboardStatus get status => _status;
+  DashboardDetailsStatus get detailsStatus => _detailsStatus;
+  SaveRecordStatus get saveStatus => _saveStatus;
+
+  bool get isLoading => _status == DashboardStatus.loading;
+  bool get isDetailsLoading => _detailsStatus == DashboardDetailsStatus.loading;
+  bool get isSavingRecord => _saveStatus == SaveRecordStatus.loading;
   String? get errorMessage => _errorMessage;
   List<UserProfile> get users => _users;
   List<Map<String, dynamic>> get patients => _patients;
@@ -39,23 +44,24 @@ class DashboardProvider with ChangeNotifier {
   List<ConsultationResponse> get activeConsultations => _activeConsultations;
 
   Future<void> loadDoctorDashboard(int doctorId) async {
-    _isLoading = true;
+    _status = DashboardStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
     try {
       _users = await _remoteDataSource.getAllUsers();
       _patients = await _remoteDataSource.getPatientsByDoctor(doctorId);
+      _status = DashboardStatus.success;
     } catch (e) {
+      _status = DashboardStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
-      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> loadPatientDashboard(int patientId, int userId, {int? doctorId}) async {
-    _isLoading = true;
+    _status = DashboardStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
@@ -92,16 +98,17 @@ class DashboardProvider with ChangeNotifier {
       } else {
         _consultations = [];
       }
+      _status = DashboardStatus.success;
     } catch (e) {
+      _status = DashboardStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
-      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> loadPatientDetails(int patientId, {int? doctorId}) async {
-    _isDetailsLoading = true;
+    _detailsStatus = DashboardDetailsStatus.loading;
     _activeMedicalRecord = null;
     _activeConsultations = [];
     notifyListeners();
@@ -113,16 +120,18 @@ class DashboardProvider with ChangeNotifier {
           _activeMedicalRecord!.medicalRecordId,
         );
       }
+      _detailsStatus = DashboardDetailsStatus.success;
     } catch (e) {
       print('Error al cargar detalles de paciente: $e');
+      _detailsStatus = DashboardDetailsStatus.error;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
-      _isDetailsLoading = false;
       notifyListeners();
     }
   }
 
   Future<bool> createMedicalRecord(Map<String, dynamic> recordData) async {
-    _isSavingRecord = true;
+    _saveStatus = SaveRecordStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
@@ -130,14 +139,15 @@ class DashboardProvider with ChangeNotifier {
       final record = await _remoteDataSource.createMedicalRecord(recordData);
       _activeMedicalRecord = record;
       _activeConsultations = [];
+      _saveStatus = SaveRecordStatus.success;
       notifyListeners();
       return true;
     } catch (e) {
+      _saveStatus = SaveRecordStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     } finally {
-      _isSavingRecord = false;
       notifyListeners();
     }
   }

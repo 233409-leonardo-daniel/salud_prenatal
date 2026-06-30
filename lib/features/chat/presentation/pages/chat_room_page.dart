@@ -6,7 +6,7 @@ import '../../../patient_diaries/presentation/providers/patient_diaries_provider
 import '../providers/chat_provider.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../di/chat_module.dart';
-
+import 'chat_state.dart';
 import '../../../../core/network/api_client.dart';
 
 class ChatRoomPage extends StatefulWidget {
@@ -192,11 +192,15 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
                 // Chat Messages List
                 Expanded(
-                  child: provider.isLoading
-                      ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                      : provider.messages.isEmpty
-                          ? _buildWelcomeMessage()
-                          : _buildMessageList(provider.messages, currentUserId),
+                  child: switch (provider.status) {
+                    ChatStatus.initial || ChatStatus.loading =>
+                      Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    ChatStatus.error =>
+                      Center(child: Text(provider.errorMessage ?? 'Error al cargar mensajes')),
+                    ChatStatus.success => provider.messages.isEmpty
+                        ? _buildWelcomeMessage()
+                        : _buildMessageList(provider.messages, currentUserId),
+                  },
                 ),
 
                 // Bottom Input Control
@@ -497,7 +501,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 hintText: 'Escribe un mensaje...',
                 hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
                 filled: true,
-                fillColor: const Color(0xFFF5F5F7),
+                fillColor: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),

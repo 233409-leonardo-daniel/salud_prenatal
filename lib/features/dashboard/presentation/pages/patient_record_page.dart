@@ -7,6 +7,7 @@ import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../../core/enums/appointment_status.dart';
 import 'create_medical_record_page.dart';
+import 'dashboard_state.dart';
 
 class PatientRecordPage extends StatefulWidget {
   final String patientName;
@@ -30,7 +31,9 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     super.initState();
     _parsedPatientId = int.tryParse(widget.patientId.replaceAll('#SP-', '').trim()) ?? 1;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
+      final loginProvider = context.read<LoginProvider>();
+      final docId = loginProvider.doctorId ?? 1;
+      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
     });
   }
 
@@ -39,15 +42,28 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     final dashboardProvider = context.watch<DashboardProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
 
-    if (dashboardProvider.isDetailsLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Expediente: ${widget.patientName}'),
-          backgroundColor: AppColors.primary,
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-      );
+    switch (dashboardProvider.detailsStatus) {
+      case DashboardDetailsStatus.initial:
+      case DashboardDetailsStatus.loading:
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Expediente: ${widget.patientName}'),
+            backgroundColor: AppColors.primary,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        );
+      case DashboardDetailsStatus.error:
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Expediente: ${widget.patientName}'),
+            backgroundColor: AppColors.primary,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          body: Center(child: Text(dashboardProvider.errorMessage ?? 'Error al cargar expediente')),
+        );
+      case DashboardDetailsStatus.success:
+        break;
     }
 
     final patientData = dashboardProvider.patients.firstWhere(
@@ -287,12 +303,20 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         riskPrediction.diagnosis != null &&
         riskPrediction.diagnosis!.isNotEmpty;
 
+    final isHigh = riskPrediction?.diagnosis?.toLowerCase().contains('alto') == true ||
+        riskPrediction?.diagnosis?.toLowerCase().contains('crítico') == true ||
+        riskPrediction?.diagnosis?.toLowerCase().contains('critico') == true;
+    final isMedium = riskPrediction?.diagnosis?.toLowerCase().contains('medio') == true ||
+        riskPrediction?.diagnosis?.toLowerCase().contains('moderado') == true;
+    final String riskLevel = isHigh ? 'Alto' : (isMedium ? 'Medio' : 'Bajo');
+    final Color riskColor = isHigh ? Colors.red : (isMedium ? Colors.orange : Colors.teal);
+
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0F6),
+        color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.pink.shade50),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,9 +337,9 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.pink.shade100),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                 ),
                 child: Text(
                   'GENERADO POR IA',
@@ -340,16 +364,51 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               child: Divider(color: Colors.pinkAccent, thickness: 0.5),
             ),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.analytics_outlined, color: Colors.purple, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Clúster de Riesgo: ${riskPrediction.riskCluster ?? "N/A"}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple,
-                    fontSize: 13,
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.analytics_outlined, color: Colors.purple, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Clúster de Riesgo: ${riskPrediction.riskCluster ?? "N/A"}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.shield_outlined, color: riskColor, size: 16),
+                    SizedBox(width: 4),
+                    Text(
+                      'Riesgo: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: riskColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: riskColor.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        riskLevel,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: riskColor,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -358,15 +417,15 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               width: double.infinity,
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.purple.shade50,
+                color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.purple.shade50,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.purple.shade100),
+                border: Border.all(color: Colors.purple.withOpacity(0.3)),
               ),
               child: Text(
                 'Diagnóstico: ${riskPrediction.diagnosis}',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Colors.purple.shade900,
+                  color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
                   fontSize: 13,
                   height: 1.4,
                 ),
@@ -417,78 +476,50 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
 
   Widget _buildNoRecordBanner(BuildContext context, bool isDoctor) {
     if (isDoctor) {
-      return Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF9DB),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFFEC99)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'Sin Expediente Clínico',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 16,
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateMedicalRecordPage(
+                    patientId: _parsedPatientId,
+                    patientName: widget.patientName,
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Esta paciente no cuenta con un expediente clínico registrado en el sistema. Es necesario crearlo para registrar antecedentes y factores de riesgo.',
-              style: TextStyle(color: AppColors.textDark, fontSize: 13, height: 1.4),
-            ),
-            SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateMedicalRecordPage(
-                      patientId: _parsedPatientId,
-                      patientName: widget.patientName,
-                    ),
-                  ),
-                );
-                if (result == true) {
-                  if (context.mounted) {
-                    context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
-                  }
+              );
+              if (result == true) {
+                if (context.mounted) {
+                  context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
                 }
-              },
-              icon: Icon(Icons.add_moderator, size: 18),
-              label: Text('Crear Expediente Médico'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
+              }
+            },
+            icon: const Icon(Icons.add_moderator, size: 18),
+            label: const Text('Crear Expediente Médico', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
-          ],
+          ),
         ),
       );
     } else {
       return Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F3F5),
+          color: AppColors.isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
             Icon(Icons.info_outline, color: AppColors.textMuted, size: 24),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Tu expediente clínico no está registrado en el sistema. Tu médico lo creará en tu próxima consulta.',

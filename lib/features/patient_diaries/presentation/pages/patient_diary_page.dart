@@ -33,7 +33,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
     if (dashboardProvider.medicalRecord == null) {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
+      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: loginProvider.doctorId ?? 1);
     }
 
     final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
@@ -475,35 +475,43 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
       );
     }
 
-    if (provider.isLoading && provider.diaries.isEmpty) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
-
-    if (provider.status == PatientDiariesStatus.error && provider.diaries.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 54, color: Colors.red),
-              SizedBox(height: 16),
-              Text(
-                provider.errorMessage ?? 'Ocurrió un error al cargar la bitácora.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark),
+    switch (provider.status) {
+      case PatientDiariesStatus.initial:
+      case PatientDiariesStatus.loading:
+        if (provider.diaries.isEmpty) {
+          return Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
+        }
+        break;
+      case PatientDiariesStatus.error:
+        if (provider.diaries.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 54, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    provider.errorMessage ?? 'Ocurrió un error al cargar la bitácora.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadData,
+                    child: Text('Reintentar'),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadData,
-                child: Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
-      );
+            ),
+          );
+        }
+        break;
+      case PatientDiariesStatus.success:
+        break;
     }
 
     if (provider.diaries.isEmpty) {

@@ -103,7 +103,10 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   @override
   Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId, {int? doctorId}) async {
     try {
-      final String queryParam = doctorId != null ? '?doctor_id=$doctorId' : '';
+      if (doctorId == null) {
+        throw Exception('El doctor_id es requerido para el endpoint de expedientes.');
+      }
+      final String queryParam = '?doctor_id=$doctorId';
       final response = await _apiClient.get('/medical-records/patient/$patientId$queryParam');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

@@ -68,7 +68,7 @@ class _ChatListPageState extends State<ChatListPage> {
       }
       
       // Load users list for doctor search / fallback matching
-      dashboardProvider.loadPatientDashboard(patId, currentUserId);
+      dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
     });
   }
 
@@ -142,7 +142,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 await context.read<PatientsListProvider>().loadPatients(doctorId);
                 await _loadLastMessages();
               }
-              dashboardProvider.loadPatientDashboard(patId, currentUserId);
+              dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
             },
           ),
           SizedBox(width: 8),
@@ -211,8 +211,17 @@ class _ChatListPageState extends State<ChatListPage> {
     final dashboardProvider = context.watch<DashboardProvider>();
     final loginProvider = context.watch<LoginProvider>();
 
-    if (patientsProvider.status == PatientsListStatus.loading || _loadingLastMessages) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+    switch (patientsProvider.status) {
+      case PatientsListStatus.initial:
+      case PatientsListStatus.loading:
+        return Center(child: CircularProgressIndicator(color: AppColors.primary));
+      case PatientsListStatus.error:
+        return Center(child: Text(patientsProvider.error ?? 'Error'));
+      case PatientsListStatus.success:
+        if (_loadingLastMessages) {
+          return Center(child: CircularProgressIndicator(color: AppColors.primary));
+        }
+        break;
     }
 
     final patients = patientsProvider.patients;
@@ -284,7 +293,7 @@ class _ChatListPageState extends State<ChatListPage> {
         return Container(
           margin: EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -361,8 +370,8 @@ class _ChatListPageState extends State<ChatListPage> {
           builder: (context, setModalState) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.75,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
@@ -409,7 +418,7 @@ class _ChatListPageState extends State<ChatListPage> {
                               return Container(
                                 margin: EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF9F9FB),
+                                  color: AppColors.isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF9F9FB),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: ListTile(
@@ -521,6 +530,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         context.read<DashboardProvider>().loadPatientDashboard(
                               loginProvider.patientId ?? 0,
                               loginProvider.userId ?? 0,
+                              doctorId: loginProvider.doctorId ?? 1,
                             );
                       }
                     },
@@ -579,7 +589,7 @@ class _ChatListPageState extends State<ChatListPage> {
         return Container(
           margin: EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(24),
             border: isAssigned ? Border.all(color: Colors.pink.shade100, width: 1.5) : null,
             boxShadow: [

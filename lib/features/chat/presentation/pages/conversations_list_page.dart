@@ -41,18 +41,19 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
   }
 
   Widget _buildBody(ConversationsProvider provider, int currentUserId) {
-    if (provider.viewState == ConversationsViewState.loading) {
-      return Center(child: CircularProgressIndicator());
-    }
-    
-    if (provider.viewState == ConversationsViewState.error) {
-      return Center(child: Text('Error: ${provider.error}'));
-    }
-    
-    if (provider.conversations.isEmpty) {
-      return Center(
-        child: Text('No tienes conversaciones activas.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
-      );
+    switch (provider.viewState) {
+      case ConversationsViewState.loading:
+        return const Center(child: CircularProgressIndicator());
+      case ConversationsViewState.error:
+        return Center(child: Text('Error: ${provider.error}'));
+      case ConversationsViewState.initial:
+      case ConversationsViewState.success:
+        if (provider.conversations.isEmpty) {
+          return Center(
+            child: Text('No tienes conversaciones activas.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
+          );
+        }
+        break;
     }
     
     return ListView.builder(

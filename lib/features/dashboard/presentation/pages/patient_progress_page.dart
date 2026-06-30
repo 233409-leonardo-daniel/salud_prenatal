@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
+import 'dashboard_state.dart';
 
 class PatientProgressPage extends StatefulWidget {
   final String patientName;
@@ -32,7 +33,9 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
       _parsedPatientId = context.read<LoginProvider>().patientId ?? 1;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
+      final loginProvider = context.read<LoginProvider>();
+      final docId = loginProvider.doctorId ?? 1;
+      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
     });
   }
 
@@ -40,18 +43,34 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
   Widget build(BuildContext context) {
     final dashboardProvider = context.watch<DashboardProvider>();
 
-    if (dashboardProvider.isDetailsLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Progreso: ${widget.patientName}',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    switch (dashboardProvider.detailsStatus) {
+      case DashboardDetailsStatus.initial:
+      case DashboardDetailsStatus.loading:
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              'Progreso: ${widget.patientName}',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: AppColors.primary,
+            iconTheme: IconThemeData(color: Colors.white),
           ),
-          backgroundColor: AppColors.primary,
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-      );
+          body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        );
+      case DashboardDetailsStatus.error:
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              'Progreso: ${widget.patientName}',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: AppColors.primary,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          body: Center(child: Text(dashboardProvider.errorMessage ?? 'Error al cargar detalles')),
+        );
+      case DashboardDetailsStatus.success:
+        break;
     }
 
     final consultations = dashboardProvider.activeConsultations;

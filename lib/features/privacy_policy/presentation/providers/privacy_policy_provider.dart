@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/accepted_policy_model.dart';
 import '../../domain/usecases/save_accepted_policies_usecase.dart';
 import '../../domain/usecases/get_accepted_policies_usecase.dart';
+import '../pages/privacy_policy_state.dart';
 
 class PrivacyPolicyProvider with ChangeNotifier {
   final SaveAcceptedPoliciesUseCase _saveAcceptedPoliciesUseCase;
@@ -16,8 +17,9 @@ class PrivacyPolicyProvider with ChangeNotifier {
   List<AcceptedPolicyModel> _acceptedPolicies = [];
   List<AcceptedPolicyModel> get acceptedPolicies => _acceptedPolicies;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  PrivacyPolicyStatus _status = PrivacyPolicyStatus.initial;
+  PrivacyPolicyStatus get status => _status;
+  bool get isLoading => _status == PrivacyPolicyStatus.loading;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -27,7 +29,7 @@ class PrivacyPolicyProvider with ChangeNotifier {
     required bool acceptedPrivacy,
     required bool acceptedSensitiveData,
   }) async {
-    _isLoading = true;
+    _status = PrivacyPolicyStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
@@ -54,27 +56,27 @@ class PrivacyPolicyProvider with ChangeNotifier {
       }
 
       await _saveAcceptedPoliciesUseCase.execute(policies);
-      _isLoading = false;
+      _status = PrivacyPolicyStatus.success;
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _status = PrivacyPolicyStatus.error;
       notifyListeners();
     }
   }
 
   Future<void> loadAcceptedPolicies(String userEmail) async {
-    _isLoading = true;
+    _status = PrivacyPolicyStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
     try {
       _acceptedPolicies = await _getAcceptedPoliciesUseCase.execute(userEmail);
-      _isLoading = false;
+      _status = PrivacyPolicyStatus.success;
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _status = PrivacyPolicyStatus.error;
       notifyListeners();
     }
   }

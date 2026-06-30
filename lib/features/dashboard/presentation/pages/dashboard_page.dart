@@ -4,6 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../providers/dashboard_provider.dart';
+import 'dashboard_state.dart';
 import '../../data/models/medical_record_response.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
@@ -59,10 +60,8 @@ class _DashboardPageState extends State<DashboardPage> {
       appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
     } else {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      final docId = loginProvider.doctorId;
+      final docId = loginProvider.doctorId ?? 1;
       await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: docId);
-      context.read<AppointmentsProvider>().loadAppointments(patId.toString(), isDoctor: false);
-      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
       
@@ -258,10 +257,30 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildDoctorDashboard() {
     final dashboardProvider = context.watch<DashboardProvider>();
-    if (dashboardProvider.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+    switch (dashboardProvider.status) {
+      case DashboardStatus.initial:
+      case DashboardStatus.loading:
+        return Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      case DashboardStatus.error:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(dashboardProvider.errorMessage ?? 'Error al cargar el dashboard'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadDashboardData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        );
+      case DashboardStatus.success:
+        break;
     }
     final appointmentsProvider = context.watch<AppointmentsProvider>();
     final today = DateTime.now();
@@ -297,7 +316,7 @@ class _DashboardPageState extends State<DashboardPage> {
       priorityAlerts.add(
         Card(
           elevation: 0,
-          color: Colors.white,
+          color: AppColors.cardBackground,
           child: Padding(
             padding: EdgeInsets.all(16.0),
             child: Text('No hay alertas de riesgo alto el día de hoy.', style: TextStyle(color: AppColors.textMuted)),
@@ -410,7 +429,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -444,7 +463,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -524,7 +543,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildDoctorAppointmentItem(String time, String name, String subtitle, bool isUrgent) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16),
-      color: Colors.white,
+      color: AppColors.cardBackground,
       child: Row(
         children: [
           SizedBox(
@@ -584,10 +603,30 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildPatientDashboard() {
     final dashboardProvider = context.watch<DashboardProvider>();
-    if (dashboardProvider.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+    switch (dashboardProvider.status) {
+      case DashboardStatus.initial:
+      case DashboardStatus.loading:
+        return Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      case DashboardStatus.error:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(dashboardProvider.errorMessage ?? 'Error al cargar el dashboard'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadDashboardData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        );
+      case DashboardStatus.success:
+        break;
     }
     final loginProvider = context.watch<LoginProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
@@ -854,9 +893,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(color: AppColors.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
                       ),
                       child: Text(
                         'Aún no tienes registros en tu bitácora.',
@@ -1089,7 +1128,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -1150,9 +1189,9 @@ class _DashboardPageState extends State<DashboardPage> {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.pink.shade50),
+              border: Border.all(color: AppColors.isDarkMode ? Colors.pink.shade900.withOpacity(0.3) : Colors.pink.shade50),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1177,7 +1216,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       SizedBox(height: 6),
                       Text(
                         '"Es normal sentir más cansancio en la semana $currentWeeks. Recuerda hidratarte bien y..."',
-                        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade700, fontSize: 12),
+                        style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textDark, fontSize: 12),
                       ),
                     ],
                   ),
@@ -1191,7 +1230,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -1302,7 +1341,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } else {
       // Bottom nav bar for Patient role (which has a central circular "+" button)
       return BottomAppBar(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         elevation: 10,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1318,10 +1357,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 margin: EdgeInsets.only(bottom: 12),
                 width: 50,
                 height: 50,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
                 ),
                 child: Container(
                   margin: EdgeInsets.all(4),

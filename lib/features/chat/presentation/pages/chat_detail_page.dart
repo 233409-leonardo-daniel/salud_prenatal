@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/chat_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
+import 'chat_state.dart';
 
 class ChatDetailPage extends StatefulWidget {
   final int otherUserId;
@@ -83,20 +84,22 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       body: Column(
         children: [
           Expanded(
-            child: chatProvider.isLoading
-                ? Center(child: CircularProgressIndicator())
-                : chatProvider.errorMessage != null
-                    ? Center(child: Text(chatProvider.errorMessage!))
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.all(16),
-                        itemCount: chatProvider.messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = chatProvider.messages[index];
-                          final isMe = msg.senderId == currentUserId;
-                          return _buildMessageBubble(msg.content, isMe);
-                        },
-                      ),
+            child: switch (chatProvider.status) {
+              ChatStatus.initial || ChatStatus.loading =>
+                Center(child: CircularProgressIndicator()),
+              ChatStatus.error =>
+                Center(child: Text(chatProvider.errorMessage ?? 'Error al cargar mensajes')),
+              ChatStatus.success => ListView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.all(16),
+                  itemCount: chatProvider.messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = chatProvider.messages[index];
+                    final isMe = msg.senderId == currentUserId;
+                    return _buildMessageBubble(msg.content, isMe);
+                  },
+                ),
+            },
           ),
           _buildMessageInput(chatProvider),
         ],
@@ -111,7 +114,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         margin: EdgeInsets.symmetric(vertical: 4),
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primary : Colors.grey.shade200,
+          color: isMe ? AppColors.primary : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade200),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -121,7 +124,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         ),
         child: Text(
           text,
-          style: TextStyle(color: isMe ? Colors.white : Colors.black87),
+          style: TextStyle(color: isMe ? Colors.white : AppColors.textDark),
         ),
       ),
     );
@@ -130,7 +133,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Widget _buildMessageInput(ChatProvider provider) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      color: Colors.white,
+      color: AppColors.cardBackground,
       child: Row(
         children: [
           Expanded(

@@ -77,12 +77,10 @@ class LoginProvider with ChangeNotifier {
 
       final isDoctor = _role == 'doctor' || _role == 'doctor(a)';
       if (isDoctor) {
-        _doctorId = response.doctorId ?? 1; // Default doctor ID fallback
+        _doctorId = response.doctorId;
       } else {
-        // Assign patientId from response directly.
-        // Also keep previousPatientId logic if we came from registration and the API login doesn't have it yet, 
-        // though the new backend should return it.
-        _patientId = response.patientId ?? _patientId ?? _userId; 
+        // Assign patientId from response directly without falling back to userId
+        _patientId = response.patientId ?? _patientId; 
         _doctorId = response.doctorId;
         _medicalRecordId = response.medicalRecordId;
       }

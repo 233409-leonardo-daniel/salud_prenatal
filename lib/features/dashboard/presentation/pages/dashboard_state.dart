@@ -1,0 +1,3 @@
+enum DashboardStatus { initial, loading, success, error }
+enum DashboardDetailsStatus { initial, loading, success, error }
+enum SaveRecordStatus { initial, loading, success, error }

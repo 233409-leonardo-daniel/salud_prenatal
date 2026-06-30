@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
+import '../pages/chat_state.dart';
 
 class ChatProvider with ChangeNotifier {
   final ChatRepository _repository;
@@ -9,7 +10,7 @@ class ChatProvider with ChangeNotifier {
   ChatProvider(this._repository);
 
   List<ChatMessage> _messages = [];
-  bool _isLoading = false;
+  ChatStatus _status = ChatStatus.initial;
   bool _isConnected = false;
   String? _errorMessage;
 
@@ -20,7 +21,8 @@ class ChatProvider with ChangeNotifier {
   StreamSubscription<bool>? _connectionSubscription;
 
   List<ChatMessage> get messages => _messages;
-  bool get isLoading => _isLoading;
+  ChatStatus get status => _status;
+  bool get isLoading => _status == ChatStatus.loading;
   bool get isConnected => _isConnected;
   String? get errorMessage => _errorMessage;
 
@@ -32,7 +34,7 @@ class ChatProvider with ChangeNotifier {
 
     _currentUserId = currentUserId;
     _otherUserId = otherUserId;
-    _isLoading = true;
+    _status = ChatStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
@@ -41,7 +43,7 @@ class ChatProvider with ChangeNotifier {
       final history = await _repository.getChatHistory(otherUserId, currentUserId);
       _messages = List.from(history);
       _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      _isLoading = false;
+      _status = ChatStatus.success;
       notifyListeners();
 
       // 2. Conectar al WebSocket
@@ -78,7 +80,7 @@ class ChatProvider with ChangeNotifier {
       });
 
     } catch (e) {
-      _isLoading = false;
+      _status = ChatStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
     }
@@ -107,7 +109,7 @@ class ChatProvider with ChangeNotifier {
     _currentUserId = null;
     _otherUserId = null;
     _isConnected = false;
-    _isLoading = false;
+    _status = ChatStatus.initial;
     _errorMessage = null;
   }
 

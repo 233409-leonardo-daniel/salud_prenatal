@@ -98,20 +98,22 @@ class _UserSearchPageState extends State<UserSearchPage> {
   }
 
   Widget _buildBody(UserProvider provider) {
-    if (provider.viewState == UserViewState.loading) {
-      return Center(child: CircularProgressIndicator());
-    }
-    
-    if (provider.viewState == UserViewState.error) {
-      return Center(child: Text('Error: ${provider.error}'));
+    switch (provider.viewState) {
+      case UserViewState.loading:
+        return const Center(child: CircularProgressIndicator());
+      case UserViewState.error:
+        return Center(child: Text('Error: ${provider.error}'));
+      case UserViewState.initial:
+      case UserViewState.success:
+        if (provider.users.isEmpty) {
+          return Center(
+            child: Text('No se encontraron usuarios.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
+          );
+        }
+        break;
     }
     
     var displayUsers = provider.users;
-    if (displayUsers.isEmpty) {
-      return Center(
-        child: Text('No se encontraron usuarios.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
-      );
-    }
     
     return ListView.builder(
       padding: EdgeInsets.all(16),

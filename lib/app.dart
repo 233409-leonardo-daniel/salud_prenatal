@@ -134,6 +134,7 @@ class MyApp extends StatelessWidget {
           create: (_) => UserProvider(
             userModule.getDoctorsUseCase,
             userModule.getPatientsUseCase,
+            userModule.getUserByIdUseCase,
           ),
         ),
         ChangeNotifierProvider(

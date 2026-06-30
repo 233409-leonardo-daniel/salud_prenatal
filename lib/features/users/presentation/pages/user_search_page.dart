@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/user_provider.dart';
 
+import '../../../login/presentation/providers/login_provider.dart';
+import '../../../chat/presentation/pages/chat_detail_page.dart';
+
 class UserSearchPage extends StatefulWidget {
   final bool initialIsDoctor;
 
@@ -25,10 +28,14 @@ class _UserSearchPageState extends State<UserSearchPage> {
   }
 
   void _loadData() {
+    final loginProvider = context.read<LoginProvider>();
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final docId = isReceptionist ? loginProvider.doctorId : null;
+
     if (_isDoctor) {
-      context.read<UserProvider>().loadDoctors();
+      context.read<UserProvider>().loadDoctors(singleDoctorId: docId);
     } else {
-      context.read<UserProvider>().loadPatients();
+      context.read<UserProvider>().loadPatients(doctorId: docId);
     }
   }
 
@@ -99,7 +106,8 @@ class _UserSearchPageState extends State<UserSearchPage> {
       return Center(child: Text('Error: ${provider.error}'));
     }
     
-    if (provider.users.isEmpty) {
+    var displayUsers = provider.users;
+    if (displayUsers.isEmpty) {
       return Center(
         child: Text('No se encontraron usuarios.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
       );
@@ -107,9 +115,9 @@ class _UserSearchPageState extends State<UserSearchPage> {
     
     return ListView.builder(
       padding: EdgeInsets.all(16),
-      itemCount: provider.users.length,
+      itemCount: displayUsers.length,
       itemBuilder: (context, index) {
-        final user = provider.users[index];
+        final user = displayUsers[index];
         return Card(
           margin: EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -121,10 +129,30 @@ class _UserSearchPageState extends State<UserSearchPage> {
             ),
             title: Text(user.fullName, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
             subtitle: Text(user.email),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMuted),
+            trailing: IconButton(
+              icon: Icon(Icons.chat, color: AppColors.primary),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatDetailPage(
+                      otherUserId: user.id,
+                      otherUserName: user.fullName,
+                    ),
+                  ),
+                );
+              },
+            ),
             onTap: () {
-              // Return selected user or open their profile
-              Navigator.pop(context, user);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatDetailPage(
+                    otherUserId: user.id,
+                    otherUserName: user.fullName,
+                  ),
+                ),
+              );
             },
           ),
         );

@@ -36,8 +36,10 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
       await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
     }
 
-    final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
-    diariesProvider.loadDiaries(medicalRecordId);
+    final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
+    if (medicalRecordId != null && medicalRecordId > 0) {
+      diariesProvider.loadDiaries(medicalRecordId);
+    }
   }
 
   String _formatDateTime(DateTime dateTime) {
@@ -84,7 +86,8 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   void _showFormDialog(BuildContext context, {PatientDiary? diary}) {
     final dashboardProvider = context.read<DashboardProvider>();
     final diariesProvider = context.read<PatientDiariesProvider>();
-    final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
+    final loginProvider = context.read<LoginProvider>();
+    final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId ?? 0;
 
     final formKey = GlobalKey<FormState>();
     final weightController = TextEditingController(
@@ -410,6 +413,9 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   @override
   Widget build(BuildContext context) {
     final diariesProvider = context.watch<PatientDiariesProvider>();
+    final loginProvider = context.watch<LoginProvider>();
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -421,17 +427,54 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
         backgroundColor: AppColors.primary,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: _buildBody(diariesProvider),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFormDialog(context),
-        backgroundColor: AppColors.primary,
-        icon: Icon(Icons.add, color: Colors.white),
-        label: Text('Nueva medición', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
+      body: _buildBody(diariesProvider, loginProvider, medicalRecordId),
+      floatingActionButton: (medicalRecordId != null && medicalRecordId > 0)
+          ? FloatingActionButton.extended(
+              onPressed: () => _showFormDialog(context),
+              backgroundColor: AppColors.primary,
+              icon: Icon(Icons.add, color: Colors.white),
+              label: Text('Nueva medición', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          : null,
     );
   }
 
-  Widget _buildBody(PatientDiariesProvider provider) {
+  Widget _buildBody(PatientDiariesProvider provider, LoginProvider loginProvider, int? medicalRecordId) {
+    if (medicalRecordId == null || medicalRecordId <= 0) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.folder_off_outlined, size: 64, color: Colors.red.shade400),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Tu médico no te ha creado un expediente aún',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+              ),
+              if (loginProvider.doctorId == null) ...[
+                SizedBox(height: 12),
+                Text(
+                  'Aún no estás vinculado a un médico.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
     if (provider.isLoading && provider.diaries.isEmpty) {
       return Center(
         child: CircularProgressIndicator(color: AppColors.primary),

@@ -217,19 +217,19 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   void _triggerOfflineReply(int receiverId) {
-    Timer(const Duration(milliseconds: 1500), () {
-      if (_isOfflineMode && _isConnected && !_isDisposed) {
-        final mockReply = ChatMessageModel(
-          messageId: DateTime.now().millisecondsSinceEpoch + 1,
-          senderId: receiverId,
-          receiverId: _currentUserId ?? 99,
-          content: "Este es un mensaje de prueba offline",
-          createdAt: DateTime.now(),
-          isRead: false,
-        );
-        _messageController.add(mockReply);
-      }
-    });
+    // Timer(const Duration(milliseconds: 1500), () {
+    //   if (_isOfflineMode && _isConnected && !_isDisposed) {
+    //     final mockReply = ChatMessageModel(
+    //       messageId: DateTime.now().millisecondsSinceEpoch + 1,
+    //       senderId: receiverId,
+    //       receiverId: _currentUserId ?? 99,
+    //       content: "Este es un mensaje de prueba offline",
+    //       createdAt: DateTime.now(),
+    //       isRead: false,
+    //     );
+    //     _messageController.add(mockReply);
+    //   }
+    // });
   }
 
   @override

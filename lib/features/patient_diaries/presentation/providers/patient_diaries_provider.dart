@@ -40,8 +40,7 @@ class PatientDiariesProvider with ChangeNotifier {
 
     try {
       final allDiaries = await _getDiariesUseCase.execute(medicalRecordId);
-      // Filtrar por medicalRecordId para asegurar que solo se muestren los registros del usuario actual
-      _diaries = allDiaries.where((d) => d.medicalRecordId == medicalRecordId).toList();
+      _diaries = allDiaries;
       // Sort: newest first
       _diaries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       _status = PatientDiariesStatus.success;

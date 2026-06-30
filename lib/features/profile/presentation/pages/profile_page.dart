@@ -4,6 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import '../../../privacy_policy/data/models/accepted_policy_model.dart';
+import '../../../register/presentation/providers/register_provider.dart';
 import 'edit_profile_page.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -127,6 +128,27 @@ class ProfilePage extends StatelessWidget {
                     elevation: 0,
                   ),
                 ),
+                if (loginProvider.userProfile?.role.toLowerCase() == 'doctor') ...[
+                  SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      _showCreateReceptionistDialog(context);
+                    },
+                    icon: Icon(Icons.person_add_alt_1_outlined, size: 18, color: Colors.white),
+                    label: Text(
+                      'Mi Recepcionista',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6A5ACD),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -203,6 +225,17 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+  void _showCreateReceptionistDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: const _CreateReceptionistBottomSheet(),
+      ),
     );
   }
 }
@@ -676,6 +709,194 @@ class _AccountDeletionTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CreateReceptionistBottomSheet extends StatefulWidget {
+  const _CreateReceptionistBottomSheet();
+
+  @override
+  State<_CreateReceptionistBottomSheet> createState() => _CreateReceptionistBottomSheetState();
+}
+
+class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loginProvider = context.read<LoginProvider>();
+    final registerProvider = context.watch<RegisterProvider>();
+    
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6A5ACD).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.person_add_alt_1_outlined, color: const Color(0xFF6A5ACD)),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Crear Recepcionista',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: AppColors.textMuted),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+                validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+              ),
+              SizedBox(height: 16),
+
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Apellidos',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+                validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+              ),
+              SizedBox(height: 16),
+
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Correo electrónico',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Requerido';
+                  if (!val.contains('@')) return 'Correo inválido';
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Teléfono',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+                validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+              ),
+              SizedBox(height: 16),
+
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  prefixIcon: Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                  ),
+                ),
+                validator: (val) => val == null || val.length < 6 ? 'Mínimo 6 caracteres' : null,
+              ),
+              SizedBox(height: 32),
+
+              ElevatedButton(
+                onPressed: registerProvider.isLoading ? null : () async {
+                  if (_formKey.currentState!.validate()) {
+                    final doctorId = loginProvider.doctorId ?? 0;
+                    if (doctorId == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: No se pudo obtener el ID del médico.'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+                    
+                    final success = await registerProvider.registerReceptionist(
+                      name: _nameController.text.trim(),
+                      lastName: _lastNameController.text.trim(),
+                      email: _emailController.text.trim(),
+                      phone: _phoneController.text.trim(),
+                      password: _passwordController.text.trim(),
+                      doctorId: doctorId,
+                    );
+
+                    if (success && mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Recepcionista creado exitosamente.'), backgroundColor: Colors.green),
+                      );
+                    } else if (!success && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(registerProvider.errorMessage ?? 'Error al crear recepcionista.'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6A5ACD),
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: registerProvider.isLoading
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(
+                        'Crear Cuenta',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

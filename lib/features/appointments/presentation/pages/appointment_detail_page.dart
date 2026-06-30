@@ -25,7 +25,7 @@ class AppointmentDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final loginProvider = context.watch<LoginProvider>();
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
-    final isReceptionist = loginProvider.role == 'recepcionist';
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista' || loginProvider.role == 'recepcionist';
     
     // Obtenemos la cita del provider si existe (para reflejar cambios locales de estado)
     final provider = context.watch<AppointmentsProvider>();
@@ -94,7 +94,7 @@ class AppointmentDetailPage extends StatelessWidget {
             
             SizedBox(height: 32),
             
-            if (isReceptionist || isDoctor) ..._buildActionButtons(context, currentAppointment, provider),
+            if (isReceptionist) ..._buildActionButtons(context, currentAppointment, provider),
 
             if (!isReceptionist)
               ElevatedButton(

@@ -395,8 +395,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               _buildRoleCard('patient', 'Paciente', Icons.pregnant_woman, AppColors.primary),
                               SizedBox(width: 8),
                               _buildRoleCard('doctor', 'Doctor(a)', Icons.badge_outlined, AppColors.primary),
-                              SizedBox(width: 8),
-                              _buildRoleCard('receptionist', 'Recepcionista', Icons.assignment_ind_outlined, const Color(0xFF6A5ACD)),
                             ],
                           ),
                           SizedBox(height: 24),
@@ -490,61 +488,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                 prefixIcon: Icon(Icons.local_hospital_outlined),
                               ),
                               validator: (value) => value == null || value.isEmpty ? 'Ingresa tu consultorio' : null,
-                            ),
-                          ] else if (registerProvider.selectedRole == 'receptionist') ...[
-                            Container(
-                              padding: EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6A5ACD).withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFF6A5ACD).withOpacity(0.3)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.assignment_ind_outlined, color: Color(0xFF6A5ACD), size: 28),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Recepcionista',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF6A5ACD),
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'Serás vinculado al médico que te asignó. Ingresa el ID del médico para completar tu registro.',
-                                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: _doctorIdController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'ID del Médico',
-                                hintText: 'Ej: 1',
-                                prefixIcon: Icon(Icons.badge_outlined),
-                                helperText: 'Solicita este número a tu médico',
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Ingresa el ID del médico';
-                                }
-                                if (int.tryParse(value.trim()) == null) {
-                                  return 'Debe ser un número válido';
-                                }
-                                return null;
-                              },
                             ),
                           ],
                           SizedBox(height: 32),

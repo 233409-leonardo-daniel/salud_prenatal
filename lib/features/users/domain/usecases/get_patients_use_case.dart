@@ -6,7 +6,7 @@ class GetPatientsUseCase {
 
   GetPatientsUseCase(this.repository);
 
-  Future<List<UserEntity>> call() async {
-    return await repository.getPatients();
+  Future<List<UserEntity>> call({int? doctorId}) async {
+    return await repository.getPatients(doctorId: doctorId);
   }
 }

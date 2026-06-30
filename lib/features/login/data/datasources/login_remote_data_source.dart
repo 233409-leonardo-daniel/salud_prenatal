@@ -29,6 +29,9 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('====== LOGIN RESPONSE CREDENTIALS ======');
+        print(response.body);
+        print('========================================');
         return LoginResponse.fromJson(data);
       }
       

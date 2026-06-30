@@ -78,27 +78,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Editar Perfil',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Top Description
-                const Text(
+                Text(
                   'Modifica tus datos de contacto y personales a continuación.',
                   style: TextStyle(color: AppColors.textMuted, fontSize: 14),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Name Input
                 TextFormField(
@@ -107,14 +107,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     labelText: 'Nombre',
                     filled: true,
                     fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
+                    prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
                     ),
                   ),
                   validator: (value) {
@@ -124,7 +124,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Last Name Input
                 TextFormField(
@@ -133,14 +133,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     labelText: 'Apellidos',
                     filled: true,
                     fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
+                    prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
                     ),
                   ),
                   validator: (value) {
@@ -150,7 +150,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Phone Input
                 TextFormField(
@@ -160,14 +160,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     labelText: 'Teléfono',
                     filled: true,
                     fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
+                    prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
                     ),
                   ),
                   validator: (value) {
@@ -177,7 +177,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Email (Read Only)
                 TextFormField(
@@ -187,32 +187,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     labelText: 'Correo Electrónico (No editable)',
                     filled: true,
                     fillColor: const Color(0xFFF5F5F5),
-                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMuted),
+                    prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderSide: BorderSide(color: Colors.transparent),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderSide: BorderSide(color: Colors.transparent),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // Save Button
                 ElevatedButton(
                   onPressed: isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
                     elevation: 2,
                   ),
                   child: isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
@@ -220,7 +220,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Guardar Cambios',
                           style: TextStyle(
                             fontSize: 16,

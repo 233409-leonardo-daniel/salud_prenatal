@@ -31,12 +31,12 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Todas las Citas',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _buildBody(provider),
       floatingActionButton: FloatingActionButton(
@@ -44,14 +44,14 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
           // Navigator.pushNamed(context, '/appointments/new');
         },
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
   Widget _buildBody(AppointmentsProvider provider) {
     if (provider.viewState == ViewState.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
     
     if (provider.viewState == ViewState.error) {
@@ -59,7 +59,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     }
     
     if (provider.appointments.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No hay citas programadas.',
           style: TextStyle(color: AppColors.textMuted, fontSize: 16),
@@ -68,7 +68,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     }
     
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       itemCount: provider.appointments.length,
       itemBuilder: (context, index) {
         final appointment = provider.appointments[index];

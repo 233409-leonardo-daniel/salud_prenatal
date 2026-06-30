@@ -85,14 +85,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       backgroundColor: Colors.white,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
@@ -100,9 +100,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
               Text(
                 'Citas para el ${_formatDate(day).split(',')[0]}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -143,19 +143,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Agenda de Citas',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _buildBody(provider, theme),
       floatingActionButton: isDoctor
           ? FloatingActionButton(
               onPressed: () => _showCreateAppointmentDialog(context),
               backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
+              child: Icon(Icons.add, color: Colors.white),
             )
           : null,
     );
@@ -226,19 +226,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           builder: (dialogCtx, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: const Text('Agendar Cita', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              title: Text('Agendar Cita', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Paciente:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    Text('Paciente:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
                     DropdownButtonFormField<int>(
                       value: selectedPatientId,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: patientsList.map((patient) {
                         final pId = patient['patient_id'] as int;
@@ -257,9 +257,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
-                    const Text('Fecha y Hora:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 16),
+                    Text('Fecha y Hora:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: isSaving ? null : () async {
                         final date = await showDatePicker(
@@ -286,19 +286,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           }
                         }
                       },
-                      icon: const Icon(Icons.calendar_today, color: AppColors.primary),
+                      icon: Icon(Icons.calendar_today, color: AppColors.primary),
                       label: Text(
                         '${selectedDateTime.day}/${selectedDateTime.month}/${selectedDateTime.year} - ${selectedDateTime.hour.toString().padLeft(2, '0')}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
-                        style: const TextStyle(color: AppColors.textDark),
+                        style: TextStyle(color: AppColors.textDark),
                       ),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text('Motivo de la Cita:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 16),
+                    Text('Motivo de la Cita:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
                     TextField(
                       controller: reasonController,
                       enabled: !isSaving,
@@ -314,7 +314,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
-                  child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+                  child: Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
@@ -368,12 +368,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text('Agendar', style: TextStyle(color: Colors.white)),
+                      : Text('Agendar', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -386,29 +386,29 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _buildBody(AppointmentsProvider provider, ThemeData theme) {
     if (provider.status == AppointmentsListStatus.loading ||
         provider.status == AppointmentsListStatus.initial) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     } else if (provider.status == AppointmentsListStatus.error) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: 48, color: Colors.red),
+              SizedBox(height: 16),
               Text(
                 provider.error ?? 'Error desconocido',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _loadAppointmentsData,
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary),
-                child: const Text('Reintentar',
+                child: Text('Reintentar',
                     style: TextStyle(color: Colors.white)),
               ),
             ],
@@ -423,7 +423,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       onRefresh: () async => _loadAppointmentsData(),
       color: AppColors.primary,
       child: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         children: [
           Container(
             decoration: BoxDecoration(
@@ -476,14 +476,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+          Text(
             'Citas Próximas',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           if (allAppointments.isEmpty)
-            const Text('No hay citas programadas')
+            Text('No hay citas programadas')
           else
             ...allAppointments.take(3).map((app) => _buildAppointmentCard(app, theme, isCompact: false)),
         ],
@@ -526,7 +526,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
+      margin: EdgeInsets.only(bottom: 12.0),
       elevation: isCompact ? 1 : 2,
       shadowColor: Colors.black.withOpacity(0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -541,7 +541,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 Row(
                   children: [
                     Icon(statusIcon, color: statusColor, size: isCompact ? 16 : 20),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       statusText,
                       style: theme.textTheme.labelSmall?.copyWith(
@@ -562,7 +562,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Row(
               children: [
                 CircleAvatar(
@@ -570,7 +570,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   radius: isCompact ? 16 : 24,
                   child: Icon(Icons.medical_services, color: AppColors.primary, size: isCompact ? 16 : 24),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -585,7 +585,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         'Paciente: ${app.patientName}',
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -596,7 +596,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     ],
                   ),
                 ),
-                if (isCompact) const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                if (isCompact) Icon(Icons.chevron_right, color: AppColors.textMuted),
               ],
             ),
           ],

@@ -123,7 +123,7 @@ class _ChatListPageState extends State<ChatListPage> {
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'Mensajes',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppColors.textDark),
         ),
@@ -131,7 +131,7 @@ class _ChatListPageState extends State<ChatListPage> {
         backgroundColor: const Color(0xFFF9F9FB),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_outlined, color: AppColors.primary),
+            icon: Icon(Icons.refresh_outlined, color: AppColors.primary),
             onPressed: () async {
               final dashboardProvider = context.read<DashboardProvider>();
               final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
@@ -145,7 +145,7 @@ class _ChatListPageState extends State<ChatListPage> {
               dashboardProvider.loadPatientDashboard(patId, currentUserId);
             },
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -153,17 +153,17 @@ class _ChatListPageState extends State<ChatListPage> {
           children: [
             // Search Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
                   hintText: isDoctor ? 'Buscar paciente...' : 'Buscar médico...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                  prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: AppColors.textMuted),
+                          icon: Icon(Icons.clear, color: AppColors.textMuted),
                           onPressed: () {
                             setState(() {
                               _searchController.clear();
@@ -180,7 +180,7 @@ class _ChatListPageState extends State<ChatListPage> {
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide(color: Colors.pink.shade50),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -200,7 +200,7 @@ class _ChatListPageState extends State<ChatListPage> {
       floatingActionButton: isDoctor ? FloatingActionButton(
         onPressed: _showContactsDialog,
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.contacts, color: Colors.white),
+        child: Icon(Icons.contacts, color: Colors.white),
       ) : null,
     );
   }
@@ -212,7 +212,7 @@ class _ChatListPageState extends State<ChatListPage> {
     final loginProvider = context.watch<LoginProvider>();
 
     if (patientsProvider.status == PatientsListStatus.loading || _loadingLastMessages) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     final patients = patientsProvider.patients;
@@ -254,7 +254,7 @@ class _ChatListPageState extends State<ChatListPage> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0),
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final patient = filtered[index];
@@ -282,7 +282,7 @@ class _ChatListPageState extends State<ChatListPage> {
         }
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -308,13 +308,13 @@ class _ChatListPageState extends State<ChatListPage> {
               );
               _loadLastMessages();
             },
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               radius: 26,
               backgroundColor: AppColors.primaryLight,
               child: Text(
                 initials,
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
             title: Row(
@@ -323,22 +323,22 @@ class _ChatListPageState extends State<ChatListPage> {
                 Expanded(
                   child: Text(
                     fullName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                   ),
                 ),
                 Text(
                   lastMessageTime,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
             ),
             subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
+              padding: EdgeInsets.only(top: 4.0),
               child: Text(
                 lastMessageContent,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
               ),
             ),
           ),
@@ -370,7 +370,7 @@ class _ChatListPageState extends State<ChatListPage> {
               ),
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Container(
                     width: 40,
                     height: 4,
@@ -379,23 +379,23 @@ class _ChatListPageState extends State<ChatListPage> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: 16),
+                  Text(
                     'Contactos (Pacientes)',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   const Divider(),
                   Expanded(
                     child: patients.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               'No hay pacientes registrados.',
                               style: TextStyle(color: AppColors.textMuted),
                             ),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16),
                             itemCount: patients.length,
                             itemBuilder: (context, index) {
                               final patient = patients[index];
@@ -407,26 +407,26 @@ class _ChatListPageState extends State<ChatListPage> {
                               final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
 
                               return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
+                                margin: EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF9F9FB),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   leading: CircleAvatar(
                                     radius: 22,
                                     backgroundColor: AppColors.primaryLight,
                                     child: Text(
                                       initials,
-                                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                   ),
                                   title: Text(
                                     fullName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
                                   ),
-                                  trailing: const Icon(Icons.chat_bubble_outline, color: AppColors.primary, size: 18),
+                                  trailing: Icon(Icons.chat_bubble_outline, color: AppColors.primary, size: 18),
                                   onTap: () async {
                                     Navigator.pop(context); // Close bottom sheet
                                     await Navigator.push(
@@ -468,14 +468,14 @@ class _ChatListPageState extends State<ChatListPage> {
 
     if (!hasDoctor) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
             Container(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.0),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF0F6),
                 borderRadius: BorderRadius.circular(30),
@@ -491,26 +491,26 @@ class _ChatListPageState extends State<ChatListPage> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.medical_services_outlined, color: AppColors.primary, size: 40),
+                    child: Icon(Icons.medical_services_outlined, color: AppColors.primary, size: 40),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
+                  SizedBox(height: 20),
+                  Text(
                     'Aún no tienes un médico asignado',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 18),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Para poder chatear en tiempo real y recibir asesoramiento, debes vincular tu cuenta con tu doctor usando su código.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.4),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () async {
                       final result = await Navigator.push(
@@ -525,9 +525,9 @@ class _ChatListPageState extends State<ChatListPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.vpn_key_outlined, size: 18),
@@ -567,7 +567,7 @@ class _ChatListPageState extends State<ChatListPage> {
     }).toList();
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0),
       itemCount: filteredDoctors.length,
       itemBuilder: (context, index) {
         final doctor = filteredDoctors[index];
@@ -577,7 +577,7 @@ class _ChatListPageState extends State<ChatListPage> {
         final isAssigned = docName.contains(doctor.name) || doctor.userId == 1;
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
@@ -591,7 +591,7 @@ class _ChatListPageState extends State<ChatListPage> {
             ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             leading: Stack(
               children: [
                 CircleAvatar(
@@ -599,7 +599,7 @@ class _ChatListPageState extends State<ChatListPage> {
                   backgroundColor: AppColors.primaryLight,
                   child: Text(
                     initials,
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
                 Positioned(
@@ -622,17 +622,17 @@ class _ChatListPageState extends State<ChatListPage> {
                 Expanded(
                   child: Text(
                     fullName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                   ),
                 ),
                 if (isAssigned)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF0F6),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Mi Doctor',
                       style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
                     ),
@@ -640,13 +640,13 @@ class _ChatListPageState extends State<ChatListPage> {
               ],
             ),
             subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
+              padding: EdgeInsets.only(top: 4.0),
               child: Text(
                 docSpecialty,
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ),
-            trailing: const Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
+            trailing: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
             onTap: () {
               Navigator.push(
                 context,
@@ -668,21 +668,21 @@ class _ChatListPageState extends State<ChatListPage> {
   Widget _buildEmptyState({required IconData icon, required String title, required String description}) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 64, color: Colors.pink.shade100),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               description,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
             ),
           ],
         ),

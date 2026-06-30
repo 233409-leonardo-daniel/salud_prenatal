@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../data/models/medical_record_response.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
@@ -43,9 +44,9 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         appBar: AppBar(
           title: Text('Expediente: ${widget.patientName}'),
           backgroundColor: AppColors.primary,
-          iconTheme: const IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: Colors.white),
         ),
-        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
@@ -93,30 +94,30 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
       }
     }
     if (flags.isEmpty) {
-      flags.add(const Text('Sin alertas clínicas reportadas.', style: TextStyle(color: AppColors.textMuted)));
+      flags.add(Text('Sin alertas clínicas reportadas.', style: TextStyle(color: AppColors.textMuted)));
     }
 
     // 3. Previous consultations
     final consultationsWidgets = <Widget>[];
     if (consultations.isEmpty) {
-      consultationsWidgets.add(const Text('No hay consultas registradas aún.', style: TextStyle(color: AppColors.textMuted)));
+      consultationsWidgets.add(Text('No hay consultas registradas aún.', style: TextStyle(color: AppColors.textMuted)));
     } else {
       for (var i = 0; i < consultations.length; i++) {
         final c = consultations[i];
         final formattedDate = '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}';
         consultationsWidgets.add(
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
+            padding: EdgeInsets.symmetric(vertical: 6.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '$formattedDate - Consulta #${c.consultationId}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
-                const SizedBox(height: 2),
-                Text('Notas: ${c.notes}', style: const TextStyle(fontSize: 13)),
-                Text('Objetivo: ${c.objective}', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                SizedBox(height: 2),
+                Text('Notas: ${c.notes}', style: TextStyle(fontSize: 13)),
+                Text('Objetivo: ${c.objective}', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                 if (i < consultations.length - 1) const Divider(),
               ],
             ),
@@ -129,7 +130,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     final pendingAppsWidgets = <Widget>[];
     final pendingApps = patientAppointments.where((app) => app.status == AppointmentStatus.pending).toList();
     if (pendingApps.isEmpty) {
-      pendingAppsWidgets.add(const Text('No hay citas programadas.', style: TextStyle(color: AppColors.textMuted)));
+      pendingAppsWidgets.add(Text('No hay citas programadas.', style: TextStyle(color: AppColors.textMuted)));
     } else {
       for (var i = 0; i < pendingApps.length; i++) {
         final app = pendingApps[i];
@@ -140,12 +141,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         final min = app.dateTime.minute.toString().padLeft(2, '0');
         pendingAppsWidgets.add(
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: EdgeInsets.symmetric(vertical: 4.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$day/$month/$year - $hour:$min', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(app.reason, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                Text('$day/$month/$year - $hour:$min', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(app.reason, style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                 if (i < pendingApps.length - 1) const Divider(),
               ],
             ),
@@ -161,101 +162,101 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Expediente: ${widget.patientName}',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (record == null) ...[
               _buildNoRecordBanner(context, isDoctor),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
             ] else ...[
               _buildResumenIA(record),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
             ],
             _buildExpansionSection(
               title: 'Detalles del paciente',
               icon: Icons.person_outline,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Edad: $age años', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Tipo de sangre: $bloodType', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Residencia: $residence', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Estado civil: $marital', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Escolaridad: $education', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Peso inicial: $initialWeight kg', style: const TextStyle(color: AppColors.textDark)),
+                    Text('Edad: $age años', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Tipo de sangre: $bloodType', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Residencia: $residence', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Estado civil: $marital', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Escolaridad: $education', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Peso inicial: $initialWeight kg', style: TextStyle(color: AppColors.textDark)),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Banderas (Factores de Riesgo)',
               icon: Icons.flag_outlined,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: flags,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Consultas Previas',
               icon: Icons.history,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: consultationsWidgets,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Citas Pendientes',
               icon: Icons.calendar_today_outlined,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: pendingAppsWidgets,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Plan del Paciente',
               icon: Icons.next_plan_outlined,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(planText, style: const TextStyle(color: AppColors.textDark, height: 1.4)),
+                    Text(planText, style: TextStyle(color: AppColors.textDark, height: 1.4)),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
           ],
         ),
       ),
@@ -264,27 +265,30 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
 
   Widget _buildFlagRow(String flagName, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
           Icon(Icons.warning_amber_rounded, color: color, size: 20),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(flagName, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  Widget _buildResumenIA(dynamic record) {
+  Widget _buildResumenIA(MedicalRecordResponse record) {
     String iaSummary = 'Presión arterial estable y desarrollo fetal adecuado. Continuar con plan nutricional.';
-    if (record != null) {
-      if (record.chronicHypertension || record.previousHypertension || record.previousPreeclampsia) {
-        iaSummary = 'Paciente con antecedentes de hipertensión/preeclampsia. Monitorear estrechamente presión sistólica.';
-      }
+    if (record.chronicHypertension || record.previousHypertension || record.previousPreeclampsia) {
+      iaSummary = 'Paciente con antecedentes de hipertensión/preeclampsia. Monitorear estrechamente presión sistólica.';
     }
 
+    final riskPrediction = record.riskPrediction;
+    final hasRiskPrediction = riskPrediction != null &&
+        riskPrediction.diagnosis != null &&
+        riskPrediction.diagnosis!.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF0F6),
         borderRadius: BorderRadius.circular(24),
@@ -298,38 +302,77 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.psychology_outlined, color: AppColors.primary, size: 24),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Resumen IA',
+                  Icon(Icons.psychology_outlined, color: AppColors.primary, size: 24),
+                  SizedBox(width: 8),
+                  Text(
+                    'Resumen IA / Predicción',
                     style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 15),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.pink.shade100),
                 ),
-                child: const Text(
+                child: Text(
                   'GENERADO POR IA',
                   style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             '"$iaSummary"',
-            style: const TextStyle(
+            style: TextStyle(
               fontStyle: FontStyle.italic,
               color: AppColors.textDark,
               fontSize: 13,
               height: 1.5,
             ),
           ),
+          if (hasRiskPrediction) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.0),
+              child: Divider(color: Colors.pinkAccent, thickness: 0.5),
+            ),
+            Row(
+              children: [
+                Icon(Icons.analytics_outlined, color: Colors.purple, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Clúster de Riesgo: ${riskPrediction.riskCluster ?? "N/A"}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple.shade100),
+              ),
+              child: Text(
+                'Diagnóstico: ${riskPrediction.diagnosis}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple.shade900,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -342,7 +385,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -353,11 +396,11 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         ],
       ),
       child: ExpansionTile(
-        shape: const Border(),
+        shape: Border(),
         leading: Icon(icon, color: AppColors.primary),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
         ),
         children: [
           Container(
@@ -375,7 +418,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
   Widget _buildNoRecordBanner(BuildContext context, bool isDoctor) {
     if (isDoctor) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFFFFF9DB),
           borderRadius: BorderRadius.circular(20),
@@ -384,7 +427,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
                 SizedBox(width: 8),
@@ -398,12 +441,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Esta paciente no cuenta con un expediente clínico registrado en el sistema. Es necesario crearlo para registrar antecedentes y factores de riesgo.',
               style: TextStyle(color: AppColors.textDark, fontSize: 13, height: 1.4),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () async {
                 final result = await Navigator.push(
@@ -421,12 +464,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                   }
                 }
               },
-              icon: const Icon(Icons.add_moderator, size: 18),
-              label: const Text('Crear Expediente Médico'),
+              icon: Icon(Icons.add_moderator, size: 18),
+              label: Text('Crear Expediente Médico'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -437,12 +480,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
       );
     } else {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFFF1F3F5),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Icon(Icons.info_outline, color: AppColors.textMuted, size: 24),
             SizedBox(width: 12),

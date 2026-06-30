@@ -39,15 +39,15 @@ class _UserSearchPageState extends State<UserSearchPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
-        title: const Text('Directorio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Directorio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -74,7 +74,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -92,7 +92,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
 
   Widget _buildBody(UserProvider provider) {
     if (provider.viewState == UserViewState.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
     
     if (provider.viewState == UserViewState.error) {
@@ -100,28 +100,28 @@ class _UserSearchPageState extends State<UserSearchPage> {
     }
     
     if (provider.users.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('No se encontraron usuarios.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
       );
     }
     
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       itemCount: provider.users.length,
       itemBuilder: (context, index) {
         final user = provider.users[index];
         return Card(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: const Color(0xFFFFF0F6),
               backgroundImage: user.profilePicture != null ? NetworkImage(user.profilePicture!) : null,
-              child: user.profilePicture == null ? const Icon(Icons.person, color: AppColors.primary) : null,
+              child: user.profilePicture == null ? Icon(Icons.person, color: AppColors.primary) : null,
             ),
-            title: Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            title: Text(user.fullName, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
             subtitle: Text(user.email),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMuted),
+            trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMuted),
             onTap: () {
               // Return selected user or open their profile
               Navigator.pop(context, user);

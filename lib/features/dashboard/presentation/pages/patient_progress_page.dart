@@ -45,12 +45,12 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
         appBar: AppBar(
           title: Text(
             'Progreso: ${widget.patientName}',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           backgroundColor: AppColors.primary,
-          iconTheme: const IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: Colors.white),
         ),
-        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
@@ -97,7 +97,7 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
             c.reportedFacts.toLowerCase().contains('dolor') ? Colors.redAccent : Colors.orange,
           ),
         );
-        symptomsWidgets.add(const SizedBox(height: 8));
+        symptomsWidgets.add(SizedBox(height: 8));
       }
     }
 
@@ -109,49 +109,49 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
       weightSpots.addAll([const FlSpot(1, 60.0), const FlSpot(2, 60.5), const FlSpot(3, 61.2)]);
     }
     if (symptomsWidgets.isEmpty) {
-      symptomsWidgets.add(const Text('Sin síntomas reportados recientemente.', style: TextStyle(color: AppColors.textMuted)));
+      symptomsWidgets.add(Text('Sin síntomas reportados recientemente.', style: TextStyle(color: AppColors.textMuted)));
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Progreso: ${widget.patientName}',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Datos Biométricos',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildChartCard(
               title: 'Presión Arterial (Sistólica/Diastólica)',
               chart: _buildPressureChart(pressureSpotsSystolic, pressureSpotsDiastolic),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildChartCard(
               title: 'Evolución de Peso (kg)',
               chart: _buildWeightChart(weightSpots),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24),
+            Text(
               'Síntomas Recientes',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: symptomsWidgets,
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
           ],
         ),
       ),
@@ -160,7 +160,7 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
 
   Widget _buildChartCard({required String title, required Widget chart}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -177,9 +177,9 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           SizedBox(
             height: 200,
             child: chart,
@@ -248,7 +248,7 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
 
   Widget _buildSymptomItem(String symptom, String time, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -267,10 +267,10 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
           Expanded(
             child: Text(
               symptom,
-              style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textDark),
+              style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textDark),
             ),
           ),
-          Text(time, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          Text(time, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
         ],
       ),
     );

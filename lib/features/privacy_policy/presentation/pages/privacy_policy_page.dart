@@ -47,21 +47,21 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         backgroundColor: const Color(0xFFFAF6F8),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark),
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.textDark),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(5),
+              padding: EdgeInsets.all(5),
               decoration: const BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.shield_outlined, color: Colors.white, size: 16),
+              child: Icon(Icons.shield_outlined, color: Colors.white, size: 16),
             ),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               'Aviso de Privacidad',
               style: TextStyle(
                 color: AppColors.textDark,
@@ -81,70 +81,70 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               thumbVisibility: true,
               child: SingleChildScrollView(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSectionHeader('AVISO DE PRIVACIDAD INTEGRAL', Icons.privacy_tip_outlined),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBodyText(
                       'Maximiliano Diaz Clemente (persona física), en adelante "Salud Prenatal" o "el Responsable", con domicilio en Av Sauce #198, 29010 Albania Baja. Tuxtla Gutiérrez, Chiapas, es el responsable del uso y protección de sus datos personales.',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildSectionTitle('1. ¿Para qué fines utilizaremos sus datos personales?'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBodyText('Los datos que recabamos se utilizarán para las siguientes finalidades principales:'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBullet('Creación, estudio, análisis, actualización y conservación de su expediente clínico.'),
                     _buildBullet('Llevar un control y seguimiento de su embarazo, incluyendo semanas de gestación y cálculo de riesgo prenatal.'),
                     _buildBullet('Registro y gestión de consultas médicas, notas clínicas, objetivos y planes de tratamiento.'),
                     _buildBullet('Creación y administración de su cuenta de usuario dentro de la aplicación móvil.'),
                     _buildBullet('Agendamiento y gestión de citas médicas.'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildBodyText('Finalidades secundarias (puede oponerse enviando un correo a fitnesspro.soporte@gmail.com):'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBullet('Fines estadísticos, de investigación y análisis interno para la mejora de la aplicación (datos anonimizados).'),
                     _buildBullet('Envío de notificaciones relacionadas con actualizaciones o información general de salud materno-fetal.'),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildSectionTitle('2. ¿Qué datos personales utilizaremos?'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBullet('Datos de identificación y contacto: nombre completo, apellidos, correo electrónico, fecha de nacimiento y edad.'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildSensitiveDataBox(),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildSectionTitle('3. ¿Con quién compartimos su información?'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBodyText(
                       'Sus datos personales NO son compartidos con ninguna empresa, organización o persona distinta a nosotros, salvo en cumplimiento de obligaciones legales ante autoridades sanitarias o judiciales competentes, o en situaciones de riesgo inminente para su vida o salud.',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildSectionTitle('4. Derechos ARCO'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBodyText(
                       'Usted tiene derecho a Acceder, Rectificar, Cancelar u Oponerse al uso de sus datos personales. Para ejercer estos derechos envíe su solicitud a fitnesspro.soporte@gmail.com con su nombre, identificación oficial y descripción de su petición. Daremos respuesta en un plazo máximo de 20 días hábiles.',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildSectionTitle('5. Revocación del consentimiento'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBodyText(
                       'Puede revocar su consentimiento enviando un correo a fitnesspro.soporte@gmail.com. Considere que en ciertos casos, por obligación legal (NOM-004-SSA3-2012), podremos seguir conservando sus datos. La revocación puede implicar que no podamos seguir prestándole los servicios.',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildSectionTitle('6. Cambios al aviso de privacidad'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildBodyText(
                       'Este aviso puede modificarse. Le informaremos a través de la propia aplicación o mediante notificaciones al iniciar sesión.',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     _buildDateChip('Última actualización: 21 de junio de 2026'),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -164,7 +164,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               ],
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            padding: EdgeInsets.fromLTRB(24, 20, 24, 32),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -173,14 +173,14 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                   onChanged: (val) => setState(() => _acceptedPrivacy = val ?? false),
                   label: 'He leído el aviso de privacidad y acepto el tratamiento de mis datos personales para las finalidades descritas.',
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _buildCheckboxTile(
                   value: _acceptedSensitiveData,
                   onChanged: (val) => setState(() => _acceptedSensitiveData = val ?? false),
                   label: 'Otorgo mi consentimiento expreso para el tratamiento de mis datos personales sensibles (datos de salud y embarazo).',
                   isImportant: true,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -191,7 +191,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -201,7 +201,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                           color: _canContinue ? Colors.white : AppColors.textMuted,
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           'Acepto y Continúo',
                           style: TextStyle(
@@ -227,18 +227,18 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.textDark,
@@ -252,7 +252,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.bold,
         color: AppColors.primary,
@@ -263,7 +263,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   Widget _buildBodyText(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         color: AppColors.textDark,
         height: 1.6,
@@ -273,12 +273,12 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
   Widget _buildBullet(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 6),
+      padding: EdgeInsets.only(left: 8, bottom: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            margin: const EdgeInsets.only(top: 6),
+            margin: EdgeInsets.only(top: 6),
             width: 5,
             height: 5,
             decoration: const BoxDecoration(
@@ -286,11 +286,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, color: AppColors.textDark, height: 1.5),
+              style: TextStyle(fontSize: 13, color: AppColors.textDark, height: 1.5),
             ),
           ),
         ],
@@ -300,7 +300,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
   Widget _buildSensitiveDataBox() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E5),
         borderRadius: BorderRadius.circular(16),
@@ -323,7 +323,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _buildBullet('Historial Ginecobstétrico: embarazos previos, partos, cesáreas y abortos.'),
           _buildBullet('Antecedentes patológicos: hipertensión, diabetes, preeclampsia, enfermedad renal crónica, entre otros.'),
           _buildBullet('Antecedentes familiares de hipertensión y enfermedades cardíacas.'),
@@ -336,14 +336,14 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
   Widget _buildDateChip(String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F7),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+        style: TextStyle(fontSize: 11, color: AppColors.textMuted),
       ),
     );
   }
@@ -357,7 +357,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: value
               ? (isImportant
@@ -381,7 +381,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               visualDensity: VisualDensity.compact,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: Text(
                 label,

@@ -109,21 +109,21 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       ),
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'Enviar Recomendación Rápida',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textDark),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               ...templates.map((tpl) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: EdgeInsets.only(bottom: 8),
                 elevation: 0,
-                color: const Color(0xFFF5F5F7),
+                color: AppColors.background,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
@@ -131,15 +131,15 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     _messageController.text = tpl;
                   },
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: EdgeInsets.all(12.0),
                     child: Text(
                       tpl,
-                      style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+                      style: TextStyle(fontSize: 13, color: AppColors.textDark),
                     ),
                   ),
                 ),
               )),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             ],
           ),
         );
@@ -163,7 +163,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           }
 
           return Scaffold(
-            backgroundColor: const Color(0xFFF5F5F7),
+            backgroundColor: AppColors.background,
             appBar: _buildAppBar(provider),
             body: Column(
               children: [
@@ -172,8 +172,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   Container(
                     width: double.infinity,
                     color: Colors.orange.shade100,
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                    child: const Row(
+                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
@@ -193,7 +193,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 // Chat Messages List
                 Expanded(
                   child: provider.isLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                      ? Center(child: CircularProgressIndicator(color: AppColors.primary))
                       : provider.messages.isEmpty
                           ? _buildWelcomeMessage()
                           : _buildMessageList(provider.messages, currentUserId),
@@ -217,11 +217,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         
     return AppBar(
       titleSpacing: 0,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       elevation: 2,
       shadowColor: Colors.black.withAlpha(20),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+        icon: Icon(Icons.arrow_back, color: AppColors.textDark),
         onPressed: () => Navigator.pop(context),
       ),
       title: Row(
@@ -231,17 +231,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             backgroundColor: AppColors.primaryLight,
             child: Text(
               initials,
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   widget.otherUserName,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
                 ),
                 Row(
                   children: [
@@ -253,7 +253,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       provider.isConnected ? 'En línea' : 'Desconectado',
                       style: TextStyle(
@@ -271,10 +271,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.info_outline, color: AppColors.textMuted),
+          icon: Icon(Icons.info_outline, color: AppColors.textMuted),
           onPressed: () {},
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
       ],
     );
   }
@@ -283,11 +283,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   Widget _buildWelcomeMessage() {
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
@@ -304,13 +304,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Conversación con ${widget.otherUserName}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
             ),
-            const SizedBox(height: 6),
-            const Text(
+            SizedBox(height: 6),
+            Text(
               'Este chat es privado y está diseñado para dar seguimiento y resolver dudas. Envía un mensaje para comenzar la conversación.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
@@ -340,7 +340,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemCount: listItems.length,
       itemBuilder: (context, index) => listItems[index],
     );
@@ -360,15 +360,15 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        margin: EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
         ),
       ),
     );
@@ -386,13 +386,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: EdgeInsets.only(bottom: 8),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primary : Colors.white,
+          color: isMe ? AppColors.primary : AppColors.cardBackground,
           gradient: isMe 
               ? LinearGradient(
                   colors: [AppColors.primary, AppColors.primary.withRed(220)],
@@ -425,7 +425,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 height: 1.3,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -437,7 +437,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   ),
                 ),
                 if (isMe) ...[
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Icon(
                     message.isRead ? Icons.done_all : Icons.done,
                     color: Colors.white70,
@@ -455,9 +455,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   // --- INPUT CONTROL BAR BUILDER ---
   Widget _buildInputBar(bool isDoctor) {
     return Container(
-      padding: const EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 24),
+      padding: EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(10),
@@ -472,7 +472,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           GestureDetector(
             onTap: isDoctor ? _showDoctorTipsMenu : _sendLatestMeasurement,
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.primaryLight,
                 shape: BoxShape.circle,
@@ -485,7 +485,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           
           // Text Input Field
           Expanded(
@@ -495,10 +495,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               maxLines: null,
               decoration: InputDecoration(
                 hintText: 'Escribe un mensaje...',
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
                 filled: true,
                 fillColor: const Color(0xFFF5F5F7),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -515,18 +515,18 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           
           // Send Button
           GestureDetector(
             onTap: _sendMessage,
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               decoration: const BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.send,
                 color: Colors.white,
                 size: 18,

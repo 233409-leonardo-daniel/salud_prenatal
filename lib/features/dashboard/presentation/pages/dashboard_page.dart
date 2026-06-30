@@ -4,6 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../../data/models/medical_record_response.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
@@ -66,7 +67,7 @@ class _DashboardPageState extends State<DashboardPage> {
       appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
       
       final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
-      context.read<PatientDiariesProvider>().loadDiaries(medicalRecordId);
+      diariesProvider.loadDiaries(medicalRecordId);
     }
   }
 
@@ -85,7 +86,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavBar(),
@@ -113,14 +114,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 backgroundColor: AppColors.primaryLight,
                 child: Text(
                   doctorInitial,
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Buenos días,',
                     style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.normal),
                   ),
@@ -135,16 +136,16 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             IconButton(
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0EFF4),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
+                child: Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
               ),
               onPressed: () {},
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
           ],
         );
       } else if (_currentTab == 1) {
@@ -158,10 +159,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 backgroundColor: AppColors.primaryLight,
                 child: Text(
                   doctorInitial,
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Text(
                 'Salud Prenatal',
                 style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
@@ -170,7 +171,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+              icon: Icon(Icons.add_circle_outline, color: AppColors.primary),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -179,10 +180,10 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
+              icon: Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
               onPressed: () {},
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
           ],
         );
       }
@@ -231,21 +232,21 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildPlaceholderView(String description) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.construction_outlined, size: 64, color: AppColors.primary),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.construction_outlined, size: 64, color: AppColors.primary),
+            SizedBox(height: 16),
+            Text(
               'En Construcción',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               description,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: AppColors.textMuted),
             ),
           ],
         ),
@@ -258,7 +259,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildDoctorDashboard() {
     final dashboardProvider = context.watch<DashboardProvider>();
     if (dashboardProvider.isLoading) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
@@ -289,12 +290,12 @@ class _DashboardPageState extends State<DashboardPage> {
         priorityAlerts.add(
           _buildAlertCard(fullName, 'Riesgo de Preeclampsia (Alto)', initials),
         );
-        priorityAlerts.add(const SizedBox(height: 12));
+        priorityAlerts.add(SizedBox(height: 12));
       }
     }
     if (priorityAlerts.isEmpty) {
       priorityAlerts.add(
-        const Card(
+        Card(
           elevation: 0,
           color: Colors.white,
           child: Padding(
@@ -306,55 +307,55 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               _buildDoctorStatCard('Total Pacientes', totalPatientsStr, Icons.people_outline, Colors.pink),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               _buildDoctorStatCard('Citas Hoy', citasHoyStr, Icons.calendar_today_outlined, Colors.teal),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Alertas Prioritarias Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Alertas Prioritarias',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
               TextButton(
                 onPressed: () {},
-                child: const Text(
+                child: Text(
                   'Ver todas',
                   style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ...priorityAlerts,
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Próximas Citas Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Próximas Citas',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE5E5EA),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.calendar_today, size: 12, color: AppColors.textDark),
                     SizedBox(width: 4),
@@ -367,10 +368,10 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           if (todayAppointments.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 24.0),
               child: Center(
                 child: Text(
@@ -398,7 +399,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ],
               );
             }),
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
         ],
       ),
     );
@@ -407,7 +408,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildDoctorStatCard(String title, String count, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -423,15 +424,15 @@ class _DashboardPageState extends State<DashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 28),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               count,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
           ],
         ),
@@ -441,7 +442,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildAlertCard(String name, String alert, String initials) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -467,32 +468,32 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           CircleAvatar(
             backgroundColor: const Color(0xFFFFEBEA),
             radius: 20,
             child: Text(
               initials,
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
-                    const SizedBox(width: 4),
+                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
+                    SizedBox(width: 4),
                     Text(
                       alert,
-                      style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                      style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -504,13 +505,13 @@ class _DashboardPageState extends State<DashboardPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               minimumSize: Size.zero,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Detalle',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
@@ -522,7 +523,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildDoctorAppointmentItem(String time, String name, String subtitle, bool isUrgent) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: 16),
       color: Colors.white,
       child: Row(
         children: [
@@ -533,11 +534,11 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Text(
                   time.split(' ')[0],
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
                 ),
                 Text(
                   time.split(' ')[1],
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -547,16 +548,16 @@ class _DashboardPageState extends State<DashboardPage> {
             height: 30,
             color: Colors.pink.shade50,
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(
@@ -569,7 +570,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
+            icon: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
             onPressed: () {},
           ),
         ],
@@ -584,7 +585,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildPatientDashboard() {
     final dashboardProvider = context.watch<DashboardProvider>();
     if (dashboardProvider.isLoading) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
@@ -602,13 +603,25 @@ class _DashboardPageState extends State<DashboardPage> {
     String patientRisk = 'Bajo';
 
     if (medicalRecord != null) {
-      if (medicalRecord.previousPreeclampsia || 
-          medicalRecord.chronicHypertension || 
-          medicalRecord.previousHypertension) {
-        patientRisk = 'Alto';
-      } else if (medicalRecord.diabetes || 
-                 medicalRecord.familyHistoryHypertension) {
-        patientRisk = 'Medio';
+      if (medicalRecord.riskPrediction?.diagnosis != null &&
+          medicalRecord.riskPrediction!.diagnosis!.isNotEmpty) {
+        final diagnosis = medicalRecord.riskPrediction!.diagnosis!.toLowerCase();
+        if (diagnosis.contains('alto') || diagnosis.contains('crítico') || diagnosis.contains('critico')) {
+          patientRisk = 'Alto';
+        } else if (diagnosis.contains('medio') || diagnosis.contains('moderado')) {
+          patientRisk = 'Medio';
+        } else {
+          patientRisk = 'Bajo';
+        }
+      } else {
+        if (medicalRecord.previousPreeclampsia || 
+            medicalRecord.chronicHypertension || 
+            medicalRecord.previousHypertension) {
+          patientRisk = 'Alto';
+        } else if (medicalRecord.diabetes || 
+                   medicalRecord.familyHistoryHypertension) {
+          patientRisk = 'Medio';
+        }
       }
     }
 
@@ -636,12 +649,10 @@ class _DashboardPageState extends State<DashboardPage> {
     
     String docNameStr = 'Sin médico';
     String docSpecialtyStr = 'Especialidad no especificada';
-    String? docImageStr;
 
     if (dashboardProvider.dashboardData?['current_doctor'] != null) {
       docNameStr = dashboardProvider.dashboardData!['current_doctor'];
       docSpecialtyStr = dashboardProvider.dashboardData?['current_doctor_specialty'] ?? docSpecialtyStr;
-      docImageStr = dashboardProvider.dashboardData?['current_doctor_image'];
     } else if (nextApp != null) {
       docNameStr = nextApp.doctorName;
     }
@@ -684,7 +695,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
+      padding: EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -698,19 +709,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     children: [
                       Text(
                         'Hola, $displayName',
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
                       ),
-                      const SizedBox(width: 4),
-                      const Text(
+                      SizedBox(width: 4),
+                      Text(
                         '👋',
                         style: TextStyle(fontSize: 22),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     'Semana $currentWeeks de embarazo',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
                   ),
                 ],
               ),
@@ -719,18 +730,18 @@ class _DashboardPageState extends State<DashboardPage> {
                 backgroundColor: AppColors.primaryLight,
                 child: Text(
                   displayName.isNotEmpty ? displayName[0].toUpperCase() : 'P',
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
 
           // Banner de vinculación si no tiene doctor
           if (dashboardProvider.dashboardData?['current_doctor'] == null)
             Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              padding: const EdgeInsets.all(16),
+              margin: EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF0F6),
                 borderRadius: BorderRadius.circular(20),
@@ -739,31 +750,31 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.medical_services_outlined, color: AppColors.primary),
+                    child: Icon(Icons.medical_services_outlined, color: AppColors.primary),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Aún no tienes un médico',
                           style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 15),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
+                        SizedBox(height: 4),
+                        Text(
                           'Vincúlate usando el código de invitación.',
                           style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () async {
                       final result = await Navigator.push(
@@ -779,23 +790,23 @@ class _DashboardPageState extends State<DashboardPage> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
-                    child: const Text('Vincular', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('Vincular', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
             ),
 
           // MI ESTADO DE HOY Section
-          const Text(
+          Text(
             'MI ESTADO DE HOY',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           if (diariesProvider.isLoading)
-            const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            Center(child: CircularProgressIndicator(color: AppColors.primary))
           else if (diariesProvider.diaries.isNotEmpty)
             LatestDiaryRecordCard(
               systolic: diariesProvider.diaries.first.systolic,
@@ -804,20 +815,20 @@ class _DashboardPageState extends State<DashboardPage> {
             )
           else
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: const Text(
+              child: Text(
                 'Aún no tienes registros en tu bitácora.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textMuted),
               ),
             ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           ElevatedButton.icon(
             onPressed: () {
@@ -826,26 +837,32 @@ class _DashboardPageState extends State<DashboardPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14),
             ),
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            label: const Text(
+            icon: Icon(Icons.add_circle_outline, color: Colors.white),
+            label: Text(
               'Registrar medición',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
+
+          if (medicalRecord?.riskPrediction?.diagnosis != null &&
+              medicalRecord!.riskPrediction!.diagnosis!.isNotEmpty) ...[
+            _buildRiskPredictionBanner(medicalRecord.riskPrediction!),
+            SizedBox(height: 28),
+          ],
 
           // MI PRÓXIMA CITA Section
-          const Text(
+          Text(
             'MI PRÓXIMA CITA',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Magenta Card
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.primary, AppColors.primary.withRed(220)],
@@ -867,7 +884,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha(51),
                         borderRadius: BorderRadius.circular(16),
@@ -880,31 +897,31 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           Text(
                             dayStr,
-                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             timeStr,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             reasonStr,
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Row(
                   children: [
                     CircleAvatar(
@@ -914,17 +931,17 @@ class _DashboardPageState extends State<DashboardPage> {
                         docNameStr.isNotEmpty
                             ? docNameStr.replaceAll(RegExp(r'^(Dr\.|Dra\.)\s*', caseSensitive: false), '')[0].toUpperCase()
                             : 'D',
-                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             docNameStr,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
                             docSpecialtyStr,
@@ -935,7 +952,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
@@ -953,13 +970,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white.withAlpha(51),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Text('Ver detalles', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        child: Text('Ver detalles', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -989,10 +1006,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.chat_bubble_outline, size: 14),
@@ -1007,31 +1024,31 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
 
           // SEGUIMIENTO SEMANAL Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'SEGUIMIENTO SEMANAL',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
               ),
               TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
-                child: const Text(
+                child: Text(
                   'Presión Sistólica',
                   style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Weekly chart card mockup
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
@@ -1053,12 +1070,12 @@ class _DashboardPageState extends State<DashboardPage> {
                     children: barsList,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: dayLabelsList,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   patientRisk == 'Alto'
                       ? 'Atención: Tu presión muestra variaciones. Reporta cualquier malestar de inmediato.'
@@ -1069,30 +1086,30 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
 
           // COMUNIDAD Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'COMUNIDAD',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
               ),
               TextButton(
                 onPressed: () {},
-                child: const Text(
+                child: Text(
                   'Ver más',
                   style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
 
           // Doctor Tip card
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -1109,16 +1126,16 @@ class _DashboardPageState extends State<DashboardPage> {
                     borderRadius: BorderRadius.only(topLeft: Radius.circular(4), bottomLeft: Radius.circular(4)),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Dra. Sofia - Consejos',
                         style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Text(
                         '"Es normal sentir más cansancio en la semana $currentWeeks. Recuerda hidratarte bien y..."',
                         style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade700, fontSize: 12),
@@ -1129,11 +1146,11 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Community Question card
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -1151,25 +1168,25 @@ class _DashboardPageState extends State<DashboardPage> {
                           backgroundColor: Colors.amber,
                           child: Text('M', style: TextStyle(color: Colors.white, fontSize: 8)),
                         ),
-                        const SizedBox(width: 8),
-                        const Text(
+                        SizedBox(width: 8),
+                        Text(
                           'María R.',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
                         ),
                       ],
                     ),
-                    const Text('Hace 2h', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                    Text('Hace 2h', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
                   ],
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                SizedBox(height: 10),
+                Text(
                   '¿Alguna recomendación para dormir mejor en este trimestre? 🤰✨',
                   style: TextStyle(fontSize: 13, color: AppColors.textDark),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
         ],
       ),
     );
@@ -1259,7 +1276,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Navigator.pushNamed(context, '/patient-diaries');
               },
               child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: EdgeInsets.only(bottom: 12),
                 width: 50,
                 height: 50,
                 decoration: const BoxDecoration(
@@ -1268,12 +1285,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
                 ),
                 child: Container(
-                  margin: const EdgeInsets.all(4),
+                  margin: EdgeInsets.all(4),
                   decoration: const BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                  child: Icon(Icons.add, color: Colors.white, size: 28),
                 ),
               ),
             ),
@@ -1301,13 +1318,101 @@ class _DashboardPageState extends State<DashboardPage> {
             color: isSelected ? AppColors.primary : AppColors.textMuted,
             size: 24,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               color: isSelected ? AppColors.primary : AppColors.textMuted,
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRiskPredictionBanner(RiskPrediction prediction) {
+    final isHigh = prediction.diagnosis!.toLowerCase().contains('alto') ||
+        prediction.diagnosis!.toLowerCase().contains('crítico') ||
+        prediction.diagnosis!.toLowerCase().contains('critico');
+    final isMedium = prediction.diagnosis!.toLowerCase().contains('medio') ||
+        prediction.diagnosis!.toLowerCase().contains('moderado');
+
+    final Color bgColor = isHigh
+        ? AppColors.riskHighBg
+        : (isMedium ? AppColors.riskMediumBg : AppColors.riskLowBg);
+    final Color textColor = isHigh
+        ? AppColors.riskHighText
+        : (isMedium ? AppColors.riskMediumText : AppColors.riskLowText);
+    final Color iconColor = isHigh
+        ? Colors.red
+        : (isMedium ? Colors.orange : Colors.teal);
+    final IconData icon = isHigh
+        ? Icons.warning_amber_rounded
+        : (isMedium ? Icons.info_outline : Icons.check_circle_outline);
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: iconColor.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Predicción de Riesgo IA',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    if (prediction.riskCluster != null)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: textColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'C${prediction.riskCluster}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  prediction.diagnosis!,
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

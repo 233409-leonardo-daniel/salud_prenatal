@@ -152,7 +152,11 @@ class MyApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         initialRoute: '/login',
-        builder: (context, child) => SessionTimeoutListener(child: child!),
+        builder: (context, child) {
+          final brightness = MediaQuery.of(context).platformBrightness;
+          AppColors.isDarkMode = brightness == Brightness.dark;
+          return SessionTimeoutListener(child: child!);
+        },
         routes: {
           '/login': (context) => const LoginPage(),
           '/register': (context) => const RegisterPage(),

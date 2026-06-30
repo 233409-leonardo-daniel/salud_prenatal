@@ -50,8 +50,8 @@ class _LoginPageState extends State<LoginPage> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
                   Text(
                       '¡Sesión Iniciada! Rol: ${role == 'doctor' ? 'Médico' : (role == 'receptionist' ? 'Recepcionista' : 'Paciente')}'),
                 ],
@@ -72,8 +72,8 @@ class _LoginPageState extends State<LoginPage> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error, color: Colors.white),
-                  const SizedBox(width: 8),
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 8),
                   Expanded(child: Text(errMsg)),
                 ],
               ),
@@ -92,30 +92,30 @@ class _LoginPageState extends State<LoginPage> {
     final isLoading = loginProvider.status == LoginStatus.loading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F8),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding:
-                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Brand Logo Circle
+                  // App Brand Logo Circle (Enlarged)
                   Center(
                     child: SizedBox(
-                      width: 160,
-                      height: 160,
+                      width: 220,
+                      height: 220,
                       child: Image.asset(
                         'assets/logo_integrador-removebg-preview.png',
                         fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
 
                   // Title and Subtitle
                   Text(
@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Tu app de confianza en el camino a la maternidad.',
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -134,13 +134,13 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
 
                   // Main Form Card
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
@@ -161,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                             color: AppColors.textDark,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -180,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
 
                         // Password input
                         Row(
@@ -200,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                                 tapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
                               ),
-                              child: const Text(
+                              child: Text(
                                 '¿Olvidaste tu contraseña?',
                                 style: TextStyle(
                                   color: AppColors.primary,
@@ -211,13 +211,13 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: !_isPasswordVisible,
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            prefixIcon: Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _isPasswordVisible
@@ -238,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
 
                         // Submit button
                         ElevatedButton(
@@ -246,13 +246,13 @@ class _LoginPageState extends State<LoginPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             padding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                                EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
                           child: isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
@@ -262,7 +262,7 @@ class _LoginPageState extends State<LoginPage> {
                                             Colors.white),
                                   ),
                                 )
-                              : const Row(
+                              : Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.center,
                                   children: [
@@ -280,71 +280,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                         ),
-                        const SizedBox(height: 24),
-
-                        // Divider
-                        Row(
-                          children: [
-                            const Expanded(
-                                child: Divider(color: Color(0xFFE5E5EA))),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0),
-                              child: Text(
-                                'O CONTINUAR CON',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: AppColors.textMuted,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const Expanded(
-                                child: Divider(color: Color(0xFFE5E5EA))),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Google button
-                        OutlinedButton(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            side: const BorderSide(
-                                color: Color(0xFFE5E5EA)),
-                            backgroundColor: Colors.white,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.network(
-                                'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
-                                height: 20,
-                                width: 20,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.g_mobiledata,
-                                      color: Colors.blue);
-                                },
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Continuar con Google',
-                                style: TextStyle(
-                                  color: AppColors.textDark,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   // Help prompt for testing
                   Center(
                     child: Text(
@@ -356,13 +295,13 @@ class _LoginPageState extends State<LoginPage> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
 
                   // Footer navigation
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         '¿No tienes una cuenta? ',
                         style: TextStyle(color: AppColors.textMuted),
                       ),
@@ -371,7 +310,7 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.pushReplacementNamed(
                               context, '/register');
                         },
-                        child: const Text(
+                        child: Text(
                           'Regístrate ahora',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,

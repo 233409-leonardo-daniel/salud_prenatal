@@ -15,7 +15,7 @@ class ProfilePage extends StatelessWidget {
     final initial = loginProvider.name.isNotEmpty ? loginProvider.name[0].toUpperCase() : 'U';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -27,17 +27,17 @@ class ProfilePage extends StatelessWidget {
                 backgroundColor: const Color(0xFFFFE0EF),
                 child: Text(
                   initial,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Mi Perfil',
                     style: TextStyle(
@@ -55,11 +55,11 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
 
           // User Information details card
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
@@ -105,7 +105,7 @@ class ProfilePage extends StatelessWidget {
                       ? 'Médico / Especialista'
                       : 'Paciente',
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(
@@ -113,14 +113,14 @@ class ProfilePage extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => const EditProfilePage()),
                     );
                   },
-                  icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
-                  label: const Text(
+                  icon: Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                  label: Text(
                     'Editar Perfil',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -130,15 +130,15 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Accepted policies section
           const _AcceptedPoliciesTile(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Account deletion section (expandable)
           _AccountDeletionTile(),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Logout Button
           ElevatedButton.icon(
@@ -147,14 +147,14 @@ class ProfilePage extends StatelessWidget {
               loginProvider.reset();
               Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
             },
-            icon: const Icon(Icons.logout_rounded, size: 18, color: Colors.white),
-            label: const Text(
+            icon: Icon(Icons.logout_rounded, size: 18, color: Colors.white),
+            label: Text(
               'Cerrar Sesión',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent.shade200,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -174,26 +174,26 @@ class ProfilePage extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.06),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: AppColors.primary, size: 18),
         ),
-        const SizedBox(width: 14),
+        SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
@@ -251,18 +251,18 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          tilePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           childrenPadding: EdgeInsets.zero,
-          shape: const Border(),
+          shape: Border(),
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.policy_outlined, color: AppColors.primary, size: 20),
+            child: Icon(Icons.policy_outlined, color: AppColors.primary, size: 20),
           ),
-          title: const Text(
+          title: Text(
             'Políticas Aceptadas',
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -270,7 +270,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
               fontSize: 14,
             ),
           ),
-          subtitle: const Text(
+          subtitle: Text(
             'Consulta las políticas que aceptaste al registrarte',
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
@@ -280,11 +280,11 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Consumer<PrivacyPolicyProvider>(
                 builder: (context, provider, _) {
                   if (provider.isLoading) {
-                    return const Center(
+                    return Center(
                       child: Padding(
                         padding: EdgeInsets.all(20),
                         child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
@@ -294,16 +294,16 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
 
                   if (provider.acceptedPolicies.isEmpty) {
                     return Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F7),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline, color: AppColors.textMuted, size: 18),
-                          const SizedBox(width: 10),
-                          const Expanded(
+                          Icon(Icons.info_outline, color: AppColors.textMuted, size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
                             child: Text(
                               'No se encontraron políticas aceptadas para esta cuenta.',
                               style: TextStyle(fontSize: 13, color: AppColors.textMuted),
@@ -318,7 +318,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF0FFF4),
                           borderRadius: BorderRadius.circular(12),
@@ -326,12 +326,12 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.verified_user_outlined, color: Color(0xFF2E7D32), size: 18),
-                            const SizedBox(width: 10),
+                            Icon(Icons.verified_user_outlined, color: Color(0xFF2E7D32), size: 18),
+                            SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 '${provider.acceptedPolicies.length} política(s) aceptada(s)',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF2E7D32),
@@ -341,7 +341,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14),
                       ...provider.acceptedPolicies.map((policy) => _buildPolicyCard(policy)),
                     ],
                   );
@@ -369,8 +369,8 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
     final bool isSensitive = policy.policyId.contains('sensitive');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isSensitive ? const Color(0xFFFFF8E1) : const Color(0xFFF5F5F7),
         borderRadius: BorderRadius.circular(14),
@@ -388,7 +388,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                 color: isSensitive ? const Color(0xFFE65100) : AppColors.primary,
                 size: 18,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   policy.policyTitle,
@@ -400,12 +400,12 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
+                child: Text(
                   'Aceptada',
                   style: TextStyle(
                     fontSize: 10,
@@ -416,25 +416,25 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textMuted),
-              const SizedBox(width: 6),
+              Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textMuted),
+              SizedBox(width: 6),
               Text(
                 formattedDate,
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.email_outlined, size: 12, color: AppColors.textMuted),
-              const SizedBox(width: 6),
+              Icon(Icons.email_outlined, size: 12, color: AppColors.textMuted),
+              SizedBox(width: 6),
               Text(
                 policy.userEmail,
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ],
           ),
@@ -462,18 +462,18 @@ class _AccountDeletionTile extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          tilePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           childrenPadding: EdgeInsets.zero,
-          shape: const Border(),
+          shape: Border(),
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: const Color(0xFFFFEBEA),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.delete_outline, color: Color(0xFFD32F2F), size: 20),
+            child: Icon(Icons.delete_outline, color: Color(0xFFD32F2F), size: 20),
           ),
-          title: const Text(
+          title: Text(
             'Eliminar mi cuenta',
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -481,7 +481,7 @@ class _AccountDeletionTile extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-          subtitle: const Text(
+          subtitle: Text(
             'Conoce cómo solicitar la eliminación de tus datos',
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
@@ -491,15 +491,15 @@ class _AccountDeletionTile extends StatelessWidget {
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildInfoText(
                     'En Salud Prenatal respetamos tu privacidad y tu derecho a controlar tus datos personales. Si deseas eliminar tu cuenta y todos los datos asociados, puedes solicitarlo siguiendo estos pasos:',
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: 16),
+                  Text(
                     'Pasos para solicitar la eliminación',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -507,26 +507,26 @@ class _AccountDeletionTile extends StatelessWidget {
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _buildStep('1', 'Abre tu correo electrónico (preferiblemente el mismo con el que te registraste).'),
                   _buildStep('2', 'Redacta un correo dirigido a: fitnesspro.soporte@gmail.com'),
                   _buildStep('3', 'En el asunto escribe: "Solicitud de eliminación de cuenta - Salud Prenatal".'),
                   _buildStep('4', 'Incluye tu nombre completo y el correo asociado a tu cuenta.'),
                   _buildStep('5', '(Opcional) Cuéntanos brevemente el motivo de tu baja.'),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.schedule_outlined, color: AppColors.primary, size: 18),
-                        const SizedBox(width: 10),
+                        Icon(Icons.schedule_outlined, color: AppColors.primary, size: 18),
+                        SizedBox(width: 10),
                         Expanded(
                           child: RichText(
-                            text: const TextSpan(
+                            text: TextSpan(
                               style: TextStyle(fontSize: 13, color: AppColors.textDark),
                               children: [
                                 TextSpan(text: 'Tiempo de respuesta: '),
@@ -542,8 +542,8 @@ class _AccountDeletionTile extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: 16),
+                  Text(
                     '¿Qué datos se eliminan y cuáles se conservan?',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -551,7 +551,7 @@ class _AccountDeletionTile extends StatelessWidget {
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _buildDataRow(
                     icon: Icons.delete_forever_outlined,
                     color: const Color(0xFFD32F2F),
@@ -560,7 +560,7 @@ class _AccountDeletionTile extends StatelessWidget {
                     description:
                         'Cuenta de usuario, contraseñas, datos de contacto (nombre, correo) e historial médico personal (datos ginecobstétricos, signos vitales, notas de consulta y riesgos calculados).',
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _buildDataRow(
                     icon: Icons.lock_outline,
                     color: const Color(0xFF00796B),
@@ -569,12 +569,12 @@ class _AccountDeletionTile extends StatelessWidget {
                     description:
                         'Únicamente información disociada o anonimizada (estadísticas sin identidad) para fines de investigación, o datos que por ley debamos resguardar temporalmente ante auditorías sanitarias.',
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.email_outlined, color: AppColors.textMuted, size: 16),
-                      const SizedBox(width: 6),
-                      const Expanded(
+                      Icon(Icons.email_outlined, color: AppColors.textMuted, size: 16),
+                      SizedBox(width: 6),
+                      Expanded(
                         child: Text(
                           '¿Dudas? Contáctanos en fitnesspro.soporte@gmail.com',
                           style: TextStyle(fontSize: 12, color: AppColors.textMuted),
@@ -594,13 +594,13 @@ class _AccountDeletionTile extends StatelessWidget {
   Widget _buildInfoText(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 13, color: AppColors.textDark, height: 1.6),
+      style: TextStyle(fontSize: 13, color: AppColors.textDark, height: 1.6),
     );
   }
 
   Widget _buildStep(String number, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -614,7 +614,7 @@ class _AccountDeletionTile extends StatelessWidget {
             child: Center(
               child: Text(
                 number,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -622,11 +622,11 @@ class _AccountDeletionTile extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, color: AppColors.textDark, height: 1.5),
+              style: TextStyle(fontSize: 13, color: AppColors.textDark, height: 1.5),
             ),
           ),
         ],
@@ -642,7 +642,7 @@ class _AccountDeletionTile extends StatelessWidget {
     required String description,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(14),
@@ -651,14 +651,14 @@ class _AccountDeletionTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 16),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -667,10 +667,10 @@ class _AccountDeletionTile extends StatelessWidget {
                   label,
                   style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textDark, height: 1.5),
+                  style: TextStyle(fontSize: 12, color: AppColors.textDark, height: 1.5),
                 ),
               ],
             ),

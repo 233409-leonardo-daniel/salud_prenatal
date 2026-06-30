@@ -67,7 +67,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.otherUserName, style: const TextStyle(fontSize: 16)),
+            Text(widget.otherUserName, style: TextStyle(fontSize: 16)),
             Text(
               chatProvider.isConnected ? 'En línea' : 'Desconectado',
               style: TextStyle(
@@ -78,18 +78,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           ],
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
           Expanded(
             child: chatProvider.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator())
                 : chatProvider.errorMessage != null
                     ? Center(child: Text(chatProvider.errorMessage!))
                     : ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         itemCount: chatProvider.messages.length,
                         itemBuilder: (context, index) {
                           final msg = chatProvider.messages[index];
@@ -108,8 +108,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        margin: EdgeInsets.symmetric(vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isMe ? AppColors.primary : Colors.grey.shade200,
           borderRadius: BorderRadius.only(
@@ -129,7 +129,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   Widget _buildMessageInput(ChatProvider provider) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       color: Colors.white,
       child: Row(
         children: [
@@ -144,7 +144,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                 ),
                 filled: true,
                 fillColor: Colors.grey.shade100,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               onSubmitted: (_) {
                 if (_messageController.text.isNotEmpty) {
@@ -154,11 +154,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               },
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           CircleAvatar(
             backgroundColor: AppColors.primary,
             child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.white),
+              icon: Icon(Icons.send, color: Colors.white),
               onPressed: () {
                 if (_messageController.text.isNotEmpty) {
                   provider.sendMessage(_messageController.text);

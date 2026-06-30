@@ -66,22 +66,22 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
-        title: const Text('Nueva Cita', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Nueva Cita', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _reasonController,
               decoration: const InputDecoration(labelText: 'Motivo de la Cita'),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ListTile(
               title: Text(_selectedDate == null ? 'Seleccionar Fecha' : '${_selectedDate!.toLocal()}'.split(' ')[0]),
-              trailing: const Icon(Icons.calendar_today),
+              trailing: Icon(Icons.calendar_today),
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
@@ -96,7 +96,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
             ),
             ListTile(
               title: Text(_selectedTime == null ? 'Seleccionar Hora' : _selectedTime!.format(context)),
-              trailing: const Icon(Icons.access_time),
+              trailing: Icon(Icons.access_time),
               onTap: () async {
                 final time = await showTimePicker(
                   context: context,
@@ -107,7 +107,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                 }
               },
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             if (provider.status == CreateAppointmentStatus.loading)
               const CircularProgressIndicator()
             else
@@ -117,7 +117,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   backgroundColor: AppColors.primary,
                   minimumSize: const Size.fromHeight(50),
                 ),
-                child: const Text('Guardar Cita', style: TextStyle(color: Colors.white, fontSize: 16)),
+                child: Text('Guardar Cita', style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
           ],
         ),

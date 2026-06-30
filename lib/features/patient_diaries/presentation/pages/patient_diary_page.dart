@@ -112,7 +112,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.cardBackground,
               surfaceTintColor: Colors.transparent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               title: Row(
@@ -122,10 +122,10 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                     color: AppColors.primary,
                     size: 28,
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Text(
                     diary != null ? 'Editar Registro' : 'Nueva Medición',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textDark,
                       fontSize: 20,
@@ -140,11 +140,11 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         'Ingresa tus mediciones del día. Es importante no omitir ningún dato.',
                         style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       Row(
                         children: [
                           Expanded(
@@ -169,7 +169,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
                               controller: diastolicController,
@@ -194,7 +194,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       TextFormField(
                         controller: weightController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -215,7 +215,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       TextFormField(
                         controller: symptomsController,
                         enabled: !isSubmitting,
@@ -225,7 +225,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                           prefixIcon: Icon(Icons.sick_outlined, color: AppColors.primary, size: 20),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       TextFormField(
                         controller: notesController,
                         enabled: !isSubmitting,
@@ -243,7 +243,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
               actions: [
                 TextButton(
                   onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-                  child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                  child: Text('Cancelar', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
                 ),
                 ElevatedButton(
                   onPressed: isSubmitting ? null : () async {
@@ -321,15 +321,15 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   child: isSubmitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : Text(diary == null ? 'Registrar' : 'Guardar', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      : Text(diary == null ? 'Registrar' : 'Guardar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -349,15 +349,15 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.cardBackground,
               surfaceTintColor: Colors.transparent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: const Text('Eliminar Registro', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-              content: const Text('¿Estás segura de que deseas eliminar esta medición de tu bitácora? Esta acción no se puede deshacer.'),
+              title: Text('Eliminar Registro', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              content: Text('¿Estás segura de que deseas eliminar esta medición de tu bitácora? Esta acción no se puede deshacer.'),
               actions: [
                 TextButton(
                   onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-                  child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+                  child: Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isSubmitting ? null : () async {
@@ -392,12 +392,12 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: isSubmitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text('Eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      : Text('Eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -412,28 +412,28 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     final diariesProvider = context.watch<PatientDiariesProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Mi Bitácora de Salud',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _buildBody(diariesProvider),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFormDialog(context),
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Nueva medición', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: Icon(Icons.add, color: Colors.white),
+        label: Text('Nueva medición', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
   Widget _buildBody(PatientDiariesProvider provider) {
     if (provider.isLoading && provider.diaries.isEmpty) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
@@ -441,21 +441,21 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     if (provider.status == PatientDiariesStatus.error && provider.diaries.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 54, color: Colors.red),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: 54, color: Colors.red),
+              SizedBox(height: 16),
               Text(
                 provider.errorMessage ?? 'Ocurrió un error al cargar la bitácora.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _loadData,
-                child: const Text('Reintentar'),
+                child: Text('Reintentar'),
               ),
             ],
           ),
@@ -466,34 +466,34 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     if (provider.diaries.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.auto_stories_outlined, size: 64, color: AppColors.primary),
+                child: Icon(Icons.auto_stories_outlined, size: 64, color: AppColors.primary),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: 24),
+              Text(
                 'Tu bitácora está vacía',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 8),
+              Text(
                 'Llevar un registro diario de tu presión arterial y peso te ayuda a prevenir complicaciones durante tu embarazo.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textMuted, fontSize: 14),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => _showFormDialog(context),
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text('Registrar mi primer medición', style: TextStyle(color: Colors.white)),
+                icon: Icon(Icons.add, color: Colors.white),
+                label: Text('Registrar mi primer medición', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -508,7 +508,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
       onRefresh: _loadData,
       color: AppColors.primary,
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           LatestDiaryRecordCard(
@@ -516,12 +516,12 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
             diastolic: latest.diastolic,
             weightKg: latest.weightKg,
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+          Text(
             'HISTORIAL DE MEDICIONES',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -531,15 +531,15 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
               final itemRisk = _evaluatePressureRisk(item.systolic, item.diastolic);
 
               return Card(
-                margin: const EdgeInsets.only(bottom: 16.0),
+                margin: EdgeInsets.only(bottom: 16.0),
                 elevation: 0,
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                   side: BorderSide(color: Colors.grey.shade100, width: 1),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -548,7 +548,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                         children: [
                           Text(
                             _formatDateTime(item.createdAt),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textMuted,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
@@ -556,7 +556,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                           ),
                           if (itemRisk['label'] != 'Normal')
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: itemRisk['bgColor'] as Color,
                                 borderRadius: BorderRadius.circular(12),
@@ -572,30 +572,30 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: Colors.pink.shade50,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
+                                  child: Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
                                 ),
-                                const SizedBox(width: 10),
+                                SizedBox(width: 10),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Presión', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                                    Text('Presión', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                                     Text(
                                       '${item.systolic}/${item.diastolic}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                                     ),
-                                    const Text('mmHg', style: TextStyle(color: AppColors.textMuted, fontSize: 9)),
+                                    Text('mmHg', style: TextStyle(color: AppColors.textMuted, fontSize: 9)),
                                   ],
                                 ),
                               ],
@@ -605,23 +605,23 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: Colors.pink.shade50,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.monitor_weight_outlined, color: AppColors.primary, size: 20),
+                                  child: Icon(Icons.monitor_weight_outlined, color: AppColors.primary, size: 20),
                                 ),
-                                const SizedBox(width: 10),
+                                SizedBox(width: 10),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Peso', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                                    Text('Peso', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                                     Text(
                                       '${item.weightKg} kg',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                                     ),
-                                    const Text('Kilogramos', style: TextStyle(color: AppColors.textMuted, fontSize: 9)),
+                                    Text('Kilogramos', style: TextStyle(color: AppColors.textMuted, fontSize: 9)),
                                   ],
                                 ),
                               ],
@@ -629,28 +629,28 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       const Divider(height: 1, color: Color(0xFFF2F2F7)),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       if (item.symptoms.isNotEmpty &&
                           item.symptoms.toLowerCase() != 'ninguno' &&
                           item.symptoms.toLowerCase() != 'normal') ...[
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Síntomas: ',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
                             ),
                             Expanded(
                               child: Text(
                                 item.symptoms,
-                                style: const TextStyle(fontSize: 12, color: AppColors.textDark),
+                                style: TextStyle(fontSize: 12, color: AppColors.textDark),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                       ],
                       if (item.notes.isNotEmpty &&
                           item.notes.toLowerCase() != 'sin notas adicionales' &&
@@ -658,31 +658,31 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Notas: ',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
                             ),
                             Expanded(
                               child: Text(
                                 item.notes,
-                                style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+                                style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontStyle: FontStyle.italic),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                       ],
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                            icon: Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
                             onPressed: () => _showFormDialog(context, diary: item),
                             tooltip: 'Editar registro',
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                            icon: Icon(Icons.delete_outline, color: Colors.red, size: 20),
                             onPressed: () => _showDeleteConfirmation(context, item.patientDiaryId),
                             tooltip: 'Eliminar registro',
                           ),
@@ -694,7 +694,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
               );
             },
           ),
-          const SizedBox(height: 60),
+          SizedBox(height: 60),
         ],
       ),
     );

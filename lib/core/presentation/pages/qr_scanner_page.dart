@@ -16,9 +16,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Escanear QR de Vinculación', style: TextStyle(color: Colors.white)),
+        title: Text('Escanear QR de Vinculación', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
@@ -43,7 +43,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             size: Size.infinite,
             painter: ScannerOverlayPainter(),
           ),
-          const Positioned(
+          Positioned(
             bottom: 40,
             left: 0,
             right: 0,

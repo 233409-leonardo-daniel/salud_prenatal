@@ -39,22 +39,22 @@ class _PatientsListPageState extends State<PatientsListPage> {
     switch (patientsProvider.status) {
       case PatientsListStatus.initial:
       case PatientsListStatus.loading:
-        return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+        return Center(child: CircularProgressIndicator(color: AppColors.primary));
       case PatientsListStatus.error:
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(patientsProvider.error ?? 'Error', style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: 48, color: Colors.red),
+              SizedBox(height: 16),
+              Text(patientsProvider.error ?? 'Error', style: TextStyle(color: Colors.red)),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
                   final doctorId = context.read<LoginProvider>().doctorId?.toString() ?? '1';
                   context.read<PatientsListProvider>().loadPatients(doctorId);
                 },
-                child: const Text('Reintentar'),
+                child: Text('Reintentar'),
               )
             ],
           ),
@@ -129,13 +129,13 @@ class _PatientsListPageState extends State<PatientsListPage> {
 
       if (card is! SizedBox) {
         patientCards.add(card);
-        patientCards.add(const SizedBox(height: 12));
+        patientCards.add(SizedBox(height: 12));
       }
     }
 
     if (patientCards.isEmpty) {
       patientCards.add(
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(vertical: 40),
           child: Center(
             child: Text(
@@ -148,36 +148,36 @@ class _PatientsListPageState extends State<PatientsListPage> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Mis Pacientes',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Row(
             children: [
-              const Text(
+              Text(
                 'Gestión activa de cuidados prenatales.',
                 style: TextStyle(color: AppColors.textMuted, fontSize: 13),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.pink.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   totalPatientsStr,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Search patient bar
           TextField(
@@ -186,7 +186,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
               filled: true,
               fillColor: Colors.white,
               hintText: 'Buscar paciente por nombre o ID...',
-              prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+              prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide(color: Colors.pink.shade50),
@@ -195,13 +195,13 @@ class _PatientsListPageState extends State<PatientsListPage> {
                 borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide(color: Colors.pink.shade50),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             onChanged: (val) {
               setState(() {});
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Scrollable Filter Tags
           SingleChildScrollView(
@@ -209,38 +209,38 @@ class _PatientsListPageState extends State<PatientsListPage> {
             child: Row(
               children: [
                 _buildFilterChip('Todas'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _buildFilterChip('Riesgo Alto'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _buildFilterChip('Riesgo Medio'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _buildFilterChip('Riesgo Bajo'),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           ...patientCards,
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Pagination indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left, color: AppColors.textMuted),
+                icon: Icon(Icons.chevron_left, color: AppColors.textMuted),
                 onPressed: () {},
               ),
               _buildPageDot(1, true),
               _buildPageDot(2, false),
               _buildPageDot(3, false),
               IconButton(
-                icon: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                icon: Icon(Icons.chevron_right, color: AppColors.textMuted),
                 onPressed: () {},
               ),
             ],
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
         ],
       ),
     );
@@ -255,7 +255,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : const Color(0xFFEFEFF4),
           borderRadius: BorderRadius.circular(20),
@@ -303,7 +303,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -328,25 +328,25 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   style: TextStyle(color: riskColorText, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
                       'ID: $id',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: riskColorBg,
                   borderRadius: BorderRadius.circular(12),
@@ -358,9 +358,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFF5F5F7),
               borderRadius: BorderRadius.circular(16),
@@ -371,9 +371,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Text(gestationAge, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      SizedBox(height: 2),
+                      Text(gestationAge, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     ],
                   ),
                 ),
@@ -381,12 +381,12 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
+                      Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      SizedBox(height: 2),
                       Row(
                         children: [
                           Icon(statusIcon, size: 14, color: statusIconColor),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Text(status, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: statusIconColor)),
                         ],
                       ),
@@ -396,7 +396,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -414,15 +414,15 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text('Ver Detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: Text('Ver Detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
@@ -436,18 +436,18 @@ class _PatientsListPageState extends State<PatientsListPage> {
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    side: const BorderSide(color: Colors.pinkAccent, width: 1),
+                    side: BorderSide(color: Colors.pinkAccent, width: 1),
                     backgroundColor: const Color(0xFFFFF0F6),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.trending_up, size: 16, color: AppColors.primary),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text('Progreso', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -462,7 +462,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
 
   Widget _buildPageDot(int pageNum, bool isSelected) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: EdgeInsets.symmetric(horizontal: 4),
       width: 32,
       height: 32,
       decoration: BoxDecoration(

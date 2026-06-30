@@ -46,19 +46,19 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Nuevo Expediente'),
+        title: Text('Nuevo Expediente'),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Patient Info Header
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(20),
@@ -70,17 +70,17 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                     radius: 24,
                     child: Text(
                       widget.patientName.isNotEmpty ? widget.patientName[0].toUpperCase() : 'P',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.patientName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textDark,
@@ -88,7 +88,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                         ),
                         Text(
                           'ID Paciente: #SP-${widget.patientId.toString().padLeft(3, '0')}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.primary,
                             fontWeight: FontWeight.w500,
@@ -100,10 +100,10 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Section 1: History Counters (Editable text fields)
-            const Text(
+            Text(
               'Historial Obstétrico',
               style: TextStyle(
                 fontSize: 18,
@@ -111,7 +111,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                 color: AppColors.textDark,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Card(
               elevation: 0,
               color: const Color(0xFFF9F9FB),
@@ -119,7 +119,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   children: [
                     _buildNumberInputField(
@@ -165,10 +165,10 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28),
 
             // Section 2: Clinical Risks / Checkboxes
-            const Text(
+            Text(
               'Antecedentes y Factores de Riesgo',
               style: TextStyle(
                 fontSize: 18,
@@ -176,7 +176,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                 color: AppColors.textDark,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildCheckboxRow(
               label: 'Hipertensión Previa',
               subtitle: 'Antecedentes personales de hipertensión antes del embarazo',
@@ -244,7 +244,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               onChanged: (val) => setState(() => _activeSmoking = val ?? false),
             ),
 
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
 
             // Submit Button
             ElevatedButton(
@@ -303,13 +303,13 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
               child: dashboardProvider.isSavingRecord
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
@@ -317,7 +317,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Guardar Expediente',
                       style: TextStyle(
                         fontSize: 16,
@@ -325,7 +325,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                       ),
                     ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
           ],
         ),
       ),
@@ -338,28 +338,28 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
     required ValueChanged<int> onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 color: AppColors.textDark,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           SizedBox(
             width: 80,
             child: TextFormField(
               initialValue: value.toString(),
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textDark,
@@ -367,7 +367,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -378,7 +378,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  borderSide: BorderSide(color: AppColors.primary, width: 1.5),
                 ),
               ),
               onChanged: (val) {
@@ -399,7 +399,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
     required ValueChanged<bool?> onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: EdgeInsets.symmetric(vertical: 6.0),
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF9F9FB),
@@ -413,7 +413,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
           activeColor: AppColors.primary,
           title: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppColors.textDark,
@@ -422,7 +422,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
           subtitle: subtitle.isNotEmpty
               ? Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textMuted,
                   ),

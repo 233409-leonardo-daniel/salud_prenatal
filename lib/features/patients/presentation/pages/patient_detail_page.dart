@@ -48,30 +48,30 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
           appBar: AppBar(
             title: Text('Expediente: ${widget.patientName}'),
             backgroundColor: AppColors.primary,
-            iconTheme: const IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(color: Colors.white),
           ),
-          body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
         );
       case PatientDetailStatus.error:
         return Scaffold(
           appBar: AppBar(
             title: Text('Expediente: ${widget.patientName}'),
             backgroundColor: AppColors.primary,
-            iconTheme: const IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(color: Colors.white),
           ),
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(patientDetailProvider.error ?? 'Error', style: const TextStyle(color: Colors.red)),
-                const SizedBox(height: 16),
+                Icon(Icons.error_outline, size: 48, color: Colors.red),
+                SizedBox(height: 16),
+                Text(patientDetailProvider.error ?? 'Error', style: TextStyle(color: Colors.red)),
+                SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
                     context.read<PatientDetailProvider>().loadPatientDetails(widget.userId);
                   },
-                  child: const Text('Reintentar'),
+                  child: Text('Reintentar'),
                 )
               ],
             ),
@@ -103,7 +103,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     // 2. Previous consultations (completed appointments)
     final consultationsWidgets = <Widget>[];
     if (pastAppointments.isEmpty) {
-      consultationsWidgets.add(const Text('No hay consultas registradas aún.', style: TextStyle(color: AppColors.textMuted)));
+      consultationsWidgets.add(Text('No hay consultas registradas aún.', style: TextStyle(color: AppColors.textMuted)));
     } else {
       for (var i = 0; i < pastAppointments.length; i++) {
         final c = pastAppointments[i];
@@ -112,16 +112,16 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
         final year = c.dateTime.year.toString();
         consultationsWidgets.add(
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
+            padding: EdgeInsets.symmetric(vertical: 6.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '$day/$month/$year - Consulta Completada',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
-                const SizedBox(height: 2),
-                Text('Motivo: ${c.reason}', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                SizedBox(height: 2),
+                Text('Motivo: ${c.reason}', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                 if (i < pastAppointments.length - 1) const Divider(),
               ],
             ),
@@ -133,7 +133,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     // 3. Pending Appointments
     final pendingAppsWidgets = <Widget>[];
     if (pendingAppointments.isEmpty) {
-      pendingAppsWidgets.add(const Text('No hay citas programadas.', style: TextStyle(color: AppColors.textMuted)));
+      pendingAppsWidgets.add(Text('No hay citas programadas.', style: TextStyle(color: AppColors.textMuted)));
     } else {
       for (var i = 0; i < pendingAppointments.length; i++) {
         final app = pendingAppointments[i];
@@ -144,12 +144,12 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
         final min = app.dateTime.minute.toString().padLeft(2, '0');
         pendingAppsWidgets.add(
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: EdgeInsets.symmetric(vertical: 4.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$day/$month/$year - $hour:$min', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(app.reason, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                Text('$day/$month/$year - $hour:$min', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(app.reason, style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                 if (i < pendingAppointments.length - 1) const Divider(),
               ],
             ),
@@ -159,17 +159,17 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Expediente: ${widget.patientName}',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -177,30 +177,30 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
               title: 'Detalles del paciente',
               icon: Icons.person_outline,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Nombre: ${userProfile?.name} ${userProfile?.lastName}', style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text('Edad: $age', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Email: $email', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Rol: $role', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Tipo de sangre: $bloodType', style: const TextStyle(color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Residencia: $residence', style: const TextStyle(color: AppColors.textDark)),
+                    Text('Nombre: ${userProfile?.name} ${userProfile?.lastName}', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text('Edad: $age', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Email: $email', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Rol: $role', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Tipo de sangre: $bloodType', style: TextStyle(color: AppColors.textDark)),
+                    SizedBox(height: 8),
+                    Text('Residencia: $residence', style: TextStyle(color: AppColors.textDark)),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Banderas (Factores de Riesgo)',
               icon: Icons.flag_outlined,
-              content: const Padding(
+              content: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Center(
                   child: Column(
@@ -213,35 +213,35 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Consultas Previas',
               icon: Icons.history,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: consultationsWidgets,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Citas Pendientes',
               icon: Icons.calendar_today_outlined,
               content: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: pendingAppsWidgets,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Plan del Paciente',
               icon: Icons.next_plan_outlined,
-              content: const Padding(
+              content: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Center(
                   child: Column(
@@ -254,7 +254,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
           ],
         ),
       ),
@@ -273,7 +273,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
         },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        child: const Icon(Icons.chat_bubble_outline),
+        child: Icon(Icons.chat_bubble_outline),
       ),
     );
   }
@@ -296,11 +296,11 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
         ],
       ),
       child: ExpansionTile(
-        shape: const Border(),
+        shape: Border(),
         leading: Icon(icon, color: AppColors.primary),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
         ),
         initiallyExpanded: true,
         children: [

@@ -1,3 +1,29 @@
+class RiskPrediction {
+  final int? riskCluster;
+  final String? diagnosis;
+
+  RiskPrediction({
+    this.riskCluster,
+    this.diagnosis,
+  });
+
+  factory RiskPrediction.fromJson(Map<String, dynamic> json) {
+    return RiskPrediction(
+      riskCluster: json['risk_cluster'] is int
+          ? json['risk_cluster'] as int
+          : (json['risk_cluster'] != null ? int.tryParse(json['risk_cluster'].toString()) : null),
+      diagnosis: json['diagnosis']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'risk_cluster': riskCluster,
+      'diagnosis': diagnosis,
+    };
+  }
+}
+
 class MedicalRecordResponse {
   final int medicalRecordId;
   final int patientId;
@@ -18,6 +44,14 @@ class MedicalRecordResponse {
   final bool familyHistoryHeartDisease;
   final bool activeSmoking;
 
+  // New fields from the updated patient medical record endpoint
+  final int? userId;
+  final String? name;
+  final String? lastName;
+  final int? currentGestationalWeeks;
+  final int? age;
+  final RiskPrediction? riskPrediction;
+
   MedicalRecordResponse({
     required this.medicalRecordId,
     required this.patientId,
@@ -37,12 +71,23 @@ class MedicalRecordResponse {
     required this.fetalGrowthRestriction,
     required this.familyHistoryHeartDisease,
     required this.activeSmoking,
+    this.userId,
+    this.name,
+    this.lastName,
+    this.currentGestationalWeeks,
+    this.age,
+    this.riskPrediction,
   });
 
   factory MedicalRecordResponse.fromJson(Map<String, dynamic> json) {
     final recordJson = json['medical_record'] is Map<String, dynamic>
         ? json['medical_record'] as Map<String, dynamic>
         : json;
+
+    final riskPredJson = json['risk_prediction'];
+    final riskPrediction = riskPredJson is Map<String, dynamic>
+        ? RiskPrediction.fromJson(riskPredJson)
+        : null;
 
     return MedicalRecordResponse(
       medicalRecordId: recordJson['medical_record_id'] ?? 0,
@@ -71,6 +116,18 @@ class MedicalRecordResponse {
       fetalGrowthRestriction: recordJson['fetal_growth_restriction'] ?? false,
       familyHistoryHeartDisease: recordJson['family_history_heart_disease'] ?? false,
       activeSmoking: recordJson['active_smoking'] ?? false,
+      userId: json['user_id'] is int
+          ? json['user_id'] as int
+          : (json['user_id'] != null ? int.tryParse(json['user_id'].toString()) : null),
+      name: json['name']?.toString(),
+      lastName: json['last_name']?.toString(),
+      currentGestationalWeeks: json['current_gestational_weeks'] is int
+          ? json['current_gestational_weeks'] as int
+          : (json['current_gestational_weeks'] != null ? int.tryParse(json['current_gestational_weeks'].toString()) : null),
+      age: json['age'] is int
+          ? json['age'] as int
+          : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
+      riskPrediction: riskPrediction,
     );
   }
 
@@ -94,6 +151,12 @@ class MedicalRecordResponse {
       'fetal_growth_restriction': fetalGrowthRestriction,
       'family_history_heart_disease': familyHistoryHeartDisease,
       'active_smoking': activeSmoking,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (lastName != null) 'last_name': lastName,
+      if (currentGestationalWeeks != null) 'current_gestational_weeks': currentGestationalWeeks,
+      if (age != null) 'age': age,
+      if (riskPrediction != null) 'risk_prediction': riskPrediction!.toJson(),
     };
   }
 }

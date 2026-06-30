@@ -63,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               onSurface: AppColors.textDark,
@@ -166,8 +166,8 @@ class _RegisterPageState extends State<RegisterPage> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
                   Text('¡Registro Exitoso como ${role.toUpperCase()}!'),
                 ],
               ),
@@ -180,8 +180,8 @@ class _RegisterPageState extends State<RegisterPage> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error, color: Colors.white),
-                  const SizedBox(width: 8),
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 8),
                   Expanded(child: Text(registerProvider.errorMessage ?? 'Error al registrar')),
                 ],
               ),
@@ -200,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: GestureDetector(
         onTap: () => context.read<RegisterProvider>().setRole(role),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
             color: isSelected ? activeColor.withOpacity(0.08) : const Color(0xFFF5F5F7),
             borderRadius: BorderRadius.circular(16),
@@ -216,7 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 size: 28,
                 color: isSelected ? activeColor : AppColors.textMuted,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 title,
                 style: TextStyle(
@@ -237,10 +237,10 @@ class _RegisterPageState extends State<RegisterPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F8), // Soft pinkish-white background from mockup
+      backgroundColor: AppColors.background, // Soft pinkish-white background from mockup
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Builder(
             builder: (context) {
               final registerProvider = context.watch<RegisterProvider>();
@@ -253,7 +253,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 48), // Spacer to balance
+                        SizedBox(width: 48), // Spacer to balance
                         Row(
                           children: [
                             Image.asset(
@@ -262,7 +262,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               height: 48,
                               fit: BoxFit.contain,
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text(
                               'Salud Prenatal',
                               style: theme.textTheme.titleMedium?.copyWith(
@@ -273,12 +273,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           ],
                         ),
                         IconButton(
-                          icon: const Icon(Icons.help_outline, color: AppColors.primary),
+                          icon: Icon(Icons.help_outline, color: AppColors.primary),
                           onPressed: () {},
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     Text(
                       'Comienza con nosotros',
@@ -288,7 +288,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       'Únete a nuestra comunidad para recibir acompañamiento experto, monitoreo en tiempo real y paz mental durante tu embarazo.',
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -296,11 +296,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
 
                     // Main Info Card
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
@@ -324,7 +324,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             validator: (value) => value == null || value.trim().isEmpty ? 'Ingresa tu nombre' : null,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           TextFormField(
                             controller: _lastNameController,
                             decoration: const InputDecoration(
@@ -333,7 +333,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             validator: (value) => value == null || value.trim().isEmpty ? 'Ingresa tu apellido' : null,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -349,7 +349,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           TextFormField(
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
@@ -359,13 +359,13 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             validator: (value) => value == null || value.trim().isEmpty ? 'Ingresa tu teléfono' : null,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           TextFormField(
                             controller: _passwordController,
                             obscureText: !_isPasswordVisible,
                             decoration: InputDecoration(
                               labelText: 'Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline),
+                              prefixIcon: Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -379,7 +379,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             validator: (value) => value == null || value.length < 6 ? 'Mínimo 6 caracteres' : null,
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24),
 
                           // Role selection
                           Text(
@@ -389,17 +389,17 @@ class _RegisterPageState extends State<RegisterPage> {
                               color: AppColors.textDark,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Row(
                             children: [
                               _buildRoleCard('patient', 'Paciente', Icons.pregnant_woman, AppColors.primary),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               _buildRoleCard('doctor', 'Doctor(a)', Icons.badge_outlined, AppColors.primary),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               _buildRoleCard('receptionist', 'Recepcionista', Icons.assignment_ind_outlined, const Color(0xFF6A5ACD)),
                             ],
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24),
 
                           // Dynamic fields based on role
                           if (registerProvider.selectedRole == 'patient') ...[
@@ -410,7 +410,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 color: AppColors.primary,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _birthdateController,
                               readOnly: true,
@@ -421,7 +421,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               onTap: () => _selectDate(context, _birthdateController),
                               validator: (value) => value == null || value.isEmpty ? 'Selecciona tu fecha de nacimiento' : null,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             DropdownButtonFormField<String>(
                               value: _selectedBloodType,
                               decoration: const InputDecoration(
@@ -435,7 +435,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 if (val != null) setState(() => _selectedBloodType = val);
                               },
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _weeksController,
                               keyboardType: TextInputType.number,
@@ -445,7 +445,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               validator: (value) => value == null || int.tryParse(value) == null ? 'Ingresa un número válido' : null,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _lmpController,
                               readOnly: true,
@@ -464,7 +464,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 color: AppColors.primary,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _licenseController,
                               decoration: const InputDecoration(
@@ -473,7 +473,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               validator: (value) => value == null || value.isEmpty ? 'Ingresa tu cédula profesional' : null,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _specialtyController,
                               decoration: const InputDecoration(
@@ -482,7 +482,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               validator: (value) => value == null || value.isEmpty ? 'Ingresa tu especialidad' : null,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _officeController,
                               decoration: const InputDecoration(
@@ -493,14 +493,14 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ] else if (registerProvider.selectedRole == 'receptionist') ...[
                             Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF6A5ACD).withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(color: const Color(0xFF6A5ACD).withOpacity(0.3)),
                               ),
                               child: Row(
-                                children: const [
+                                children: [
                                   Icon(Icons.assignment_ind_outlined, color: Color(0xFF6A5ACD), size: 28),
                                   SizedBox(width: 12),
                                   Expanded(
@@ -526,7 +526,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             TextFormField(
                               controller: _doctorIdController,
                               keyboardType: TextInputType.number,
@@ -547,7 +547,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               },
                             ),
                           ],
-                          const SizedBox(height: 32),
+                          SizedBox(height: 32),
 
                           // Submit button
                           ElevatedButton(
@@ -561,7 +561,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                             child: registerProvider.isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
@@ -569,7 +569,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
-                                : const Row(
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
@@ -581,7 +581,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     ],
                                   ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           GestureDetector(
                             onTap: _showPrivacyPolicy,
                             child: RichText(
@@ -608,14 +608,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
 
                     // Feature Information Row
                     Row(
                       children: [
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
@@ -625,20 +625,20 @@ class _RegisterPageState extends State<RegisterPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary.withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 18),
+                                  child: Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 18),
                                 ),
-                                const SizedBox(height: 12),
-                                const Text(
+                                SizedBox(height: 12),
+                                Text(
                                   'Atención Expert',
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
                                 ),
-                                const SizedBox(height: 4),
-                                const Text(
+                                SizedBox(height: 4),
+                                Text(
                                   'Conexión directa con especialistas en obstetricia.',
                                   style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                                 ),
@@ -646,10 +646,10 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
@@ -659,20 +659,20 @@ class _RegisterPageState extends State<RegisterPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary.withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 18),
+                                  child: Icon(Icons.analytics_outlined, color: AppColors.primary, size: 18),
                                 ),
-                                const SizedBox(height: 12),
-                                const Text(
+                                SizedBox(height: 12),
+                                Text(
                                   'Progreso',
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
                                 ),
-                                const SizedBox(height: 4),
-                                const Text(
+                                SizedBox(height: 4),
+                                Text(
                                   'Seguimiento semanal detallado de tu bebé.',
                                   style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                                 ),
@@ -682,13 +682,13 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
 
                     // Back to login prompt
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           '¿Ya tienes una cuenta?',
                           style: TextStyle(color: AppColors.textMuted),
                         ),
@@ -696,7 +696,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: () {
                             Navigator.pushReplacementNamed(context, '/login');
                           },
-                          child: const Text(
+                          child: Text(
                             'Inicia Sesión',
                             style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),

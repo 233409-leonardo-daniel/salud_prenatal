@@ -32,9 +32,9 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
-        title: const Text('Mensajes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Mensajes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _buildBody(provider, currentUserId),
     );
@@ -42,7 +42,7 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
 
   Widget _buildBody(ConversationsProvider provider, int currentUserId) {
     if (provider.viewState == ConversationsViewState.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
     
     if (provider.viewState == ConversationsViewState.error) {
@@ -50,13 +50,13 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
     }
     
     if (provider.conversations.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('No tienes conversaciones activas.', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
       );
     }
     
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       itemCount: provider.conversations.length,
       itemBuilder: (context, index) {
         final conv = provider.conversations[index];
@@ -68,20 +68,20 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
         return Card(
           elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 12),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: const CircleAvatar(
               backgroundColor: Color(0xFFFFF0F6),
               child: Icon(Icons.person, color: AppColors.primary),
             ),
-            title: Text(otherName, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            title: Text(otherName, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
             subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis),
             trailing: conv.unreadCount > 0 
                 ? Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: EdgeInsets.all(6),
                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    child: Text('${conv.unreadCount}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    child: Text('${conv.unreadCount}', style: TextStyle(color: Colors.white, fontSize: 12)),
                   )
                 : null,
             onTap: () {

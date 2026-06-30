@@ -37,20 +37,20 @@ class AppointmentDetailPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Detalles de la Cita',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
@@ -69,30 +69,30 @@ class AppointmentDetailPage extends StatelessWidget {
                     backgroundColor: Color(0xFFFFF0F6),
                     child: Icon(Icons.calendar_month, color: AppColors.primary, size: 40),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     currentAppointment.reason,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     _formatDate(currentAppointment.dateTime),
-                    style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 16, color: AppColors.textMuted),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   AppointmentStatusChip(status: currentAppointment.status),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             if (isDoctor || isReceptionist) ...[
               _buildInfoCard('Paciente', currentAppointment.patientName, Icons.person_outline),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
             ],
             _buildInfoCard('Médico', currentAppointment.doctorName, Icons.medical_services_outlined),
             
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             
             if (isReceptionist || isDoctor) ..._buildActionButtons(context, currentAppointment, provider),
 
@@ -103,10 +103,10 @@ class AppointmentDetailPage extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                child: const Text('Volver al Calendario', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: Text('Volver al Calendario', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
           ],
         ),
@@ -116,7 +116,7 @@ class AppointmentDetailPage extends StatelessWidget {
 
   Widget _buildInfoCard(String title, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -124,13 +124,13 @@ class AppointmentDetailPage extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, color: AppColors.primary),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-              const SizedBox(height: 4),
-              Text(value, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 15)),
+              Text(title, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              SizedBox(height: 4),
+              Text(value, style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
         ],
@@ -140,7 +140,7 @@ class AppointmentDetailPage extends StatelessWidget {
 
   List<Widget> _buildActionButtons(BuildContext context, Appointment appointment, AppointmentsProvider provider) {
     if (provider.viewState == ViewState.loading) {
-      return [const Center(child: CircularProgressIndicator())];
+      return [Center(child: CircularProgressIndicator())];
     }
     
     List<Widget> buttons = [];
@@ -151,11 +151,11 @@ class AppointmentDetailPage extends StatelessWidget {
     
     if (appointment.status == AppointmentStatus.pending) {
       buttons.add(_actionButton('Confirmar Asistencia', Colors.blue, () => updateStatus(AppointmentStatus.confirmed)));
-      buttons.add(const SizedBox(height: 8));
+      buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Cancelar Cita', Colors.red, () => updateStatus(AppointmentStatus.cancelled)));
     } else if (appointment.status == AppointmentStatus.confirmed) {
       buttons.add(_actionButton('Marcar En Curso', Colors.indigo, () => updateStatus(AppointmentStatus.in_progress)));
-      buttons.add(const SizedBox(height: 8));
+      buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Cancelar Cita', Colors.red, () => updateStatus(AppointmentStatus.cancelled)));
     } else if (appointment.status == AppointmentStatus.in_progress) {
       buttons.add(_actionButton('Marcar Completada', Colors.green, () => updateStatus(AppointmentStatus.completed)));
@@ -169,10 +169,10 @@ class AppointmentDetailPage extends StatelessWidget {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+      child: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
     );
   }
 }

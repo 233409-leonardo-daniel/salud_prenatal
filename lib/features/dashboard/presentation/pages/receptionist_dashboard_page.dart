@@ -32,7 +32,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: _currentTab == 0 ? _buildAppBar() : null, // Ocultar si está en otros tabs para que usen su propio AppBar
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavBar(),
@@ -55,20 +55,20 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
             backgroundColor: AppColors.primaryLight,
             child: Text(
               initial,
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Hola,',
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.normal),
               ),
               Text(
                 receptionistName,
-                style: const TextStyle(fontSize: 16, color: AppColors.primary, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, color: AppColors.primary, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -77,16 +77,16 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
       actions: [
         IconButton(
           icon: Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: const BoxDecoration(
               color: Color(0xFFF0EFF4),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
+            child: Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
           ),
           onPressed: () {},
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
       ],
       backgroundColor: Colors.white,
       elevation: 0,
@@ -116,28 +116,28 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
     final pending = appointmentsProvider.appointments.where((a) => a.status.toString().contains('pending')).length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Resumen del Día',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               _buildStatCard('Citas Programadas', totalCitas.toString(), Icons.calendar_today, Colors.blue),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               _buildStatCard('Citas Pendientes', pending.toString(), Icons.pending_actions, Colors.orange),
             ],
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+          Text(
             'Acciones Rápidas',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -145,7 +145,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const AppointmentFormPage()));
                 }),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: _buildActionCard('Directorio', Icons.people, AppColors.primary, () {
                   setState(() => _currentTab = 3); // Navegar al directorio
@@ -161,7 +161,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
   Widget _buildStatCard(String title, String count, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -173,10 +173,10 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 28),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
-            const SizedBox(height: 4),
-            Text(count, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            SizedBox(height: 12),
+            Text(title, style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+            SizedBox(height: 4),
+            Text(count, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
           ],
         ),
       ),
@@ -187,7 +187,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
@@ -196,7 +196,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
         child: Column(
           children: [
             Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
           ],
         ),

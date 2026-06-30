@@ -46,6 +46,12 @@ class DashboardProvider with ChangeNotifier {
   Future<void> loadDoctorDashboard(int doctorId) async {
     _status = DashboardStatus.loading;
     _errorMessage = null;
+    _users = [];
+    _patients = [];
+    _medicalRecord = null;
+    _consultations = [];
+    _dashboardData = null;
+    _currentPatientData = null;
     notifyListeners();
 
     try {
@@ -63,6 +69,10 @@ class DashboardProvider with ChangeNotifier {
   Future<void> loadPatientDashboard(int patientId, int userId, {int? doctorId}) async {
     _status = DashboardStatus.loading;
     _errorMessage = null;
+    _medicalRecord = null;
+    _consultations = [];
+    _dashboardData = null;
+    _currentPatientData = null;
     notifyListeners();
 
     try {

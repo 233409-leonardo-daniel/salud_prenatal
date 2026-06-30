@@ -95,8 +95,8 @@ class _DashboardPageState extends State<DashboardPage> {
   PreferredSizeWidget _buildAppBar() {
     final loginProvider = context.watch<LoginProvider>();
     final String doctorName = loginProvider.name.isNotEmpty 
-        ? 'Dra. ${loginProvider.name}' 
-        : 'Dra. Mendoza';
+        ? 'Dr. ${loginProvider.name}' 
+        : 'Dr.';
     final String doctorInitial = loginProvider.name.isNotEmpty
         ? loginProvider.name[0].toUpperCase()
         : 'M';
@@ -713,24 +713,58 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    if (systolicPressures.isEmpty) {
-      systolicPressures.addAll([115.0, 120.0, 118.0, 122.0, 120.0, 117.0, 119.0]);
-      consultationDays.addAll(daysOfWeek);
+    // Find current week's start (Monday) and end (Sunday)
+    final now = DateTime.now();
+    final currentDay = now.weekday; // 1 = Monday, 7 = Sunday
+    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: currentDay - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+    
+    // Array of booleans to track if a measurement was made each day (index 0 = Monday, 6 = Sunday)
+    final weekMeasurements = List.filled(7, false);
+    
+    for (var diary in diariesProvider.diaries) {
+      if (diary.createdAt.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) && 
+          diary.createdAt.isBefore(endOfWeek.add(const Duration(seconds: 1)))) {
+        final dayIndex = diary.createdAt.weekday - 1;
+        weekMeasurements[dayIndex] = true;
+      }
     }
-
-    final barsList = <Widget>[];
-    for (var i = 0; i < systolicPressures.length; i++) {
-      final val = systolicPressures[i];
-      final heightVal = ((val - 90) * 1.33 + 20).clamp(15.0, 100.0);
-      final isActive = i == systolicPressures.length - 1;
-      barsList.add(_buildBar(heightVal, isActive));
-    }
-
-    final dayLabelsList = <Widget>[];
-    for (var i = 0; i < consultationDays.length; i++) {
-      final day = consultationDays[i];
-      final isActive = i == consultationDays.length - 1;
-      dayLabelsList.add(_buildDayLabel(day, isActive));
+    
+    final trackingCirclesList = <Widget>[];
+    for (var i = 0; i < 7; i++) {
+      final isActive = weekMeasurements[i];
+      final isFuture = i > (currentDay - 1);
+      
+      trackingCirclesList.add(
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive ? AppColors.primary : (isFuture ? Colors.grey.shade200 : const Color(0xFFFFF0F6)),
+                ),
+                child: isActive 
+                    ? const Icon(Icons.check, color: Colors.white, size: 18) 
+                    : (isFuture ? null : const Icon(Icons.close, color: Color(0xFFFF85C0), size: 18)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                daysOfWeek[i],
+                style: TextStyle(
+                  color: (i == currentDay - 1) ? AppColors.primary : AppColors.textMuted,
+                  fontWeight: (i == currentDay - 1) ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return SingleChildScrollView(
@@ -924,12 +958,6 @@ class _DashboardPageState extends State<DashboardPage> {
             },
           ),
           SizedBox(height: 28),
-
-          if (medicalRecord?.riskPrediction?.diagnosis != null &&
-              medicalRecord!.riskPrediction!.diagnosis!.isNotEmpty) ...[
-            _buildRiskPredictionBanner(medicalRecord.riskPrediction!),
-            SizedBox(height: 28),
-          ],
 
           // MI PRÓXIMA CITA Section
           Text(
@@ -1140,18 +1168,10 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Column(
               children: [
-                SizedBox(
-                  height: 100,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: barsList,
-                  ),
-                ),
-                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: dayLabelsList,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: trackingCirclesList,
                 ),
                 SizedBox(height: 16),
                 Text(

@@ -37,6 +37,7 @@ class AppointmentsProvider with ChangeNotifier {
   Future<void> loadAppointments(String userId, {bool isDoctor = false}) async {
     _status = AppointmentsListStatus.loading;
     _error = null;
+    _appointments = [];
     notifyListeners();
 
     try {
@@ -53,6 +54,7 @@ class AppointmentsProvider with ChangeNotifier {
   Future<void> loadAllAppointments({int? doctorId, int? patientId, String? status, String? date}) async {
     _viewState = ViewState.loading;
     _error = null;
+    _appointments = [];
     notifyListeners();
 
     try {

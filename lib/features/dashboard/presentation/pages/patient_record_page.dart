@@ -293,23 +293,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
   }
 
   Widget _buildResumenIA(MedicalRecordResponse record) {
-    String iaSummary = 'Presión arterial estable y desarrollo fetal adecuado. Continuar con plan nutricional.';
-    if (record.chronicHypertension || record.previousHypertension || record.previousPreeclampsia) {
-      iaSummary = 'Paciente con antecedentes de hipertensión/preeclampsia. Monitorear estrechamente presión sistólica.';
-    }
-
     final riskPrediction = record.riskPrediction;
     final hasRiskPrediction = riskPrediction != null &&
         riskPrediction.diagnosis != null &&
         riskPrediction.diagnosis!.isNotEmpty;
 
-    final isHigh = riskPrediction?.diagnosis?.toLowerCase().contains('alto') == true ||
-        riskPrediction?.diagnosis?.toLowerCase().contains('crítico') == true ||
-        riskPrediction?.diagnosis?.toLowerCase().contains('critico') == true;
-    final isMedium = riskPrediction?.diagnosis?.toLowerCase().contains('medio') == true ||
-        riskPrediction?.diagnosis?.toLowerCase().contains('moderado') == true;
-    final String riskLevel = isHigh ? 'Alto' : (isMedium ? 'Medio' : 'Bajo');
-    final Color riskColor = isHigh ? Colors.red : (isMedium ? Colors.orange : Colors.teal);
+    if (!hasRiskPrediction) return const SizedBox.shrink();
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -322,116 +311,40 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.psychology_outlined, color: AppColors.primary, size: 24),
-                  SizedBox(width: 8),
-                  Text(
-                    'Resumen IA / Predicción',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 15),
-                  ),
-                ],
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                ),
-                child: Text(
-                  'GENERADO POR IA',
-                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
+              Icon(Icons.analytics_outlined, color: Colors.purple, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Predicción de Riesgo',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple, fontSize: 15),
               ),
             ],
           ),
           SizedBox(height: 12),
-          Text(
-            '"$iaSummary"',
-            style: TextStyle(
-              fontStyle: FontStyle.italic,
-              color: AppColors.textDark,
-              fontSize: 13,
-              height: 1.5,
+          if (riskPrediction.riskCluster != null)
+            Text(
+              'Clúster: ${riskPrediction.riskCluster}',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple, fontSize: 13),
+            ),
+          SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.purple.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.purple.withOpacity(0.3)),
+            ),
+            child: Text(
+              'Diagnóstico: ${riskPrediction.diagnosis}',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
           ),
-          if (hasRiskPrediction) ...[
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.0),
-              child: Divider(color: Colors.pinkAccent, thickness: 0.5),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.analytics_outlined, color: Colors.purple, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Clúster de Riesgo: ${riskPrediction.riskCluster ?? "N/A"}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.shield_outlined, color: riskColor, size: 16),
-                    SizedBox(width: 4),
-                    Text(
-                      'Riesgo: ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: riskColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: riskColor.withOpacity(0.3)),
-                      ),
-                      child: Text(
-                        riskLevel,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: riskColor,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.purple.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.purple.withOpacity(0.3)),
-              ),
-              child: Text(
-                'Diagnóstico: ${riskPrediction.diagnosis}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

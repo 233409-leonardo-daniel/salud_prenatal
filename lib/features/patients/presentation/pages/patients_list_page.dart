@@ -345,17 +345,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   ],
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: riskColorBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  risk,
-                  style: TextStyle(color: riskColorText, fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ),
             ],
           ),
           SizedBox(height: 16),
@@ -374,22 +363,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
                       Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                       SizedBox(height: 2),
                       Text(gestationAge, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusIconColor),
-                          SizedBox(width: 4),
-                          Text(status, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: statusIconColor)),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -425,30 +398,22 @@ class _PatientsListPageState extends State<PatientsListPage> {
               SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PatientProgressPage(
-                          patientName: name,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: null,
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    side: BorderSide(color: Colors.pinkAccent, width: 1),
-                    backgroundColor: const Color(0xFFFFF0F6),
+                    side: BorderSide(color: Colors.grey.shade300, width: 1),
+                    backgroundColor: Colors.grey.shade100,
+                    disabledForegroundColor: Colors.grey,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.trending_up, size: 16, color: AppColors.primary),
+                      Icon(Icons.trending_up, size: 16, color: Colors.grey),
                       SizedBox(width: 6),
-                      Text('Progreso', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text('Progreso', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),

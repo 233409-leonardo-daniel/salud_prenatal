@@ -88,8 +88,8 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
 
   @override
   Future<void> updateAppointmentStatus(int id, StatusUpdateDto statusDto) async {
-    final response = await _apiClient.put('/appointments/$id/status', statusDto.toJson());
-    if (response.statusCode != 200) {
+    final response = await _apiClient.put('/appointments/$id', {'status': statusDto.status});
+    if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Error al actualizar estado de la cita (Status: ${response.statusCode})');
     }
   }

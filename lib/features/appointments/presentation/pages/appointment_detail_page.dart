@@ -5,7 +5,9 @@ import '../../../../core/enums/appointment_status.dart';
 import '../../domain/entities/appointment.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../providers/appointment_provider.dart';
+import '../providers/delete_appointment_provider.dart';
 import '../widgets/appointment_status_chip.dart';
+import 'appointment_state.dart';
 
 class AppointmentDetailPage extends StatelessWidget {
   final Appointment appointment;
@@ -145,20 +147,63 @@ class AppointmentDetailPage extends StatelessWidget {
     
     List<Widget> buttons = [];
     
-    void updateStatus(AppointmentStatus newStatus) {
-      provider.updateAppointmentStatus(appointment.id, newStatus);
+    void updateStatus(AppointmentStatus newStatus) async {
+      await provider.updateAppointmentStatus(appointment.id, newStatus);
+      if (!context.mounted) return;
+      if (provider.viewState == ViewState.success) {
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo actualizar el estado. Intenta de nuevo.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+
+    void deleteAndGoBack() async {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Eliminar cita'),
+          content: Text('¿Estás segura de que deseas eliminar esta cita? Esta acción no se puede deshacer.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('No')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Sí, eliminar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true || !context.mounted) return;
+      final deleteProvider = context.read<DeleteAppointmentProvider>();
+      await deleteProvider.deleteAppointment(appointment.id.toString());
+      if (!context.mounted) return;
+      if (deleteProvider.status == DeleteAppointmentStatus.success) {
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al eliminar la cita'), backgroundColor: Colors.red),
+        );
+      }
     }
     
     if (appointment.status == AppointmentStatus.pending) {
       buttons.add(_actionButton('Confirmar Asistencia', Colors.blue, () => updateStatus(AppointmentStatus.confirmed)));
       buttons.add(SizedBox(height: 8));
-      buttons.add(_actionButton('Cancelar Cita', Colors.red, () => updateStatus(AppointmentStatus.cancelled)));
+      buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
     } else if (appointment.status == AppointmentStatus.confirmed) {
       buttons.add(_actionButton('Marcar En Curso', Colors.indigo, () => updateStatus(AppointmentStatus.in_progress)));
       buttons.add(SizedBox(height: 8));
-      buttons.add(_actionButton('Cancelar Cita', Colors.red, () => updateStatus(AppointmentStatus.cancelled)));
+      buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
     } else if (appointment.status == AppointmentStatus.in_progress) {
       buttons.add(_actionButton('Marcar Completada', Colors.green, () => updateStatus(AppointmentStatus.completed)));
+      buttons.add(SizedBox(height: 8));
+      buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
+    } else {
+      buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
     }
     
     return buttons;

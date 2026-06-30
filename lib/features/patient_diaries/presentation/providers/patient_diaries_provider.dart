@@ -36,6 +36,7 @@ class PatientDiariesProvider with ChangeNotifier {
   Future<void> loadDiaries(int medicalRecordId) async {
     _status = PatientDiariesStatus.loading;
     _errorMessage = null;
+    _diaries = [];
     notifyListeners();
 
     try {

@@ -56,12 +56,8 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
   }
 
   Widget _buildBody(AppointmentsProvider provider) {
-    if (provider.viewState == ViewState.loading) {
+    if (provider.viewState == ViewState.loading || provider.status == AppointmentsListStatus.loading) {
       return Center(child: CircularProgressIndicator());
-    }
-    
-    if (provider.viewState == ViewState.error) {
-      return Center(child: Text('Error: ${provider.error}'));
     }
     
     if (provider.appointments.isEmpty) {
@@ -80,13 +76,18 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
         final appointment = provider.appointments[index];
         return AppointmentCard(
           appointment: appointment,
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AppointmentDetailPage(appointment: appointment),
               ),
             );
+            if (context.mounted) {
+              final loginProvider = context.read<LoginProvider>();
+              final docId = loginProvider.doctorId;
+              context.read<AppointmentsProvider>().loadAllAppointments(doctorId: docId);
+            }
           },
         );
       },

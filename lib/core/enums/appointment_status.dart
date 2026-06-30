@@ -10,28 +10,33 @@ extension AppointmentStatusExtension on AppointmentStatus {
   String get value {
     switch (this) {
       case AppointmentStatus.pending:
-        return 'pending';
+        return 'pendiente';
       case AppointmentStatus.confirmed:
-        return 'confirmed';
+        return 'confirmada';
       case AppointmentStatus.in_progress:
-        return 'in_progress';
+        return 'en_curso';
       case AppointmentStatus.completed:
-        return 'completed';
+        return 'completada';
       case AppointmentStatus.cancelled:
-        return 'cancelled';
+        return 'cancelada';
     }
   }
 
   static AppointmentStatus fromString(String status) {
     switch (status.toLowerCase()) {
+      case 'confirmada':
       case 'confirmed':
         return AppointmentStatus.confirmed;
+      case 'en_curso':
       case 'in_progress':
         return AppointmentStatus.in_progress;
+      case 'completada':
       case 'completed':
         return AppointmentStatus.completed;
+      case 'cancelada':
       case 'cancelled':
         return AppointmentStatus.cancelled;
+      case 'pendiente':
       case 'pending':
       default:
         return AppointmentStatus.pending;

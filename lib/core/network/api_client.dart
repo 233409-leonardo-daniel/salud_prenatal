@@ -8,6 +8,8 @@ class ApiClient {
 
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
+  String? get authToken => _authToken;
+
   void setAuthToken(String token) {
     _authToken = token;
   }

@@ -5,8 +5,8 @@ import '../providers/patient_detail_provider.dart';
 import 'patient_state.dart';
 import '../../domain/entities/patient.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
-import '../../../appointments/domain/entities/appointment.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class PatientDetailPage extends StatefulWidget {
   final String patientName;
@@ -41,42 +41,44 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     final patientDetailProvider = context.watch<PatientDetailProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
 
-    if (patientDetailProvider.status == PatientDetailStatus.loading || patientDetailProvider.status == PatientDetailStatus.initial) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Expediente: ${widget.patientName}'),
-          backgroundColor: AppColors.primary,
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-      );
-    }
-
-    if (patientDetailProvider.status == PatientDetailStatus.error) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Expediente: ${widget.patientName}'),
-          backgroundColor: AppColors.primary,
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(patientDetailProvider.error ?? 'Error', style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  context.read<PatientDetailProvider>().loadPatientDetails(widget.userId);
-                },
-                child: const Text('Reintentar'),
-              )
-            ],
+    switch (patientDetailProvider.status) {
+      case PatientDetailStatus.initial:
+      case PatientDetailStatus.loading:
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Expediente: ${widget.patientName}'),
+            backgroundColor: AppColors.primary,
+            iconTheme: const IconThemeData(color: Colors.white),
           ),
-        ),
-      );
+          body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        );
+      case PatientDetailStatus.error:
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Expediente: ${widget.patientName}'),
+            backgroundColor: AppColors.primary,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(patientDetailProvider.error ?? 'Error', style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<PatientDetailProvider>().loadPatientDetails(widget.userId);
+                  },
+                  child: const Text('Reintentar'),
+                )
+              ],
+            ),
+          ),
+        );
+      case PatientDetailStatus.success:
+        break;
     }
 
     final userProfile = patientDetailProvider.currentPatientProfile;

@@ -1,17 +1,21 @@
-enum AppointmentStatus { pending, completed, cancelled }
+import '../../../../core/enums/appointment_status.dart';
 
 class Appointment {
-  final String id;
+  final int id;
+  final int doctorId;
+  final int patientId;
   final String doctorName;
   final String patientName;
   final DateTime dateTime;
   final AppointmentStatus status;
   final String reason;
 
-  Appointment({
+  const Appointment({
     required this.id,
-    required this.doctorName,
-    required this.patientName,
+    required this.doctorId,
+    required this.patientId,
+    this.doctorName = '',
+    this.patientName = '',
     required this.dateTime,
     this.status = AppointmentStatus.pending,
     required this.reason,

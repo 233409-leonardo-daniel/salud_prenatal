@@ -31,6 +31,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final _specialtyController = TextEditingController();
   final _officeController = TextEditingController();
 
+  // Receptionist fields
+  final _doctorIdController = TextEditingController();
+
   bool _isPasswordVisible = false;
   bool _privacyAccepted = false;
 
@@ -47,6 +50,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _licenseController.dispose();
     _specialtyController.dispose();
     _officeController.dispose();
+    _doctorIdController.dispose();
     super.dispose();
   }
 
@@ -122,7 +126,24 @@ class _RegisterPageState extends State<RegisterPage> {
           specialty: _specialtyController.text.trim(),
           office: _officeController.text.trim(),
         );
+      } else if (role == 'receptionist') {
+        final doctorId = int.tryParse(_doctorIdController.text.trim());
+        if (doctorId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ingresa un ID de médico válido'), backgroundColor: Colors.red),
+          );
+          return;
+        }
+        success = await registerProvider.registerReceptionist(
+          name: _nameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          password: _passwordController.text,
+          doctorId: doctorId,
+        );
       } else {
+        // admin fallback
         success = await registerProvider.registerAdmin(
           name: _nameController.text.trim(),
           lastName: _lastNameController.text.trim(),
@@ -232,20 +253,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 32), // Spacer to balance
+                        const SizedBox(width: 48), // Spacer to balance
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.pregnant_woman,
-                                color: Colors.white,
-                                size: 18,
-                              ),
+                            Image.asset(
+                              'assets/logo_integrador-removebg-preview.png',
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.contain,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -378,8 +393,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           Row(
                             children: [
                               _buildRoleCard('patient', 'Paciente', Icons.pregnant_woman, AppColors.primary),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
                               _buildRoleCard('doctor', 'Doctor(a)', Icons.badge_outlined, AppColors.primary),
+                              const SizedBox(width: 8),
+                              _buildRoleCard('receptionist', 'Recepcionista', Icons.assignment_ind_outlined, const Color(0xFF6A5ACD)),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -473,6 +490,61 @@ class _RegisterPageState extends State<RegisterPage> {
                                 prefixIcon: Icon(Icons.local_hospital_outlined),
                               ),
                               validator: (value) => value == null || value.isEmpty ? 'Ingresa tu consultorio' : null,
+                            ),
+                          ] else if (registerProvider.selectedRole == 'receptionist') ...[
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6A5ACD).withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFF6A5ACD).withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.assignment_ind_outlined, color: Color(0xFF6A5ACD), size: 28),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Recepcionista',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF6A5ACD),
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'Serás vinculado al médico que te asignó. Ingresa el ID del médico para completar tu registro.',
+                                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _doctorIdController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'ID del Médico',
+                                hintText: 'Ej: 1',
+                                prefixIcon: Icon(Icons.badge_outlined),
+                                helperText: 'Solicita este número a tu médico',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Ingresa el ID del médico';
+                                }
+                                if (int.tryParse(value.trim()) == null) {
+                                  return 'Debe ser un número válido';
+                                }
+                                return null;
+                              },
                             ),
                           ],
                           const SizedBox(height: 32),

@@ -5,7 +5,7 @@ class DeleteAppointmentUsecase {
 
   const DeleteAppointmentUsecase(this._repository);
 
-  Future<void> call(String id) {
+  Future<void> call(int id) {
     return _repository.deleteAppointment(id);
   }
 }

@@ -18,4 +18,9 @@ class LoginRepositoryImpl implements LoginRepository {
   Future<UserProfile> getUserProfile(int userId) {
     return remoteDataSource.getUserProfile(userId);
   }
+
+  @override
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile) {
+    return remoteDataSource.updateUserProfile(userId, profile);
+  }
 }

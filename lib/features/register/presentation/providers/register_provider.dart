@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/register_request.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../pages/register_state.dart';
+import '../../../../core/network/api_client.dart';
+import 'dart:convert';
 
 class RegisterProvider with ChangeNotifier {
   final RegisterPatientUseCase _registerPatientUseCase;
@@ -114,6 +116,51 @@ class RegisterProvider with ChangeNotifier {
       _status = RegisterStatus.success;
       notifyListeners();
       return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _status = RegisterStatus.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> registerReceptionist({
+    required String name,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required int doctorId,
+  }) async {
+    _status = RegisterStatus.loading;
+    _errorMessage = null;
+    _token = null;
+    notifyListeners();
+
+    try {
+      final body = {
+        'name': name,
+        'last_name': lastName,
+        'email': email,
+        'phone': phone,
+        'password': password,
+      };
+      final response = await ApiClient().post(
+        '/doctors/$doctorId/receptionists',
+        body,
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        _token = 'receptionist_registered';
+        _status = RegisterStatus.success;
+        notifyListeners();
+        return true;
+      } else {
+        final decoded = jsonDecode(response.body);
+        _errorMessage = decoded['detail']?.toString() ?? 'Error al registrar recepcionista';
+        _status = RegisterStatus.error;
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _status = RegisterStatus.error;

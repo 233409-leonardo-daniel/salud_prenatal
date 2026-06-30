@@ -4,12 +4,16 @@ import '../../../../core/theme/theme.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import '../../../privacy_policy/data/models/accepted_policy_model.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final loginProvider = context.watch<LoginProvider>();
+    final initial = loginProvider.name.isNotEmpty ? loginProvider.name[0].toUpperCase() : 'U';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
@@ -18,10 +22,17 @@ class ProfilePage extends StatelessWidget {
           // Header
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 30,
-                backgroundColor: Color(0xFFFFE0EF),
-                child: Icon(Icons.person, size: 32, color: AppColors.primary),
+                backgroundColor: const Color(0xFFFFE0EF),
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
               ),
               const SizedBox(width: 16),
               Column(
@@ -46,49 +57,74 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Under construction notice
+          // User Information details card
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withOpacity(0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.construction_outlined, color: AppColors.primary, size: 22),
+                _buildInfoRow(
+                  icon: Icons.person_outline,
+                  label: 'Nombre completo',
+                  value: '${loginProvider.userProfile?.name} ${loginProvider.userProfile?.lastName}'.trim().isNotEmpty
+                      ? '${loginProvider.userProfile?.name} ${loginProvider.userProfile?.lastName}'
+                      : 'No especificado',
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sección en construcción',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                          fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Las opciones de perfil estarán disponibles próximamente.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                      ),
-                    ],
+                const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                _buildInfoRow(
+                  icon: Icons.email_outlined,
+                  label: 'Correo electrónico',
+                  value: loginProvider.userProfile?.email.isNotEmpty == true
+                      ? loginProvider.userProfile!.email
+                      : 'No especificado',
+                ),
+                const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                _buildInfoRow(
+                  icon: Icons.phone_outlined,
+                  label: 'Teléfono',
+                  value: loginProvider.userProfile?.phone.isNotEmpty == true
+                      ? loginProvider.userProfile!.phone
+                      : 'No especificado',
+                ),
+                const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                _buildInfoRow(
+                  icon: Icons.badge_outlined,
+                  label: 'Rol',
+                  value: loginProvider.userProfile?.role.toLowerCase() == 'doctor'
+                      ? 'Médico / Especialista'
+                      : 'Paciente',
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                  label: const Text(
+                    'Editar Perfil',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
                   ),
                 ),
               ],
@@ -102,8 +138,71 @@ class ProfilePage extends StatelessWidget {
 
           // Account deletion section (expandable)
           _AccountDeletionTile(),
+          const SizedBox(height: 24),
+
+          // Logout Button
+          ElevatedButton.icon(
+            onPressed: () {
+              final loginProvider = context.read<LoginProvider>();
+              loginProvider.reset();
+              Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+            },
+            icon: const Icon(Icons.logout_rounded, size: 18, color: Colors.white),
+            label: const Text(
+              'Cerrar Sesión',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.shade200,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 0,
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.06),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 18),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

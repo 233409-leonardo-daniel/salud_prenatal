@@ -5,8 +5,8 @@ import '../pages/patient_state.dart';
 class InvitationProvider with ChangeNotifier {
   final InvitationRemoteDataSource _dataSource;
 
-  InvitationProvider({InvitationRemoteDataSource? dataSource})
-      : _dataSource = dataSource ?? InvitationRemoteDataSourceImpl();
+  InvitationProvider({required InvitationRemoteDataSource dataSource})
+      : _dataSource = dataSource;
 
   InvitationCodeStatus _generateStatus = InvitationCodeStatus.initial;
   InvitationCodeStatus _redeemStatus = InvitationCodeStatus.initial;

@@ -7,6 +7,8 @@ import '../providers/chat_provider.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../di/chat_module.dart';
 
+import '../../../../core/network/api_client.dart';
+
 class ChatRoomPage extends StatefulWidget {
   final int otherUserId;
   final String otherUserName;
@@ -31,7 +33,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   @override
   void initState() {
     super.initState();
-    final chatModule = ChatModule();
+    final apiClient = context.read<ApiClient>();
+    final chatModule = ChatModule(apiClient);
     _chatProvider = ChatProvider(chatModule.repository);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -19,7 +19,7 @@ class DeleteAppointmentProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _deleteAppointmentUsecase.call(id);
+      await _deleteAppointmentUsecase.call(int.parse(id));
       _status = DeleteAppointmentStatus.success;
     } catch (e) {
       _status = DeleteAppointmentStatus.error;

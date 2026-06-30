@@ -5,8 +5,10 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/config/api_config.dart';
 import '../models/chat_message_model.dart';
+import '../models/conversation_dto.dart';
 
 abstract class ChatRemoteDataSource {
+  Future<List<ConversationDto>> getConversations(int currentUserId);
   Future<List<ChatMessageModel>> getChatHistory(int otherUserId, int currentUserId);
   Stream<ChatMessageModel> get messageStream;
   Stream<bool> get connectionStatusStream;
@@ -26,17 +28,50 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   int? _currentUserId;
   bool _isConnected = false;
   
-  // Timer for automatic reconnection attempts
   Timer? _reconnectTimer;
   bool _isDisposed = false;
 
-  ChatRemoteDataSourceImpl({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ChatRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
   @override
   Stream<ChatMessageModel> get messageStream => _messageController.stream;
 
   @override
   Stream<bool> get connectionStatusStream => _connectionController.stream;
+
+  @override
+  Future<List<ConversationDto>> getConversations(int currentUserId) async {
+    try {
+      final response = await _apiClient.get('/chat/conversations?user_id=$currentUserId');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((item) => ConversationDto.fromJson(item)).toList();
+      }
+      throw Exception('Error al obtener conversaciones (Status: ${response.statusCode})');
+    } catch (e) {
+      // Mock data if backend not available
+      return [
+        ConversationDto(
+          id: 1,
+          participant1Id: currentUserId,
+          participant2Id: 2,
+          participant1Name: 'Recepcionista',
+          participant2Name: 'María López',
+          unreadCount: 2,
+          updatedAt: DateTime.now().toIso8601String(),
+        ),
+        ConversationDto(
+          id: 2,
+          participant1Id: currentUserId,
+          participant2Id: 1,
+          participant1Name: 'Recepcionista',
+          participant2Name: 'Dr. Pedro Gómez',
+          unreadCount: 0,
+          updatedAt: DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+        ),
+      ];
+    }
+  }
 
   @override
   Future<List<ChatMessageModel>> getChatHistory(int otherUserId, int currentUserId) async {
@@ -48,7 +83,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
       throw Exception('Error al cargar historial (Status: ${response.statusCode})');
     } catch (e) {
-      // Fallback offline mock history
       if (e.toString().contains('SocketException') || 
           e.toString().contains('Connection refused') || 
           e.toString().contains('ClientException')) {
@@ -57,34 +91,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         return [
           ChatMessageModel(
             messageId: 101,
-            senderId: 2, // Maria Lopez (Patient)
-            receiverId: 1, // Pedro Gomez (Doctor)
-            content: "Buenas tardes doctor, ¿cómo está?",
+            senderId: otherUserId, 
+            receiverId: currentUserId, 
+            content: "Hola, necesito información sobre mi cita.",
             createdAt: DateTime.now().subtract(const Duration(hours: 3)),
             isRead: true,
           ),
           ChatMessageModel(
             messageId: 102,
-            senderId: 1, // Doctor
-            receiverId: 2, // Patient
-            content: "Hola. Muy bien, gracias. ¿Cómo va tu embarazo esta semana? ¿Registraste tus mediciones?",
+            senderId: currentUserId, 
+            receiverId: otherUserId, 
+            content: "Claro, ¿me indicas tu nombre completo por favor?",
             createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 55)),
-            isRead: true,
-          ),
-          ChatMessageModel(
-            messageId: 103,
-            senderId: 2, // Patient
-            receiverId: 1, // Doctor
-            content: "Sí, ya registré mi presión de hoy en la bitácora. Salió en 118/76 mmHg.",
-            createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 50)),
-            isRead: true,
-          ),
-          ChatMessageModel(
-            messageId: 104,
-            senderId: 1, // Doctor
-            receiverId: 2, // Patient
-            content: "Excelente presión. Mantén la hidratación y recuerda descansar. Cualquier síntoma me avisas.",
-            createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 45)),
             isRead: true,
           ),
         ];
@@ -108,13 +126,19 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     debugPrint('Intentando conectar WebSocket a: $socketUrl');
     
     try {
-      _webSocket = await WebSocket.connect(socketUrl).timeout(const Duration(seconds: 5));
+      Map<String, dynamic>? wsHeaders;
+      final token = ApiClient().authToken;
+      if (token != null) {
+        wsHeaders = {
+          'Authorization': 'Bearer $token',
+        };
+      }
+      _webSocket = await WebSocket.connect(socketUrl, headers: wsHeaders).timeout(const Duration(seconds: 5));
       _isOfflineMode = false;
       _isConnected = true;
       _connectionController.add(true);
       debugPrint('WebSocket conectado exitosamente.');
 
-      // Listen for incoming messages
       _webSocket!.listen(
         (data) {
           try {
@@ -149,7 +173,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     
     if (_isDisposed) return;
     
-    // Attempt reconnection in 5 seconds
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(const Duration(seconds: 5), () {
       if (!_isConnected && _currentUserId != null) {
@@ -172,8 +195,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     };
 
     if (_isOfflineMode) {
-      // Offline mode simulation
-      // 1. Echo the sent message immediately
       final echoMessage = ChatMessageModel(
         messageId: DateTime.now().millisecondsSinceEpoch,
         senderId: _currentUserId ?? 99,
@@ -184,11 +205,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
       
       _messageController.add(echoMessage);
-
-      // 2. Trigger automated simulation reply
       _triggerOfflineReply(receiverId);
     } else {
-      // Connect and send via real socket
       if (_webSocket != null && _webSocket!.readyState == WebSocket.open) {
         _webSocket!.add(jsonEncode(messageJson));
       } else {
@@ -199,26 +217,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   void _triggerOfflineReply(int receiverId) {
-    final replies = [
-      "¡Hola! He recibido tu mensaje. Estaré revisando tus registros en la bitácora en breve.",
-      "Entendido. ¿Has tenido algún síntoma adicional como dolor de cabeza o hinchazón hoy?",
-      "Perfecto. Recuerda mantener un consumo bajo de sal y beber suficiente agua.",
-      "Excelente reporte. Tus signos vitales y bitácora se ven muy estables.",
-      "Recuerda que si presentas cualquier señal de alarma (sangrado, dolor abdominal fuerte o visión borrosa), debes acudir a urgencias inmediatamente.",
-      "De acuerdo, nos vemos en nuestra próxima cita programada. ¡Sigue cuidándote mucho!"
-    ];
-
-    // Pick a pseudo-random reply based on message length or time
-    final randomIndex = DateTime.now().millisecond % replies.length;
-    final replyContent = replies[randomIndex];
-
     Timer(const Duration(milliseconds: 1500), () {
       if (_isOfflineMode && _isConnected && !_isDisposed) {
         final mockReply = ChatMessageModel(
           messageId: DateTime.now().millisecondsSinceEpoch + 1,
           senderId: receiverId,
           receiverId: _currentUserId ?? 99,
-          content: replyContent,
+          content: "Este es un mensaje de prueba offline",
           createdAt: DateTime.now(),
           isRead: false,
         );

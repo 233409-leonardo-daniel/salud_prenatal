@@ -6,7 +6,6 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
-import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
@@ -15,6 +14,8 @@ import '../../../patient_diaries/presentation/providers/patient_diaries_provider
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../chat/presentation/pages/chat_list_page.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
+import 'receptionist_dashboard_page.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -57,12 +58,15 @@ class _DashboardPageState extends State<DashboardPage> {
       appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
     } else {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
+      final docId = loginProvider.doctorId;
+      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: docId);
+      context.read<AppointmentsProvider>().loadAppointments(patId.toString(), isDoctor: false);
       await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
       
       final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
-      diariesProvider.loadDiaries(medicalRecordId);
+      context.read<PatientDiariesProvider>().loadDiaries(medicalRecordId);
     }
   }
 
@@ -76,6 +80,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_userRole == 'receptionist') {
+      return const ReceptionistDashboardPage();
+    }
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: _buildAppBar(),
@@ -89,6 +97,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final String doctorName = loginProvider.name.isNotEmpty 
         ? 'Dra. ${loginProvider.name}' 
         : 'Dra. Mendoza';
+    final String doctorInitial = loginProvider.name.isNotEmpty
+        ? loginProvider.name[0].toUpperCase()
+        : 'M';
 
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
@@ -97,9 +108,13 @@ class _DashboardPageState extends State<DashboardPage> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  doctorInitial,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -138,9 +153,13 @@ class _DashboardPageState extends State<DashboardPage> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  doctorInitial,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -695,9 +714,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 22,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'P',
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ],
           ),
@@ -886,9 +909,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundImage: docImageStr != null 
-                        ? NetworkImage(docImageStr)
-                        : const NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        docNameStr.isNotEmpty
+                            ? docNameStr.replaceAll(RegExp(r'^(Dr\.|Dra\.)\s*', caseSensitive: false), '')[0].toUpperCase()
+                            : 'D',
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(

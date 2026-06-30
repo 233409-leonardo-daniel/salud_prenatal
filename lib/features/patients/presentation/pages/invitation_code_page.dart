@@ -91,42 +91,46 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
           ),
           const SizedBox(height: 32),
 
-          // Code card
-          if (invitationProvider.generateStatus == InvitationCodeStatus.loading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          else if (invitationProvider.generateStatus == InvitationCodeStatus.error)
-            _buildErrorCard(invitationProvider.error ?? 'Error al generar código', () {
-              final doctorId = context.read<LoginProvider>().doctorId ?? 1;
-              invitationProvider.generateInvitationCode(doctorId);
-            })
-          else if (invitationProvider.generateStatus == InvitationCodeStatus.success &&
-              invitationProvider.generatedCode != null)
-            _buildCodeCard(invitationProvider.generatedCode!, invitationProvider.expiresAt),
-
-          const SizedBox(height: 24),
-
-          // Generate new code button
-          if (invitationProvider.generateStatus == InvitationCodeStatus.success)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
+          // Code card & buttons
+          ...switch (invitationProvider.generateStatus) {
+            InvitationCodeStatus.initial => [
+                const SizedBox(height: 40),
+              ],
+            InvitationCodeStatus.loading => [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                ),
+              ],
+            InvitationCodeStatus.error => [
+                _buildErrorCard(invitationProvider.error ?? 'Error al generar código', () {
                   final doctorId = context.read<LoginProvider>().doctorId ?? 1;
                   invitationProvider.generateInvitationCode(doctorId);
-                },
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Generar nuevo código'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.primary),
-                  foregroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                }),
+              ],
+            InvitationCodeStatus.success => [
+                if (invitationProvider.generatedCode != null)
+                  _buildCodeCard(invitationProvider.generatedCode!, invitationProvider.expiresAt),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      final doctorId = context.read<LoginProvider>().doctorId ?? 1;
+                      invitationProvider.generateInvitationCode(doctorId);
+                    },
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Generar nuevo código'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppColors.primary),
+                      foregroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              ],
+          },
         ],
       ),
     );
@@ -397,53 +401,54 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
             ),
           ),
 
-          // Error message
-          if (invitationProvider.redeemStatus == InvitationCodeStatus.error) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      invitationProvider.error ?? 'Error al vincular',
-                      style: TextStyle(color: Colors.red.shade700, fontSize: 13),
-                    ),
+          // Error or success messages
+          ...switch (invitationProvider.redeemStatus) {
+            InvitationCodeStatus.initial || InvitationCodeStatus.loading => [],
+            InvitationCodeStatus.error => [
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-            ),
-          ],
-
-          // Success message
-          if (invitationProvider.redeemStatus == InvitationCodeStatus.success) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle_outline, color: Colors.teal.shade700, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '¡Te has vinculado exitosamente con tu médico!',
-                      style: TextStyle(color: Colors.teal.shade700, fontSize: 13),
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          invitationProvider.error ?? 'Error al vincular',
+                          style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            InvitationCodeStatus.success => [
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, color: Colors.teal.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '¡Te has vinculado exitosamente con tu médico!',
+                          style: TextStyle(color: Colors.teal.shade700, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+          },
         ],
       ),
     );

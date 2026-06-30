@@ -11,6 +11,7 @@ import '../../../patients/presentation/pages/patient_state.dart';
 import '../../di/chat_module.dart';
 import '../../domain/entities/chat_message.dart';
 import 'chat_room_page.dart';
+import '../../../../core/network/api_client.dart';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
@@ -23,7 +24,7 @@ class _ChatListPageState extends State<ChatListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  final ChatModule _chatModule = ChatModule();
+  late final ChatModule _chatModule;
   Map<int, List<ChatMessage>> _conversations = {};
   bool _loadingLastMessages = false;
   StreamSubscription<ChatMessage>? _listMessageSubscription;
@@ -31,6 +32,8 @@ class _ChatListPageState extends State<ChatListPage> {
   @override
   void initState() {
     super.initState();
+    final apiClient = context.read<ApiClient>();
+    _chatModule = ChatModule(apiClient);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final loginProvider = context.read<LoginProvider>();
       final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;

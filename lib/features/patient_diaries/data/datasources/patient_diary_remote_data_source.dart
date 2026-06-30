@@ -21,8 +21,8 @@ abstract class PatientDiaryRemoteDataSource {
 class PatientDiaryRemoteDataSourceImpl implements PatientDiaryRemoteDataSource {
   final ApiClient _apiClient;
 
-  PatientDiaryRemoteDataSourceImpl({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  PatientDiaryRemoteDataSourceImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   // Local fallback storage for mock offline mode
   static final List<PatientDiaryModel> _offlineDiaries = [
@@ -103,13 +103,16 @@ class PatientDiaryRemoteDataSourceImpl implements PatientDiaryRemoteDataSource {
       'notes': diary.notes,
     };
 
+    print('[PatientDiary] POST /patient-diaries/ payload: $payload');
+
     try {
       final response = await _apiClient.post('/patient-diaries/', payload);
+      print('[PatientDiary] Response status: ${response.statusCode}, body: ${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return PatientDiaryModel.fromJson(data);
       }
-      throw Exception('Error al crear bitácora (Status: ${response.statusCode})');
+      throw Exception('Error al crear bitácora (Status: ${response.statusCode}) - ${response.body}');
     } catch (e) {
       if (e.toString().contains('SocketException') ||
           e.toString().contains('Connection refused') ||

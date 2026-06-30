@@ -65,10 +65,13 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     backgroundColor: AppColors.primary,
                     radius: 24,
-                    child: Icon(Icons.person, color: Colors.white),
+                    child: Text(
+                      widget.patientName.isNotEmpty ? widget.patientName[0].toUpperCase() : 'P',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

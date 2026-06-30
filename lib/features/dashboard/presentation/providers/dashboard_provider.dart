@@ -7,8 +7,8 @@ import '../../../login/domain/entities/user_profile.dart';
 class DashboardProvider with ChangeNotifier {
   final DashboardRemoteDataSource _remoteDataSource;
 
-  DashboardProvider({DashboardRemoteDataSource? remoteDataSource})
-      : _remoteDataSource = remoteDataSource ?? DashboardRemoteDataSourceImpl();
+  DashboardProvider({required DashboardRemoteDataSource remoteDataSource})
+      : _remoteDataSource = remoteDataSource;
 
   bool _isLoading = false;
   bool _isDetailsLoading = false;
@@ -54,7 +54,7 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadPatientDashboard(int patientId, int userId) async {
+  Future<void> loadPatientDashboard(int patientId, int userId, {int? doctorId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -79,7 +79,7 @@ class DashboardProvider with ChangeNotifier {
       }
 
       try {
-        _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId);
+        _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId);
       } catch (e) {
         print('Error fetching medical record: $e');
         _medicalRecord = null;
@@ -100,14 +100,14 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadPatientDetails(int patientId) async {
+  Future<void> loadPatientDetails(int patientId, {int? doctorId}) async {
     _isDetailsLoading = true;
     _activeMedicalRecord = null;
     _activeConsultations = [];
     notifyListeners();
 
     try {
-      _activeMedicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId);
+      _activeMedicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId);
       if (_activeMedicalRecord != null) {
         _activeConsultations = await _remoteDataSource.getConsultationsByMedicalRecord(
           _activeMedicalRecord!.medicalRecordId,

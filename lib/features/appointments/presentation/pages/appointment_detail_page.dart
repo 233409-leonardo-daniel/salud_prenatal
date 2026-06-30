@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/enums/appointment_status.dart';
 import '../../domain/entities/appointment.dart';
 import '../../../login/presentation/providers/login_provider.dart';
+import '../providers/appointment_provider.dart';
+import '../widgets/appointment_status_chip.dart';
 
 class AppointmentDetailPage extends StatelessWidget {
   final Appointment appointment;
@@ -22,6 +25,14 @@ class AppointmentDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final loginProvider = context.watch<LoginProvider>();
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+    final isReceptionist = loginProvider.role == 'recepcionist';
+    
+    // Obtenemos la cita del provider si existe (para reflejar cambios locales de estado)
+    final provider = context.watch<AppointmentsProvider>();
+    final currentAppointment = provider.appointments.firstWhere(
+      (a) => a.id == appointment.id,
+      orElse: () => appointment,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
@@ -60,38 +71,43 @@ class AppointmentDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    appointment.reason,
+                    currentAppointment.reason,
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _formatDate(appointment.dateTime),
+                    _formatDate(currentAppointment.dateTime),
                     style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
                   ),
+                  const SizedBox(height: 16),
+                  AppointmentStatusChip(status: currentAppointment.status),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            if (isDoctor) ...[
-              _buildInfoCard('Paciente', appointment.patientName, Icons.person_outline),
+            if (isDoctor || isReceptionist) ...[
+              _buildInfoCard('Paciente', currentAppointment.patientName, Icons.person_outline),
               const SizedBox(height: 12),
             ],
-            _buildInfoCard('Médico', appointment.doctorName, Icons.medical_services_outlined),
-            const SizedBox(height: 12),
-            _buildInfoCard('Estado', _statusToString(appointment.status), Icons.info_outline),
+            _buildInfoCard('Médico', currentAppointment.doctorName, Icons.medical_services_outlined),
+            
             const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            
+            if (isReceptionist || isDoctor) ..._buildActionButtons(context, currentAppointment, provider),
+
+            if (!isReceptionist)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                child: const Text('Volver al Calendario', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
-              child: const Text('Volver al Calendario', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-            ),
           ],
         ),
       ),
@@ -122,14 +138,41 @@ class AppointmentDetailPage extends StatelessWidget {
     );
   }
 
-  String _statusToString(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.completed:
-        return 'Completada';
-      case AppointmentStatus.cancelled:
-        return 'Cancelada';
-      case AppointmentStatus.pending:
-        return 'Pendiente';
+  List<Widget> _buildActionButtons(BuildContext context, Appointment appointment, AppointmentsProvider provider) {
+    if (provider.viewState == ViewState.loading) {
+      return [const Center(child: CircularProgressIndicator())];
     }
+    
+    List<Widget> buttons = [];
+    
+    void updateStatus(AppointmentStatus newStatus) {
+      provider.updateAppointmentStatus(appointment.id, newStatus);
+    }
+    
+    if (appointment.status == AppointmentStatus.pending) {
+      buttons.add(_actionButton('Confirmar Asistencia', Colors.blue, () => updateStatus(AppointmentStatus.confirmed)));
+      buttons.add(const SizedBox(height: 8));
+      buttons.add(_actionButton('Cancelar Cita', Colors.red, () => updateStatus(AppointmentStatus.cancelled)));
+    } else if (appointment.status == AppointmentStatus.confirmed) {
+      buttons.add(_actionButton('Marcar En Curso', Colors.indigo, () => updateStatus(AppointmentStatus.in_progress)));
+      buttons.add(const SizedBox(height: 8));
+      buttons.add(_actionButton('Cancelar Cita', Colors.red, () => updateStatus(AppointmentStatus.cancelled)));
+    } else if (appointment.status == AppointmentStatus.in_progress) {
+      buttons.add(_actionButton('Marcar Completada', Colors.green, () => updateStatus(AppointmentStatus.completed)));
+    }
+    
+    return buttons;
+  }
+  
+  Widget _actionButton(String label, Color color, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      ),
+      child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+    );
   }
 }

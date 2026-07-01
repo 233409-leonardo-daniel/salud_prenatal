@@ -40,6 +40,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Stream<bool> get connectionStatusStream => _connectionController.stream;
 
   @override
+  @override
   Future<List<ConversationDto>> getConversations(int currentUserId) async {
     try {
       final response = await _apiClient.get('/chat/conversations?user_id=$currentUserId');
@@ -47,29 +48,33 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((item) => ConversationDto.fromJson(item)).toList();
       }
-      throw Exception('Error al obtener conversaciones (Status: ${response.statusCode})');
+      return [];
     } catch (e) {
-      // Mock data if backend not available
-      return [
-        ConversationDto(
-          id: 1,
-          participant1Id: currentUserId,
-          participant2Id: 2,
-          participant1Name: 'Recepcionista',
-          participant2Name: 'María López',
-          unreadCount: 2,
-          updatedAt: DateTime.now().toIso8601String(),
-        ),
-        ConversationDto(
-          id: 2,
-          participant1Id: currentUserId,
-          participant2Id: 1,
-          participant1Name: 'Recepcionista',
-          participant2Name: 'Dr. Pedro Gómez',
-          unreadCount: 0,
-          updatedAt: DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
-        ),
-      ];
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Connection refused') || 
+          e.toString().contains('ClientException')) {
+        return [
+          ConversationDto(
+            id: 1,
+            participant1Id: currentUserId,
+            participant2Id: 2,
+            participant1Name: 'Recepcionista',
+            participant2Name: 'María López',
+            unreadCount: 2,
+            updatedAt: DateTime.now().toIso8601String(),
+          ),
+          ConversationDto(
+            id: 2,
+            participant1Id: currentUserId,
+            participant2Id: 1,
+            participant1Name: 'Recepcionista',
+            participant2Name: 'Dr. Pedro Gómez',
+            unreadCount: 0,
+            updatedAt: DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+          ),
+        ];
+      }
+      return [];
     }
   }
 
@@ -81,13 +86,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((item) => ChatMessageModel.fromJson(item)).toList();
       }
-      throw Exception('Error al cargar historial (Status: ${response.statusCode})');
+      return [];
     } catch (e) {
       if (e.toString().contains('SocketException') || 
           e.toString().contains('Connection refused') || 
           e.toString().contains('ClientException')) {
         await Future.delayed(const Duration(milliseconds: 500));
-        
         return [
           ChatMessageModel(
             messageId: 101,
@@ -107,21 +111,23 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           ),
         ];
       }
-      rethrow;
+      return [];
     }
   }
 
   @override
   Future<void> connect(int currentUserId) async {
-    if (_isConnected) return;
+    if (_isConnected && _webSocket != null && _webSocket!.readyState == WebSocket.open) return;
     
     _currentUserId = currentUserId;
     _isDisposed = false;
     
     final httpUrl = ApiConfig.baseUrl;
-    final wsScheme = httpUrl.startsWith('https') ? 'wss' : 'ws';
-    final hostAndPath = httpUrl.replaceFirst(RegExp(r'^https?://'), '');
-    final socketUrl = '$wsScheme://$hostAndPath/chat/ws/$currentUserId';
+    final uri = Uri.parse(httpUrl);
+    final host = uri.host;
+    final port = uri.hasPort ? uri.port : 8000;
+    final path = uri.path;
+    final socketUrl = 'ws://$host:$port$path/chat/ws/$currentUserId';
 
     debugPrint('Intentando conectar WebSocket a: $socketUrl');
     
@@ -160,10 +166,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         cancelOnError: true,
       );
     } catch (e) {
-      debugPrint('Fallo de conexión WebSocket: $e. Entrando en modo offline simulado.');
-      _isOfflineMode = true;
-      _isConnected = true; // Simulado
-      _connectionController.add(true);
+      debugPrint('Fallo de conexión WebSocket: $e. Reintentando en 5 segundos...');
+      _handleDisconnect();
     }
   }
 
@@ -184,35 +188,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   void sendMessage(int receiverId, String content) {
-    if (!_isConnected) {
-      debugPrint('Error: No se pueden enviar mensajes sin conexión.');
-      return;
-    }
-
-    final messageJson = {
-      'receiver_id': receiverId,
-      'content': content,
-    };
-
-    if (_isOfflineMode) {
-      final echoMessage = ChatMessageModel(
-        messageId: DateTime.now().millisecondsSinceEpoch,
-        senderId: _currentUserId ?? 99,
-        receiverId: receiverId,
-        content: content,
-        createdAt: DateTime.now(),
-        isRead: false,
-      );
-      
-      _messageController.add(echoMessage);
-      _triggerOfflineReply(receiverId);
+    if (_webSocket != null && _webSocket!.readyState == WebSocket.open) {
+      final messageJson = {
+        'receiver_id': receiverId,
+        'content': content,
+      };
+      _webSocket!.add(jsonEncode(messageJson));
+      debugPrint('Mensaje enviado vía WebSocket: $messageJson');
     } else {
-      if (_webSocket != null && _webSocket!.readyState == WebSocket.open) {
-        _webSocket!.add(jsonEncode(messageJson));
-      } else {
-        debugPrint('Error: El WebSocket no está listo. Intentando reconectar...');
-        _handleDisconnect();
-      }
+      debugPrint('Error: El WebSocket no está listo. Intentando reconectar...');
+      _handleDisconnect();
     }
   }
 

@@ -8,9 +8,6 @@ import io.flutter.embedding.android.FlutterActivity
 class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Prevent screenshots and screen recordings
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        
         // Start persistent background service
         val serviceIntent = Intent(this, BackgroundService::class.java)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

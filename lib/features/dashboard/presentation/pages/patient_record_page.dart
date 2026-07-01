@@ -175,7 +175,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     final planText = consultations.isNotEmpty ? consultations.last.plan : 'Continuar con las indicaciones médicas generales.';
 
     final loginProvider = context.watch<LoginProvider>();
-    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+    final isDoctor = loginProvider.role?.toLowerCase() == 'doctor' || loginProvider.role?.toLowerCase() == 'doctor(a)';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -220,6 +220,40 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                     Text('Peso inicial: $initialWeight kg', style: TextStyle(color: AppColors.textDark)),
                   ],
                 ),
+              ),
+            ),
+            SizedBox(height: 12),
+            _buildExpansionSection(
+              title: 'Datos del Expediente Médico',
+              icon: Icons.medical_information_outlined,
+              content: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: record == null
+                    ? Text(
+                        'Aún no se cuenta con expediente médico registrado para esta paciente.',
+                        style: TextStyle(color: AppColors.textMuted),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildRecordValueRow('Embarazos previos', record.previousPregnancies.toString()),
+                          _buildRecordValueRow('Partos previos', record.previousDeliveries.toString()),
+                          _buildRecordValueRow('Abortos previos', record.previousMiscarriages.toString()),
+                          _buildRecordValueRow('Cesáreas previas', record.previousCesareans.toString()),
+                          const Divider(height: 20),
+                          _buildRecordBoolRow('Hipertensión previa', record.previousHypertension),
+                          _buildRecordBoolRow('Diabetes', record.diabetes),
+                          _buildRecordBoolRow('Historial familiar de hipertensión', record.familyHistoryHypertension),
+                          _buildRecordBoolRow('Preeclampsia previa', record.previousPreeclampsia),
+                          _buildRecordBoolRow('Enfermedad renal crónica', record.chronicKidneyDisease),
+                          _buildRecordBoolRow('Hipertensión crónica', record.chronicHypertension),
+                          _buildRecordBoolRow('Embarazo múltiple', record.multiplePregnancy),
+                          _buildRecordBoolRow('Muerte fetal', record.fetalDeath),
+                          _buildRecordBoolRow('Restricción de crecimiento fetal', record.fetalGrowthRestriction),
+                          _buildRecordBoolRow('Historial familiar de cardiopatía', record.familyHistoryHeartDisease),
+                          _buildRecordBoolRow('Tabaquismo activo', record.activeSmoking),
+                        ],
+                      ),
               ),
             ),
             SizedBox(height: 12),
@@ -292,6 +326,45 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     );
   }
 
+  Widget _buildRecordValueRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(label, style: TextStyle(color: AppColors.textDark)),
+          ),
+          Text(value, style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordBoolRow(String label, bool value) {
+    final color = value ? Colors.red : Colors.green;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(
+            value ? Icons.check_circle : Icons.remove_circle_outline,
+            color: color,
+            size: 18,
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(label, style: TextStyle(color: AppColors.textDark)),
+          ),
+          Text(
+            value ? 'Sí' : 'No',
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResumenIA(MedicalRecordResponse record) {
     final riskPrediction = record.riskPrediction;
     final hasRiskPrediction = riskPrediction != null &&
@@ -299,6 +372,9 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         riskPrediction.diagnosis!.isNotEmpty;
 
     if (!hasRiskPrediction) return const SizedBox.shrink();
+
+    final diagnosis = riskPrediction.diagnosis!;
+    final level = _resolveRiskLevel(diagnosis);
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -321,11 +397,49 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
             ],
           ),
           SizedBox(height: 12),
-          if (riskPrediction.riskCluster != null)
-            Text(
-              'Clúster: ${riskPrediction.riskCluster}',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple, fontSize: 13),
+          // Cuadro de nivel de riesgo
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              color: level.color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: level.color, width: 1.5),
             ),
+            child: Row(
+              children: [
+                Icon(level.icon, color: level.color, size: 22),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nivel de riesgo',
+                        style: TextStyle(fontSize: 11, color: level.color.withOpacity(0.85), fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        level.label,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: level.color),
+                      ),
+                    ],
+                  ),
+                ),
+                if (riskPrediction.riskCluster != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: level.color,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Clúster ${riskPrediction.riskCluster}',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
+            ),
+          ),
           SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -336,7 +450,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               border: Border.all(color: Colors.purple.withOpacity(0.3)),
             ),
             child: Text(
-              'Diagnóstico: ${riskPrediction.diagnosis}',
+              'Diagnóstico: $diagnosis',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
@@ -348,6 +462,30 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         ],
       ),
     );
+  }
+
+  /// Determina el nivel de riesgo (Bajo / Medio / Alto) a partir del texto del
+  /// diagnóstico devuelto por el modelo de predicción, para mostrarlo en un
+  /// cuadro con color distintivo.
+  _RiskLevel _resolveRiskLevel(String diagnosis) {
+    final text = diagnosis.toLowerCase();
+    final hasAlto = text.contains('alto');
+    final hasMedio = text.contains('medio');
+    final hasBajo = text.contains('bajo');
+
+    if (hasAlto) {
+      return _RiskLevel('Riesgo Alto', Colors.red, Icons.warning_amber_rounded);
+    }
+    if (hasMedio && hasBajo) {
+      return _RiskLevel('Riesgo Bajo-Medio', Colors.orange, Icons.info_outline);
+    }
+    if (hasMedio) {
+      return _RiskLevel('Riesgo Medio', Colors.orange, Icons.info_outline);
+    }
+    if (hasBajo) {
+      return _RiskLevel('Riesgo Bajo', Colors.green, Icons.check_circle_outline);
+    }
+    return _RiskLevel('Riesgo indeterminado', Colors.purple, Icons.analytics_outlined);
   }
 
   Widget _buildExpansionSection({
@@ -405,7 +543,8 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               );
               if (result == true) {
                 if (context.mounted) {
-                  context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId);
+                  final docId = context.read<LoginProvider>().doctorId ?? 1;
+                  context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
                 }
               }
             },
@@ -448,4 +587,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
       );
     }
   }
+}
+
+class _RiskLevel {
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const _RiskLevel(this.label, this.color, this.icon);
 }

@@ -20,6 +20,8 @@ class PatientsListPage extends StatefulWidget {
 class _PatientsListPageState extends State<PatientsListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _activeFilter = 'Todas';
+  int _currentPage = 1;
+  static const int _pageSize = 5;
 
   @override
   void initState() {
@@ -64,7 +66,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
     }
 
     final totalPatientsStr = patientsProvider.patients.length.toString();
-    final patientCards = <Widget>[];
 
     // Map and sort patients by risk
     // Risk definition: High (0), Medium (1), Low (2)
@@ -77,10 +78,15 @@ class _PatientsListPageState extends State<PatientsListPage> {
     final sortedPatients = List<PatientEntity>.from(patientsProvider.patients);
     sortedPatients.sort((a, b) => getRiskLevel(a.patientId).compareTo(getRiskLevel(b.patientId)));
 
+    // Build the view-model list and apply search/risk filters BEFORE paginating,
+    // so pagination always reflects the actually visible set of patients.
+    final searchQuery = _searchController.text.trim().toLowerCase();
+    final filteredPatients = <Map<String, dynamic>>[];
+
     for (final patient in sortedPatients) {
       final pId = patient.patientId;
       final userId = patient.userId;
-      
+
       final patientUser = dashboardProvider.users.firstWhere(
         (u) => u.userId == userId,
         orElse: () => UserProfile(
@@ -92,6 +98,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
       );
 
       final patientName = '${patientUser.name} ${patientUser.lastName}'.trim();
+      final patientCode = '#SP-$pId';
       final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
 
       String risk = 'Bajo Riesgo';
@@ -111,26 +118,66 @@ class _PatientsListPageState extends State<PatientsListPage> {
         imgBg = const Color(0xFFFFF4E5);
       }
 
-      final card = _buildPatientListCard(
-        name: patientName,
-        id: '#SP-$pId',
-        userId: userId,
-        patientEntity: patient,
-        risk: risk,
-        riskColorBg: riskBg,
-        riskColorText: riskText,
-        gestationAge: '${patient.currentGestationalWeeks ?? 28} sem',
-        status: 'Estable',
-        statusIcon: Icons.check_circle_outline,
-        statusIconColor: Colors.teal,
-        avatarInitials: initials,
-        imageBackground: imgBg,
-      );
-
-      if (card is! SizedBox) {
-        patientCards.add(card);
-        patientCards.add(SizedBox(height: 12));
+      if (searchQuery.isNotEmpty &&
+          !patientName.toLowerCase().contains(searchQuery) &&
+          !patientCode.toLowerCase().contains(searchQuery)) {
+        continue;
       }
+
+      if (_activeFilter != 'Todas') {
+        if (_activeFilter == 'Riesgo Alto' && risk != 'Alto Riesgo') continue;
+        if (_activeFilter == 'Riesgo Medio' && risk != 'Medio Riesgo') continue;
+        if (_activeFilter == 'Riesgo Bajo' && risk != 'Bajo Riesgo') continue;
+      }
+
+      filteredPatients.add({
+        'name': patientName,
+        'id': patientCode,
+        'userId': userId,
+        'patientEntity': patient,
+        'risk': risk,
+        'riskBg': riskBg,
+        'riskText': riskText,
+        'gestationAge': '${patient.currentGestationalWeeks ?? 28} sem',
+        'initials': initials,
+        'imgBg': imgBg,
+      });
+    }
+
+    // Pagination: 5 patients per page.
+    final totalFiltered = filteredPatients.length;
+    final totalPages = totalFiltered == 0 ? 1 : (totalFiltered / _pageSize).ceil();
+    var effectivePage = _currentPage;
+    if (effectivePage > totalPages) effectivePage = totalPages;
+    if (effectivePage < 1) effectivePage = 1;
+    _currentPage = effectivePage;
+
+    final startIndex = (effectivePage - 1) * _pageSize;
+    final endIndex = (startIndex + _pageSize) > totalFiltered ? totalFiltered : (startIndex + _pageSize);
+    final pageItems = totalFiltered == 0
+        ? <Map<String, dynamic>>[]
+        : filteredPatients.sublist(startIndex, endIndex);
+
+    final patientCards = <Widget>[];
+    for (final item in pageItems) {
+      patientCards.add(
+        _buildPatientListCard(
+          name: item['name'] as String,
+          id: item['id'] as String,
+          userId: item['userId'] as int,
+          patientEntity: item['patientEntity'] as PatientEntity,
+          risk: item['risk'] as String,
+          riskColorBg: item['riskBg'] as Color,
+          riskColorText: item['riskText'] as Color,
+          gestationAge: item['gestationAge'] as String,
+          status: 'Estable',
+          statusIcon: Icons.check_circle_outline,
+          statusIconColor: Colors.teal,
+          avatarInitials: item['initials'] as String,
+          imageBackground: item['imgBg'] as Color,
+        ),
+      );
+      patientCards.add(SizedBox(height: 12));
     }
 
     if (patientCards.isEmpty) {
@@ -198,7 +245,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             onChanged: (val) {
-              setState(() {});
+              setState(() {
+                _currentPage = 1;
+              });
             },
           ),
           SizedBox(height: 16),
@@ -223,23 +272,42 @@ class _PatientsListPageState extends State<PatientsListPage> {
           ...patientCards,
           SizedBox(height: 24),
 
-          // Pagination indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left, color: AppColors.textMuted),
-                onPressed: () {},
-              ),
-              _buildPageDot(1, true),
-              _buildPageDot(2, false),
-              _buildPageDot(3, false),
-              IconButton(
-                icon: Icon(Icons.chevron_right, color: AppColors.textMuted),
-                onPressed: () {},
-              ),
-            ],
-          ),
+          // Pagination indicators (5 pacientes por página)
+          if (totalFiltered > 0)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.chevron_left,
+                    color: effectivePage > 1 ? AppColors.textMuted : Colors.grey.shade300,
+                  ),
+                  onPressed: effectivePage > 1
+                      ? () => setState(() => _currentPage = effectivePage - 1)
+                      : null,
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (var page = 1; page <= totalPages; page++)
+                          _buildPageDot(page, page == effectivePage),
+                      ],
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.chevron_right,
+                    color: effectivePage < totalPages ? AppColors.textMuted : Colors.grey.shade300,
+                  ),
+                  onPressed: effectivePage < totalPages
+                      ? () => setState(() => _currentPage = effectivePage + 1)
+                      : null,
+                ),
+              ],
+            ),
           SizedBox(height: 40),
         ],
       ),
@@ -252,6 +320,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
       onTap: () {
         setState(() {
           _activeFilter = label;
+          _currentPage = 1;
         });
       },
       child: Container(
@@ -287,21 +356,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
     required String avatarInitials,
     required Color imageBackground,
   }) {
-    // Basic search filtering
-    if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text.toLowerCase();
-      if (!name.toLowerCase().contains(query) && !id.toLowerCase().contains(query)) {
-        return const SizedBox.shrink();
-      }
-    }
-
-    // Risk filtering
-    if (_activeFilter != 'Todas') {
-      if (_activeFilter == 'Riesgo Alto' && risk != 'Alto Riesgo') return const SizedBox.shrink();
-      if (_activeFilter == 'Riesgo Medio' && risk != 'Medio Riesgo') return const SizedBox.shrink();
-      if (_activeFilter == 'Riesgo Bajo' && risk != 'Bajo Riesgo') return const SizedBox.shrink();
-    }
-
+    // El filtrado por búsqueda y riesgo ya se aplica antes de paginar en build().
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -426,20 +481,27 @@ class _PatientsListPageState extends State<PatientsListPage> {
   }
 
   Widget _buildPageDot(int pageNum, bool isSelected) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4),
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          pageNum.toString(),
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        if (!isSelected) {
+          setState(() => _currentPage = pageNum);
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 4),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            pageNum.toString(),
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textDark,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

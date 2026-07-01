@@ -7,7 +7,8 @@ import '../../domain/entities/patient.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../../core/enums/appointment_status.dart';
-
+import '../../../../core/network/api_client.dart';
+import '../../../login/presentation/providers/login_provider.dart';
 class PatientDetailPage extends StatefulWidget {
   final String patientName;
   final String patientId;
@@ -27,11 +28,34 @@ class PatientDetailPage extends StatefulWidget {
 }
 
 class _PatientDetailPageState extends State<PatientDetailPage> {
+  bool _previousHypertension = false;
+  bool _diabetes = false;
+  bool _familyHistoryHypertension = false;
+  int _previousPregnancies = 0;
+  int _previousDeliveries = 0;
+  int _previousMiscarriages = 0;
+  int _previousCesareans = 0;
+  bool _previousPreeclampsia = false;
+  bool _chronicKidneyDisease = false;
+  bool _chronicHypertension = false;
+  bool _multiplePregnancy = false;
+  bool _fetalDeath = false;
+  bool _fetalGrowthRestriction = false;
+  bool _familyHistoryHeartDisease = false;
+  bool _activeSmoking = false;
+
+  bool _isSubmittingMedicalRecord = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PatientDetailProvider>().loadPatientDetails(widget.userId);
+      final loginProvider = context.read<LoginProvider>();
+      context.read<PatientDetailProvider>().loadPatientDetails(
+        widget.userId,
+        patientId: widget.patientEntity.patientId,
+        doctorId: loginProvider.doctorId,
+      );
       context.read<AppointmentsProvider>().loadAppointments(widget.patientId, isDoctor: false);
     });
   }
@@ -40,6 +64,8 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
   Widget build(BuildContext context) {
     final patientDetailProvider = context.watch<PatientDetailProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
+    final loginProvider = context.read<LoginProvider>();
+    final isDoctor = loginProvider.role?.toLowerCase() == 'doctor' || loginProvider.role?.toLowerCase() == 'doctor(a)';
 
     switch (patientDetailProvider.status) {
       case PatientDetailStatus.initial:
@@ -173,6 +199,10 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (patientDetailProvider.rawRecordResponse?['risk_prediction'] != null) ...[
+              _buildResumenIA(patientDetailProvider.rawRecordResponse!['risk_prediction']),
+              SizedBox(height: 16),
+            ],
             _buildExpansionSection(
               title: 'Detalles del paciente',
               icon: Icons.person_outline,
@@ -196,20 +226,191 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                 ),
               ),
             ),
+            if (isDoctor && !patientDetailProvider.hasMedicalRecord) ...[
+              SizedBox(height: 12),
+              _buildExpansionSection(
+                title: 'Crear Expediente Médico',
+                icon: Icons.add_card,
+                content: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      CheckboxListTile(
+                        title: Text('Hipertensión Previa', style: TextStyle(fontSize: 14)),
+                        value: _previousHypertension,
+                        onChanged: (val) => setState(() => _previousHypertension = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Diabetes', style: TextStyle(fontSize: 14)),
+                        value: _diabetes,
+                        onChanged: (val) => setState(() => _diabetes = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Historial Familiar Hipertensión', style: TextStyle(fontSize: 14)),
+                        value: _familyHistoryHypertension,
+                        onChanged: (val) => setState(() => _familyHistoryHypertension = val ?? false),
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(labelText: 'Embarazos Previos'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (val) => _previousPregnancies = int.tryParse(val) ?? 0,
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(labelText: 'Partos Previos'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (val) => _previousDeliveries = int.tryParse(val) ?? 0,
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(labelText: 'Abortos Previos'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (val) => _previousMiscarriages = int.tryParse(val) ?? 0,
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(labelText: 'Cesáreas Previas'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (val) => _previousCesareans = int.tryParse(val) ?? 0,
+                      ),
+                      CheckboxListTile(
+                        title: Text('Preeclampsia Previa', style: TextStyle(fontSize: 14)),
+                        value: _previousPreeclampsia,
+                        onChanged: (val) => setState(() => _previousPreeclampsia = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Enfermedad Renal Crónica', style: TextStyle(fontSize: 14)),
+                        value: _chronicKidneyDisease,
+                        onChanged: (val) => setState(() => _chronicKidneyDisease = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Hipertensión Crónica', style: TextStyle(fontSize: 14)),
+                        value: _chronicHypertension,
+                        onChanged: (val) => setState(() => _chronicHypertension = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Embarazo Múltiple', style: TextStyle(fontSize: 14)),
+                        value: _multiplePregnancy,
+                        onChanged: (val) => setState(() => _multiplePregnancy = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Muerte Fetal', style: TextStyle(fontSize: 14)),
+                        value: _fetalDeath,
+                        onChanged: (val) => setState(() => _fetalDeath = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Restricción de Crecimiento Fetal', style: TextStyle(fontSize: 14)),
+                        value: _fetalGrowthRestriction,
+                        onChanged: (val) => setState(() => _fetalGrowthRestriction = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Historial Familiar de Cardiopatía', style: TextStyle(fontSize: 14)),
+                        value: _familyHistoryHeartDisease,
+                        onChanged: (val) => setState(() => _familyHistoryHeartDisease = val ?? false),
+                      ),
+                      CheckboxListTile(
+                        title: Text('Tabaquismo Activo', style: TextStyle(fontSize: 14)),
+                        value: _activeSmoking,
+                        onChanged: (val) => setState(() => _activeSmoking = val ?? false),
+                      ),
+                      SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSubmittingMedicalRecord
+                              ? null
+                              : () async {
+                                  setState(() => _isSubmittingMedicalRecord = true);
+                                  try {
+                                    final body = {
+                                      "previous_hypertension": _previousHypertension,
+                                      "diabetes": _diabetes,
+                                      "family_history_hypertension": _familyHistoryHypertension,
+                                      "previous_pregnancies": _previousPregnancies,
+                                      "previous_deliveries": _previousDeliveries,
+                                      "previous_miscarriages": _previousMiscarriages,
+                                      "previous_cesareans": _previousCesareans,
+                                      "previous_preeclampsia": _previousPreeclampsia,
+                                      "chronic_kidney_disease": _chronicKidneyDisease,
+                                      "chronic_hypertension": _chronicHypertension,
+                                      "multiple_pregnancy": _multiplePregnancy,
+                                      "fetal_death": _fetalDeath,
+                                      "fetal_growth_restriction": _fetalGrowthRestriction,
+                                      "family_history_heart_disease": _familyHistoryHeartDisease,
+                                      "active_smoking": _activeSmoking,
+                                      "patient_id": widget.patientEntity.patientId,
+                                      "doctor_id": loginProvider.doctorId ?? 0
+                                    };
+                                    final response = await ApiClient().post('/medical-records/', body);
+                                    if (response.statusCode >= 200 && response.statusCode < 300) {
+                                      if (mounted) {
+                                        context.read<PatientDetailProvider>().setMedicalRecordCreated();
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Expediente creado con éxito')));
+                                      }
+                                    } else {
+                                      throw Exception('Error: ${response.statusCode}');
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al crear expediente: $e')));
+                                    }
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() => _isSubmittingMedicalRecord = false);
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: _isSubmittingMedicalRecord
+                              ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Text('Guardar Expediente'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Banderas (Factores de Riesgo)',
               icon: Icons.flag_outlined,
               content: Padding(
                 padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.construction_outlined, color: AppColors.primary, size: 32),
-                      SizedBox(height: 8),
-                      Text('Sección en construcción', style: TextStyle(color: AppColors.textMuted)),
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: (() {
+                    final record = patientDetailProvider.rawRecordResponse?['medical_record'];
+                    if (record == null) {
+                      return [
+                        Text(
+                          'Aún no se cuenta con expediente médico registrado para esta paciente.',
+                          style: TextStyle(color: AppColors.textMuted),
+                        )
+                      ];
+                    }
+                    final flags = <Widget>[];
+                    if (record['chronic_hypertension'] == true || record['previous_hypertension'] == true || record['previous_preeclampsia'] == true) {
+                      flags.add(_buildFlagRow('Hipertensión / Riesgo Preeclampsia', Colors.red));
+                    }
+                    if (record['diabetes'] == true) {
+                      flags.add(_buildFlagRow('Diabetes Gestacional / Previa', Colors.orange));
+                    }
+                    if (record['multiple_pregnancy'] == true) {
+                      flags.add(_buildFlagRow('Embarazo Múltiple', Colors.blue));
+                    }
+                    if (record['chronic_kidney_disease'] == true) {
+                      flags.add(_buildFlagRow('Enfermedad Renal Crónica', Colors.red));
+                    }
+                    if (record['active_smoking'] == true) {
+                      flags.add(_buildFlagRow('Tabaquismo Activo', Colors.orange));
+                    }
+                    if (flags.isEmpty) {
+                      flags.add(Text('Sin alertas clínicas reportadas.', style: TextStyle(color: AppColors.textMuted)));
+                    }
+                    return flags;
+                  })(),
                 ),
               ),
             ),
@@ -310,6 +511,75 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
               border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
             ),
             child: content,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFlagRow(String flagName, Color color) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: color, size: 20),
+          SizedBox(width: 8),
+          Text(flagName, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumenIA(Map<String, dynamic> riskPrediction) {
+    final diagnosis = riskPrediction['diagnosis']?.toString();
+    final hasRiskPrediction = diagnosis != null && diagnosis.isNotEmpty;
+
+    if (!hasRiskPrediction) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.analytics_outlined, color: Colors.purple, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Predicción de Riesgo',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple, fontSize: 15),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          if (riskPrediction['risk_cluster'] != null)
+            Text(
+              'Clúster: ${riskPrediction['risk_cluster']}',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple, fontSize: 13),
+            ),
+          SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.purple.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.purple.withOpacity(0.3)),
+            ),
+            child: Text(
+              'Diagnóstico: $diagnosis',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),

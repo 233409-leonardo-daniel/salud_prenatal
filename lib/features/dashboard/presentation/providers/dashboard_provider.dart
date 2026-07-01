@@ -95,7 +95,7 @@ class DashboardProvider with ChangeNotifier {
       }
 
       try {
-        _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId);
+        _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId ?? 0);
       } catch (e) {
         print('Error fetching medical record: $e');
         _medicalRecord = null;
@@ -124,11 +124,9 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _activeMedicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId);
+      _activeMedicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId ?? 0);
       if (_activeMedicalRecord != null) {
-        _activeConsultations = await _remoteDataSource.getConsultationsByMedicalRecord(
-          _activeMedicalRecord!.medicalRecordId,
-        );
+        _activeConsultations = await _remoteDataSource.getConsultationsFromPatientEndpoint(patientId, doctorId: doctorId ?? 0);
       }
       _detailsStatus = DashboardDetailsStatus.success;
     } catch (e) {

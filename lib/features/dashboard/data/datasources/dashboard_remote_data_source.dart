@@ -7,8 +7,9 @@ import '../models/consultation_response.dart';
 abstract class DashboardRemoteDataSource {
   Future<List<UserProfile>> getAllUsers();
   Future<List<Map<String, dynamic>>> getPatientsByDoctor(int doctorId);
-  Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId, {int? doctorId});
+  Future<MedicalRecordResponse?> getMedicalRecordByPatient(int patientId, {required int doctorId});
   Future<List<ConsultationResponse>> getConsultationsByMedicalRecord(int medicalRecordId);
+  Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId});
   Future<Map<String, dynamic>> getPatientDashboard(int patientId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
 }
@@ -101,46 +102,45 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   }
 
   @override
-  Future<MedicalRecordResponse> getMedicalRecordByPatient(int patientId, {int? doctorId}) async {
+  Future<MedicalRecordResponse?> getMedicalRecordByPatient(int patientId, {required int doctorId}) async {
     try {
-      if (doctorId == null) {
-        throw Exception('El doctor_id es requerido para el endpoint de expedientes.');
-      }
-      final String queryParam = '?doctor_id=$doctorId';
-      final response = await _apiClient.get('/medical-records/patient/$patientId$queryParam');
+      final response = await _apiClient.get('/medical-records/patient/$patientId?doctor_id=$doctorId');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return MedicalRecordResponse.fromJson(data);
+        // The endpoint returns { medical_record: {...} | null, consultations: [], ... }
+        if (data['medical_record'] == null) {
+          return null; // Patient has no medical record yet
+        }
+        // Inject consultations and risk_prediction into the record for downstream use
+        final merged = Map<String, dynamic>.from(data);
+        return MedicalRecordResponse.fromJson(merged);
       }
-      throw Exception('Error al obtener expediente (Status: ${response.statusCode})');
+      // 404 or other error: no record
+      return null;
     } catch (e) {
-      if (e.toString().contains('SocketException') || 
-          e.toString().contains('Connection refused') || 
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('Connection refused') ||
           e.toString().contains('ClientException')) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        // Fallback medical record
-        return MedicalRecordResponse(
-          medicalRecordId: 1,
-          patientId: patientId,
-          doctorId: 1,
-          previousHypertension: false,
-          diabetes: false,
-          familyHistoryHypertension: false,
-          previousPregnancies: 0,
-          previousDeliveries: 0,
-          previousMiscarriages: 0,
-          previousCesareans: 0,
-          previousPreeclampsia: false,
-          chronicKidneyDisease: false,
-          chronicHypertension: false,
-          multiplePregnancy: false,
-          fetalDeath: false,
-          fetalGrowthRestriction: false,
-          familyHistoryHeartDisease: false,
-          activeSmoking: false,
-        );
+        return null;
       }
       rethrow;
+    }
+  }
+
+  @override
+  Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId}) async {
+    try {
+      final response = await _apiClient.get('/medical-records/patient/$patientId?doctor_id=$doctorId');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final consultationsList = data['consultations'];
+        if (consultationsList is List) {
+          return consultationsList.map((item) => ConsultationResponse.fromJson(item as Map<String, dynamic>)).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 

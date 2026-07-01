@@ -156,6 +156,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           final loginProvider = context.read<LoginProvider>();
           final currentUserId = loginProvider.userId ?? 2;
           final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
+          final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
 
           // Auto-scroll when messages update
           if (provider.messages.isNotEmpty) {
@@ -204,7 +205,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 ),
 
                 // Bottom Input Control
-                _buildInputBar(isDoctor),
+                _buildInputBar(isDoctor, isReceptionist),
               ],
             ),
           );
@@ -457,7 +458,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   // --- INPUT CONTROL BAR BUILDER ---
-  Widget _buildInputBar(bool isDoctor) {
+  Widget _buildInputBar(bool isDoctor, bool isReceptionist) {
     return Container(
       padding: EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 24),
       decoration: BoxDecoration(
@@ -473,23 +474,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       child: Row(
         children: [
           // Quick Action Shortcut Button
-          GestureDetector(
-            onTap: isDoctor ? _showDoctorTipsMenu : _sendLatestMeasurement,
-            child: Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.pink.shade50),
-              ),
-              child: Icon(
-                isDoctor ? Icons.lightbulb_outline : Icons.assignment_outlined,
-                color: AppColors.primary,
-                size: 20,
+          if (!isReceptionist) ...[
+            GestureDetector(
+              onTap: isDoctor ? _showDoctorTipsMenu : _sendLatestMeasurement,
+              child: Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.pink.shade50),
+                ),
+                child: Icon(
+                  isDoctor ? Icons.lightbulb_outline : Icons.assignment_outlined,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
             ),
-          ),
-          SizedBox(width: 10),
+            SizedBox(width: 10),
+          ],
           
           // Text Input Field
           Expanded(

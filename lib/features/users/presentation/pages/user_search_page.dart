@@ -4,7 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../providers/user_provider.dart';
 
 import '../../../login/presentation/providers/login_provider.dart';
-import '../../../chat/presentation/pages/chat_detail_page.dart';
+import '../../../chat/presentation/pages/chat_room_page.dart';
 
 class UserSearchPage extends StatefulWidget {
   final bool initialIsDoctor;
@@ -137,9 +137,10 @@ class _UserSearchPageState extends State<UserSearchPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ChatDetailPage(
+                    builder: (context) => ChatRoomPage(
                       otherUserId: user.id,
                       otherUserName: user.fullName,
+                      otherUserRole: user.role,
                     ),
                   ),
                 );
@@ -149,9 +150,10 @@ class _UserSearchPageState extends State<UserSearchPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ChatDetailPage(
+                  builder: (context) => ChatRoomPage(
                     otherUserId: user.id,
                     otherUserName: user.fullName,
+                    otherUserRole: user.role,
                   ),
                 ),
               );

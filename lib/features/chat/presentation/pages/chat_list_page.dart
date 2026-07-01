@@ -37,37 +37,41 @@ class _ChatListPageState extends State<ChatListPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final loginProvider = context.read<LoginProvider>();
       final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
+      final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+      final isDoctorOrReceptionist = isDoctor || isReceptionist;
       final dashboardProvider = context.read<DashboardProvider>();
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
       final currentUserId = loginProvider.userId ?? 2;
       
-      // Load relevant data depending on role
-      if (isDoctor) {
+      // 1. Cargar pacientes si es doctor o recepcionista
+      if (isDoctorOrReceptionist) {
         final doctorId = loginProvider.doctorId?.toString() ?? '1';
         await context.read<PatientsListProvider>().loadPatients(doctorId);
-        await _loadLastMessages();
-
-        // Listen for real-time incoming messages to update conversation status
-        _listMessageSubscription = _chatModule.remoteDataSource.messageStream.listen((message) {
-          final currentUserIdLocal = loginProvider.userId;
-          if (currentUserIdLocal == null) return;
-          final otherUserId = message.senderId == currentUserIdLocal ? message.receiverId : message.senderId;
-          
-          if (_conversations.containsKey(otherUserId)) {
-            setState(() {
-              final exists = _conversations[otherUserId]!.any((msg) => msg.messageId == message.messageId);
-              if (!exists) {
-                _conversations[otherUserId]!.add(message);
-                _conversations[otherUserId]!.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-              }
-            });
-          } else {
-            _loadLastMessages();
-          }
-        });
       }
+
+      // 2. Cargar historial y últimos mensajes para todos
+      await _loadLastMessages();
+
+      // 3. Suscribirse a mensajes en tiempo real para todos
+      _listMessageSubscription = _chatModule.remoteDataSource.messageStream.listen((message) {
+        final currentUserIdLocal = loginProvider.userId;
+        if (currentUserIdLocal == null) return;
+        final otherUserId = message.senderId == currentUserIdLocal ? message.receiverId : message.senderId;
+        
+        if (_conversations.containsKey(otherUserId)) {
+          setState(() {
+            final exists = _conversations[otherUserId]!.any((msg) => msg.messageId == message.messageId);
+            if (!exists) {
+              _conversations[otherUserId]!.add(message);
+              _conversations[otherUserId]!.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+            }
+          });
+        } else {
+          _loadLastMessages();
+        }
+      });
       
-      // Load users list for doctor search / fallback matching
+      // Cargar panel y usuarios para autocompletar o búsquedas
       dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
     });
   }
@@ -78,8 +82,10 @@ class _ChatListPageState extends State<ChatListPage> {
     if (currentUserId == null) return;
 
     final patientsProvider = context.read<PatientsListProvider>();
-    final patients = patientsProvider.patients;
-    if (patients.isEmpty) return;
+    final dashboardProvider = context.read<DashboardProvider>();
+    
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
 
     setState(() {
       _loadingLastMessages = true;
@@ -87,10 +93,40 @@ class _ChatListPageState extends State<ChatListPage> {
 
     try {
       final Map<int, List<ChatMessage>> loadedConversations = {};
-      for (final patient in patients) {
-        final history = await _chatModule.repository.getChatHistory(patient.userId, currentUserId);
-        loadedConversations[patient.userId] = history;
+      
+      if (isDoctor || isReceptionist) {
+        // Cargar conversaciones con pacientes
+        final patients = patientsProvider.patients;
+        for (final patient in patients) {
+          final history = await _chatModule.repository.getChatHistory(patient.userId, currentUserId);
+          loadedConversations[patient.userId] = history;
+        }
+
+        // Si es recepcionista, también cargar conversaciones con doctores
+        if (isReceptionist) {
+          final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
+          for (final doctor in doctors) {
+            if (doctor.userId != null) {
+              final history = await _chatModule.repository.getChatHistory(doctor.userId!, currentUserId);
+              loadedConversations[doctor.userId!] = history;
+            }
+          }
+        }
+      } else {
+        // Es un paciente. Cargar historial con doctores y recepcionistas.
+        final contacts = dashboardProvider.users.where((u) {
+          final r = u.role.toLowerCase();
+          return r.contains('doctor') || r == 'receptionist' || r == 'recepcionista';
+        }).toList();
+        
+        for (final contact in contacts) {
+          if (contact.userId != null) {
+            final history = await _chatModule.repository.getChatHistory(contact.userId!, currentUserId);
+            loadedConversations[contact.userId!] = history;
+          }
+        }
       }
+
       if (mounted) {
         setState(() {
           _conversations = loadedConversations;
@@ -118,6 +154,8 @@ class _ChatListPageState extends State<ChatListPage> {
   Widget build(BuildContext context) {
     final loginProvider = context.watch<LoginProvider>();
     final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final isDoctorOrReceptionist = isDoctor || isReceptionist;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
@@ -137,11 +175,11 @@ class _ChatListPageState extends State<ChatListPage> {
               final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
               final currentUserId = loginProvider.userId ?? 2;
               
-              if (isDoctor) {
+              if (isDoctorOrReceptionist) {
                 final doctorId = loginProvider.doctorId?.toString() ?? '1';
                 await context.read<PatientsListProvider>().loadPatients(doctorId);
-                await _loadLastMessages();
               }
+              await _loadLastMessages();
               dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
             },
           ),
@@ -159,7 +197,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
-                  hintText: isDoctor ? 'Buscar paciente...' : 'Buscar médico...',
+                  hintText: isDoctorOrReceptionist ? 'Buscar contacto...' : 'Buscar médico o recepcionista...',
                   prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -192,12 +230,12 @@ class _ChatListPageState extends State<ChatListPage> {
             
             // List view
             Expanded(
-              child: isDoctor ? _buildDoctorChatList() : _buildPatientChatList(),
+              child: isDoctorOrReceptionist ? _buildDoctorChatList() : _buildPatientChatList(),
             ),
           ],
         ),
       ),
-      floatingActionButton: isDoctor ? FloatingActionButton(
+      floatingActionButton: isDoctorOrReceptionist ? FloatingActionButton(
         onPressed: _showContactsDialog,
         backgroundColor: AppColors.primary,
         child: Icon(Icons.contacts, color: Colors.white),
@@ -205,11 +243,12 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  // --- DOCTOR VIEW: List of Patients ---
+  // --- DOCTOR & RECEPTIONIST VIEW: Active Conversations ---
   Widget _buildDoctorChatList() {
     final patientsProvider = context.watch<PatientsListProvider>();
     final dashboardProvider = context.watch<DashboardProvider>();
     final loginProvider = context.watch<LoginProvider>();
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
 
     switch (patientsProvider.status) {
       case PatientsListStatus.initial:
@@ -225,24 +264,44 @@ class _ChatListPageState extends State<ChatListPage> {
     }
 
     final patients = patientsProvider.patients;
-    if (patients.isEmpty) {
+    
+    // Construir lista de usuarios activos con los que se tiene conversación
+    final List<UserProfile> activeContacts = [];
+    if (isReceptionist) {
+      // Recepcionista: mostrar pacientes y médicos con historial activo
+      for (final user in dashboardProvider.users) {
+        if (user.userId == loginProvider.userId) continue;
+        final history = _conversations[user.userId] ?? [];
+        if (history.isNotEmpty) {
+          activeContacts.add(user);
+        }
+      }
+    } else {
+      // Doctor: mostrar pacientes con historial activo
+      for (final patient in patients) {
+        final patientUser = dashboardProvider.users.firstWhere(
+          (u) => u.userId == patient.userId,
+          orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
+        );
+        final history = _conversations[patient.userId] ?? [];
+        if (history.isNotEmpty) {
+          activeContacts.add(patientUser);
+        }
+      }
+    }
+
+    if (activeContacts.isEmpty && patients.isEmpty) {
       return _buildEmptyState(
         icon: Icons.chat_bubble_outline,
-        title: 'Sin pacientes aún',
-        description: 'Tus pacientes aparecerán aquí una vez que se vinculen a tu cuenta.',
+        title: isReceptionist ? 'Sin conversaciones' : 'Sin pacientes aún',
+        description: isReceptionist 
+            ? 'Inicia un chat con un paciente o doctor usando el botón de contactos abajo.'
+            : 'Tus pacientes aparecerán aquí una vez que se vinculen a tu cuenta.',
       );
     }
 
-    // Filter patients to only show those who have active conversations & match the search query
-    final filtered = patients.where((patient) {
-      final history = _conversations[patient.userId] ?? [];
-      if (history.isEmpty) return false;
-
-      final patientUser = dashboardProvider.users.firstWhere(
-        (u) => u.userId == patient.userId,
-        orElse: () => UserProfile(name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-      );
-      final fullName = '${patientUser.name} ${patientUser.lastName}'.toLowerCase();
+    final filtered = activeContacts.where((contact) {
+      final fullName = '${contact.name} ${contact.lastName}'.toLowerCase();
       return fullName.contains(_searchQuery);
     }).toList();
 
@@ -251,13 +310,13 @@ class _ChatListPageState extends State<ChatListPage> {
         return _buildEmptyState(
           icon: Icons.search_off_outlined,
           title: 'Sin resultados',
-          description: 'No se encontraron pacientes que coincidan con tu búsqueda.',
+          description: 'No se encontraron contactos que coincidan con tu búsqueda.',
         );
       } else {
         return _buildEmptyState(
           icon: Icons.chat_bubble_outline,
           title: 'Sin chats activos',
-          description: 'Toca el botón de contactos abajo para iniciar una conversación con tus pacientes.',
+          description: 'Toca el botón de contactos abajo para iniciar una conversación.',
         );
       }
     }
@@ -266,15 +325,16 @@ class _ChatListPageState extends State<ChatListPage> {
       padding: EdgeInsets.all(16.0),
       itemCount: filtered.length,
       itemBuilder: (context, index) {
-        final patient = filtered[index];
-        final patientUser = dashboardProvider.users.firstWhere(
-          (u) => u.userId == patient.userId,
-          orElse: () => UserProfile(name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-        );
-        final fullName = '${patientUser.name} ${patientUser.lastName}';
-        final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
+        final contactUser = filtered[index];
+        final isDoc = contactUser.role.toLowerCase().contains('doctor');
         
-        final history = _conversations[patient.userId] ?? [];
+        final fullName = isDoc 
+            ? 'Dra. ${contactUser.name} ${contactUser.lastName}'.trim()
+            : '${contactUser.name} ${contactUser.lastName}'.trim();
+            
+        final initials = '${contactUser.name.isNotEmpty ? contactUser.name[0] : 'U'}${contactUser.lastName.isNotEmpty ? contactUser.lastName[0] : ''}';
+        
+        final history = _conversations[contactUser.userId] ?? [];
         String lastMessageContent = 'Sin mensajes';
         String lastMessageTime = '';
         
@@ -309,9 +369,9 @@ class _ChatListPageState extends State<ChatListPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
-                    otherUserId: patientUser.userId ?? patient.userId,
+                    otherUserId: contactUser.userId!,
                     otherUserName: fullName,
-                    otherUserRole: 'paciente',
+                    otherUserRole: contactUser.role,
                   ),
                 ),
               );
@@ -359,7 +419,26 @@ class _ChatListPageState extends State<ChatListPage> {
   void _showContactsDialog() {
     final patientsProvider = context.read<PatientsListProvider>();
     final dashboardProvider = context.read<DashboardProvider>();
-    final patients = patientsProvider.patients;
+    final loginProvider = context.read<LoginProvider>();
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    
+    // Construir la lista de contactos disponibles
+    final List<UserProfile> availableContacts = [];
+    
+    // Todos los pacientes
+    for (final patient in patientsProvider.patients) {
+      final patientUser = dashboardProvider.users.firstWhere(
+        (u) => u.userId == patient.userId,
+        orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
+      );
+      availableContacts.add(patientUser);
+    }
+    
+    // Si es recepcionista, también agregar a todos los médicos
+    if (isReceptionist) {
+      final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
+      availableContacts.addAll(doctors);
+    }
     
     showModalBottomSheet(
       context: context,
@@ -390,30 +469,29 @@ class _ChatListPageState extends State<ChatListPage> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Contactos (Pacientes)',
+                    'Contactos',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
                   ),
                   SizedBox(height: 8),
                   const Divider(),
                   Expanded(
-                    child: patients.isEmpty
+                    child: availableContacts.isEmpty
                         ? Center(
                             child: Text(
-                              'No hay pacientes registrados.',
+                              'No hay contactos registrados.',
                               style: TextStyle(color: AppColors.textMuted),
                             ),
                           )
                         : ListView.builder(
                             padding: EdgeInsets.all(16),
-                            itemCount: patients.length,
+                            itemCount: availableContacts.length,
                             itemBuilder: (context, index) {
-                              final patient = patients[index];
-                              final patientUser = dashboardProvider.users.firstWhere(
-                                (u) => u.userId == patient.userId,
-                                orElse: () => UserProfile(name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-                              );
-                              final fullName = '${patientUser.name} ${patientUser.lastName}';
-                              final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
+                              final contactUser = availableContacts[index];
+                              final isDoc = contactUser.role.toLowerCase().contains('doctor');
+                              final fullName = isDoc 
+                                  ? 'Dra. ${contactUser.name} ${contactUser.lastName}'.trim()
+                                  : '${contactUser.name} ${contactUser.lastName}'.trim();
+                              final initials = '${contactUser.name.isNotEmpty ? contactUser.name[0] : 'U'}${contactUser.lastName.isNotEmpty ? contactUser.lastName[0] : ''}';
 
                               return Container(
                                 margin: EdgeInsets.only(bottom: 12),
@@ -442,9 +520,9 @@ class _ChatListPageState extends State<ChatListPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => ChatRoomPage(
-                                          otherUserId: patientUser.userId ?? patient.userId,
+                                          otherUserId: contactUser.userId!,
                                           otherUserName: fullName,
-                                          otherUserRole: 'paciente',
+                                          otherUserRole: contactUser.role,
                                         ),
                                       ),
                                     );
@@ -464,10 +542,11 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  // --- PATIENT VIEW: List of Doctors ---
+  // --- PATIENT VIEW: List of Doctors & Receptionists ---
   Widget _buildPatientChatList() {
     final dashboardProvider = context.watch<DashboardProvider>();
     final loginProvider = context.read<LoginProvider>();
+    final currentUserId = loginProvider.userId;
 
     final docName = dashboardProvider.dashboardData?['current_doctor'] as String?;
     final docSpecialty = dashboardProvider.dashboardData?['current_doctor_specialty'] as String? ?? 'Ginecología y Obstetricia';
@@ -554,12 +633,9 @@ class _ChatListPageState extends State<ChatListPage> {
       );
     }
 
-    // Patient has a doctor. Let's find this doctor's user ID in users list.
-    // In database, the doctor is user_id 1 (Pedro Gomez).
-    // Let's filter the users list to locate doctors.
+    // 1. Agregar el médico asignado como contacto fijo
+    final List<UserProfile> contacts = [];
     final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
-
-    // If no doctors are found in remote, fallback to Pedro Gomez (id 1)
     if (doctors.isEmpty) {
       doctors.add(UserProfile(
         userId: 1,
@@ -569,22 +645,51 @@ class _ChatListPageState extends State<ChatListPage> {
         role: 'doctor',
       ));
     }
+    contacts.addAll(doctors);
 
-    // Filter based on search query
-    final filteredDoctors = doctors.where((doc) {
-      final fullName = '${doc.name} ${doc.lastName}'.toLowerCase();
+    // 2. Agregar cualquier otro usuario que tenga conversación activa con el paciente (como la recepcionista)
+    if (currentUserId != null) {
+      for (final user in dashboardProvider.users) {
+        if (user.userId == currentUserId) continue;
+        if (contacts.any((c) => c.userId == user.userId)) continue;
+        
+        final history = _conversations[user.userId] ?? [];
+        if (history.isNotEmpty) {
+          contacts.add(user);
+        }
+      }
+    }
+
+    // 3. Filtrar según la búsqueda
+    final filteredContacts = contacts.where((contact) {
+      final fullName = '${contact.name} ${contact.lastName}'.toLowerCase();
       return fullName.contains(_searchQuery);
     }).toList();
 
     return ListView.builder(
       padding: EdgeInsets.all(16.0),
-      itemCount: filteredDoctors.length,
+      itemCount: filteredContacts.length,
       itemBuilder: (context, index) {
-        final doctor = filteredDoctors[index];
-        final fullName = 'Dra. ${doctor.name} ${doctor.lastName}'.trim();
-        final initials = '${doctor.name.isNotEmpty ? doctor.name[0] : 'D'}${doctor.lastName.isNotEmpty ? doctor.lastName[0] : ''}';
+        final contact = filteredContacts[index];
+        final isDoctorRole = contact.role.toLowerCase().contains('doctor');
+        final isReceptionistRole = contact.role.toLowerCase() == 'receptionist' || contact.role.toLowerCase() == 'recepcionista';
         
-        final isAssigned = docName.contains(doctor.name) || doctor.userId == 1;
+        final String displayName = isDoctorRole 
+            ? 'Dra. ${contact.name} ${contact.lastName}'.trim()
+            : (isReceptionistRole ? 'Recepcionista: ${contact.name} ${contact.lastName}'.trim() : '${contact.name} ${contact.lastName}'.trim());
+            
+        final initials = '${contact.name.isNotEmpty ? contact.name[0] : 'U'}${contact.lastName.isNotEmpty ? contact.lastName[0] : ''}';
+        final isAssigned = isDoctorRole && (docName.contains(contact.name) || contact.userId == 1);
+
+        // Obtener último mensaje para mostrarlo en el subtítulo
+        final history = _conversations[contact.userId] ?? [];
+        String subtitleText = isDoctorRole ? docSpecialty : 'Personal Administrativo';
+        if (history.isNotEmpty) {
+          final lastMsg = history.last;
+          final isSentByMe = lastMsg.senderId == currentUserId;
+          final prefix = isSentByMe ? 'Tú: ' : '';
+          subtitleText = '$prefix${lastMsg.content}';
+        }
 
         return Container(
           margin: EdgeInsets.only(bottom: 12),
@@ -631,7 +736,7 @@ class _ChatListPageState extends State<ChatListPage> {
               children: [
                 Expanded(
                   child: Text(
-                    fullName,
+                    displayName,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                   ),
                 ),
@@ -652,7 +757,9 @@ class _ChatListPageState extends State<ChatListPage> {
             subtitle: Padding(
               padding: EdgeInsets.only(top: 4.0),
               child: Text(
-                docSpecialty,
+                subtitleText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ),
@@ -662,9 +769,9 @@ class _ChatListPageState extends State<ChatListPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
-                    otherUserId: doctor.userId ?? 1,
-                    otherUserName: fullName,
-                    otherUserRole: 'doctor',
+                    otherUserId: contact.userId ?? 1,
+                    otherUserName: displayName,
+                    otherUserRole: contact.role,
                   ),
                 ),
               );

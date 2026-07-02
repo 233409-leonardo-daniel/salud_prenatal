@@ -11,6 +11,7 @@ import '../../../login/domain/entities/user_profile.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
+import 'patient_record_page.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
@@ -58,6 +59,9 @@ class _DashboardPageState extends State<DashboardPage> {
       await dashboardProvider.loadDoctorDashboard(docId);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
+      // Se dispara sin await: la sección de Alertas Prioritarias se actualiza
+      // sola (vía notifyListeners) en cuanto terminen las peticiones en paralelo.
+      dashboardProvider.loadCriticalPatients(docId);
     } else {
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
       final docId = loginProvider.doctorId ?? 1;
@@ -297,32 +301,56 @@ class _DashboardPageState extends State<DashboardPage> {
     final citasHoyStr = todayAppointments.length.toString();
 
     final priorityAlerts = <Widget>[];
-    for (final patient in dashboardProvider.patients) {
-      final pId = patient['patient_id'] ?? 0;
-      if (pId % 3 == 0) {
-        final patientUser = dashboardProvider.users.firstWhere(
-          (u) => u.userId == patient['user_id'],
-          orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
-        );
-        final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
-        final fullName = '${patientUser.name} ${patientUser.lastName}'.trim();
+    if (dashboardProvider.isCriticalPatientsLoading && dashboardProvider.criticalPatients.isEmpty) {
+      priorityAlerts.add(
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.0),
+          child: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+        ),
+      );
+    } else {
+      for (final critical in dashboardProvider.criticalPatients) {
+        final name = critical['name'] as String? ?? 'Paciente';
+        final diagnosis = critical['diagnosis'] as String? ?? 'Riesgo Alto';
+        final patientId = critical['patientId'];
+        final nameParts = name.trim().split(RegExp(r'\s+'));
+        final initials = nameParts.isNotEmpty
+            ? '${nameParts.first.isNotEmpty ? nameParts.first[0] : 'P'}${nameParts.length > 1 && nameParts.last.isNotEmpty ? nameParts.last[0] : ''}'
+            : 'P';
         priorityAlerts.add(
-          _buildAlertCard(fullName, 'Riesgo de Preeclampsia (Alto)', initials),
+          _buildAlertCard(
+            name,
+            diagnosis,
+            initials,
+            onDetailPressed: patientId != null
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientRecordPage(
+                          patientName: name,
+                          patientId: '#SP-$patientId',
+                        ),
+                      ),
+                    );
+                  }
+                : null,
+          ),
         );
         priorityAlerts.add(SizedBox(height: 12));
       }
-    }
-    if (priorityAlerts.isEmpty) {
-      priorityAlerts.add(
-        Card(
-          elevation: 0,
-          color: AppColors.cardBackground,
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('No hay alertas de riesgo alto el día de hoy.', style: TextStyle(color: AppColors.textMuted)),
+      if (priorityAlerts.isEmpty) {
+        priorityAlerts.add(
+          Card(
+            elevation: 0,
+            color: AppColors.cardBackground,
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('No hay alertas de riesgo alto el día de hoy.', style: TextStyle(color: AppColors.textMuted)),
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     return SingleChildScrollView(
@@ -459,7 +487,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildAlertCard(String name, String alert, String initials) {
+  Widget _buildAlertCard(String name, String alert, String initials, {VoidCallback? onDetailPressed}) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -474,6 +502,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Red curve container border decoration
           Container(
@@ -507,32 +536,41 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 SizedBox(height: 4),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
                     SizedBox(width: 4),
-                    Text(
-                      alert,
-                      style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                    Expanded(
+                      child: Text(
+                        alert,
+                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
+                SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: onDetailPressed,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: Text(
+                      'Detalle',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
               ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: Text(
-              'Detalle',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],

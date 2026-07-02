@@ -25,9 +25,15 @@ class DashboardProvider with ChangeNotifier {
   MedicalRecordResponse? _activeMedicalRecord;
   List<ConsultationResponse> _activeConsultations = [];
 
+  CriticalPatientsStatus _criticalPatientsStatus = CriticalPatientsStatus.initial;
+  List<Map<String, dynamic>> _criticalPatients = [];
+
   DashboardStatus get status => _status;
   DashboardDetailsStatus get detailsStatus => _detailsStatus;
   SaveRecordStatus get saveStatus => _saveStatus;
+  CriticalPatientsStatus get criticalPatientsStatus => _criticalPatientsStatus;
+  bool get isCriticalPatientsLoading => _criticalPatientsStatus == CriticalPatientsStatus.loading;
+  List<Map<String, dynamic>> get criticalPatients => _criticalPatients;
 
   bool get isLoading => _status == DashboardStatus.loading;
   bool get isDetailsLoading => _detailsStatus == DashboardDetailsStatus.loading;
@@ -155,6 +161,68 @@ class DashboardProvider with ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Carga los pacientes con riesgo alto/crítico para el doctor indicado.
+  /// Parte de la lista de pacientes del doctor (ya cargada en `_patients` vía
+  /// GET /doctors/{doctor_id}/patients) y consulta en paralelo (Future.wait)
+  /// el expediente + predicción de riesgo de cada uno vía
+  /// GET /medical-records/patient/{patient_id}?doctor_id={doctor_id}.
+  Future<void> loadCriticalPatients(int doctorId) async {
+    final patientIds = _patients
+        .map((p) => p['patient_id'])
+        .whereType<int>()
+        .toSet()
+        .toList();
+
+    if (patientIds.isEmpty) {
+      _criticalPatients = [];
+      _criticalPatientsStatus = CriticalPatientsStatus.success;
+      notifyListeners();
+      return;
+    }
+
+    _criticalPatientsStatus = CriticalPatientsStatus.loading;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait(
+        patientIds.map(
+          (pid) => _remoteDataSource
+              .getMedicalRecordByPatient(pid, doctorId: doctorId)
+              .catchError((_) => null),
+        ),
+      );
+
+      final critical = <Map<String, dynamic>>[];
+      for (final record in results) {
+        if (record == null) continue;
+        final diagnosis = record.riskPrediction?.diagnosis;
+        if (diagnosis == null || diagnosis.isEmpty) continue;
+
+        final lower = diagnosis.toLowerCase();
+        final isHighRisk = lower.contains('alto') ||
+            lower.contains('crítico') ||
+            lower.contains('critico');
+        if (!isHighRisk) continue;
+
+        final fullName = '${record.name ?? ''} ${record.lastName ?? ''}'.trim();
+        critical.add({
+          'patientId': record.patientId,
+          'name': fullName.isNotEmpty ? fullName : 'Paciente #${record.patientId}',
+          'diagnosis': diagnosis,
+          'riskCluster': record.riskPrediction?.riskCluster,
+        });
+      }
+
+      _criticalPatients = critical;
+      _criticalPatientsStatus = CriticalPatientsStatus.success;
+    } catch (e) {
+      print('Error al cargar pacientes críticos: $e');
+      _criticalPatientsStatus = CriticalPatientsStatus.error;
     } finally {
       notifyListeners();
     }

@@ -64,7 +64,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     final provider = context.watch<CreateAppointmentProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Nueva Cita', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,

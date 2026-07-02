@@ -85,7 +85,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       builder: (context) {
         return Container(
           padding: EdgeInsets.all(16),
@@ -144,7 +144,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Agenda de Citas',
@@ -430,7 +430,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -459,6 +459,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 _focusedDay = focusedDay;
               },
               calendarStyle: CalendarStyle(
+                defaultTextStyle: TextStyle(color: AppColors.textDark),
+                weekendTextStyle: TextStyle(color: AppColors.textDark),
+                outsideTextStyle: TextStyle(color: AppColors.textMuted.withOpacity(0.5)),
+                todayTextStyle: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                selectedTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 todayDecoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.3),
                   shape: BoxShape.circle,
@@ -473,9 +478,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 markersMaxCount: 1,
               ),
-              headerStyle: const HeaderStyle(
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                weekendStyle: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+              ),
+              headerStyle: HeaderStyle(
                 titleCentered: true,
                 formatButtonVisible: false,
+                titleTextStyle: TextStyle(color: AppColors.textDark, fontSize: 17, fontWeight: FontWeight.w600),
+                leftChevronIcon: Icon(Icons.chevron_left, color: AppColors.textMuted),
+                rightChevronIcon: Icon(Icons.chevron_right, color: AppColors.textMuted),
               ),
             ),
           ),
@@ -486,7 +498,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           ),
           SizedBox(height: 12),
           if (allAppointments.isEmpty)
-            Text('No hay citas programadas')
+            Text('No hay citas programadas', style: TextStyle(color: AppColors.textMuted))
           else
             ...allAppointments.take(3).map((app) => _buildAppointmentCard(app, theme, isCompact: false)),
         ],
@@ -569,7 +581,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFFF0E6EA),
+                  backgroundColor: AppColors.primaryLight,
                   radius: isCompact ? 16 : 24,
                   child: Icon(Icons.medical_services, color: AppColors.primary, size: isCompact ? 16 : 24),
                 ),

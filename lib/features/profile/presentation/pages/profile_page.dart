@@ -62,7 +62,7 @@ class ProfilePage extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -82,7 +82,7 @@ class ProfilePage extends StatelessWidget {
                       ? '${loginProvider.userProfile?.name} ${loginProvider.userProfile?.lastName}'
                       : 'No especificado',
                 ),
-                const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                 _buildInfoRow(
                   icon: Icons.email_outlined,
                   label: 'Correo electrónico',
@@ -90,7 +90,7 @@ class ProfilePage extends StatelessWidget {
                       ? loginProvider.userProfile!.email
                       : 'No especificado',
                 ),
-                const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                 _buildInfoRow(
                   icon: Icons.phone_outlined,
                   label: 'Teléfono',
@@ -98,7 +98,7 @@ class ProfilePage extends StatelessWidget {
                       ? loginProvider.userProfile!.phone
                       : 'No especificado',
                 ),
-                const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                 _buildInfoRow(
                   icon: Icons.badge_outlined,
                   label: 'Rol',
@@ -271,7 +271,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -310,8 +310,8 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
           children: [
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0))),
               ),
               padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Consumer<PrivacyPolicyProvider>(
@@ -329,7 +329,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                     return Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F7),
+                        color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -353,9 +353,9 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                       Container(
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0FFF4),
+                          color: AppColors.isDarkMode ? const Color(0xFF1A3320) : const Color(0xFFF0FFF4),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFA5D6A7)),
+                          border: Border.all(color: AppColors.isDarkMode ? const Color(0xFF3D6B45) : const Color(0xFFA5D6A7)),
                         ),
                         child: Row(
                           children: [
@@ -405,10 +405,14 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
       margin: EdgeInsets.only(bottom: 10),
       padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isSensitive ? const Color(0xFFFFF8E1) : const Color(0xFFF5F5F7),
+        color: isSensitive
+            ? (AppColors.isDarkMode ? const Color(0xFF3A2E10) : const Color(0xFFFFF8E1))
+            : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7)),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isSensitive ? const Color(0xFFFFCC80) : const Color(0xFFE0E0E0),
+          color: isSensitive
+              ? (AppColors.isDarkMode ? const Color(0xFF8A6A2C) : const Color(0xFFFFCC80))
+              : (AppColors.isDarkMode ? const Color(0xFF3A3A3C) : const Color(0xFFE0E0E0)),
         ),
       ),
       child: Column(
@@ -482,7 +486,7 @@ class _AccountDeletionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -501,16 +505,16 @@ class _AccountDeletionTile extends StatelessWidget {
           leading: Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFEBEA),
+              color: AppColors.riskHighBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.delete_outline, color: Color(0xFFD32F2F), size: 20),
+            child: Icon(Icons.delete_outline, color: AppColors.riskHighText, size: 20),
           ),
           title: Text(
             'Eliminar mi cuenta',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFFD32F2F),
+              color: AppColors.riskHighText,
               fontSize: 14,
             ),
           ),
@@ -521,8 +525,8 @@ class _AccountDeletionTile extends StatelessWidget {
           children: [
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0))),
               ),
               padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Column(
@@ -550,7 +554,7 @@ class _AccountDeletionTile extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F7),
+                      color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
@@ -587,8 +591,8 @@ class _AccountDeletionTile extends StatelessWidget {
                   SizedBox(height: 10),
                   _buildDataRow(
                     icon: Icons.delete_forever_outlined,
-                    color: const Color(0xFFD32F2F),
-                    bgColor: const Color(0xFFFFEBEA),
+                    color: AppColors.riskHighText,
+                    bgColor: AppColors.riskHighBg,
                     label: 'Se eliminan',
                     description:
                         'Cuenta de usuario, contraseñas, datos de contacto (nombre, correo) e historial médico personal (datos ginecobstétricos, signos vitales, notas de consulta y riesgos calculados).',
@@ -596,8 +600,8 @@ class _AccountDeletionTile extends StatelessWidget {
                   SizedBox(height: 10),
                   _buildDataRow(
                     icon: Icons.lock_outline,
-                    color: const Color(0xFF00796B),
-                    bgColor: const Color(0xFFE0F2F1),
+                    color: AppColors.riskLowText,
+                    bgColor: AppColors.riskLowBg,
                     label: 'Se conservan',
                     description:
                         'Únicamente información disociada o anonimizada (estadísticas sin identidad) para fines de investigación, o datos que por ley debamos resguardar temporalmente ante auditorías sanitarias.',
@@ -748,7 +752,7 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Form(

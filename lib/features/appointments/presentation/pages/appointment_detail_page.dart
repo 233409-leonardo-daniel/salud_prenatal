@@ -37,7 +37,7 @@ class AppointmentDetailPage extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Detalles de la Cita',
@@ -54,7 +54,7 @@ class AppointmentDetailPage extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -66,9 +66,9 @@ class AppointmentDetailPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 40,
-                    backgroundColor: Color(0xFFFFF0F6),
+                    backgroundColor: AppColors.primaryLight,
                     child: Icon(Icons.calendar_month, color: AppColors.primary, size: 40),
                   ),
                   SizedBox(height: 16),
@@ -120,7 +120,7 @@ class AppointmentDetailPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

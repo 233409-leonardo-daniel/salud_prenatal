@@ -104,18 +104,18 @@ class _PatientsListPageState extends State<PatientsListPage> {
       String risk = 'Bajo Riesgo';
       Color riskBg = AppColors.riskLowBg;
       Color riskText = AppColors.riskLowText;
-      Color imgBg = const Color(0xFFE0F2F1);
+      Color imgBg = AppColors.riskLowBg;
 
       if (getRiskLevel(pId) == 0) {
         risk = 'Alto Riesgo';
         riskBg = AppColors.riskHighBg;
         riskText = AppColors.riskHighText;
-        imgBg = const Color(0xFFFFF0F6);
+        imgBg = AppColors.riskHighBg;
       } else if (getRiskLevel(pId) == 1) {
         risk = 'Medio Riesgo';
         riskBg = AppColors.riskMediumBg;
         riskText = AppColors.riskMediumText;
-        imgBg = const Color(0xFFFFF4E5);
+        imgBg = AppColors.riskMediumBg;
       }
 
       if (searchQuery.isNotEmpty &&
@@ -214,7 +214,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -228,19 +228,25 @@ class _PatientsListPageState extends State<PatientsListPage> {
 
           // Search patient bar
           TextField(
+            style: TextStyle(color: AppColors.textDark),
             controller: _searchController,
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppColors.cardBackground,
               hintText: 'Buscar paciente por nombre o ID...',
+              hintStyle: TextStyle(color: AppColors.textMuted),
               prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.pink.shade50),
+                borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.transparent : Colors.pink.shade50),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.pink.shade50),
+                borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.transparent : Colors.pink.shade50),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
               ),
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
@@ -280,7 +286,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
                 IconButton(
                   icon: Icon(
                     Icons.chevron_left,
-                    color: effectivePage > 1 ? AppColors.textMuted : Colors.grey.shade300,
+                    color: effectivePage > 1
+                        ? AppColors.textMuted
+                        : (AppColors.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
                   ),
                   onPressed: effectivePage > 1
                       ? () => setState(() => _currentPage = effectivePage - 1)
@@ -300,7 +308,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
                 IconButton(
                   icon: Icon(
                     Icons.chevron_right,
-                    color: effectivePage < totalPages ? AppColors.textMuted : Colors.grey.shade300,
+                    color: effectivePage < totalPages
+                        ? AppColors.textMuted
+                        : (AppColors.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
                   ),
                   onPressed: effectivePage < totalPages
                       ? () => setState(() => _currentPage = effectivePage + 1)
@@ -326,7 +336,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : const Color(0xFFEFEFF4),
+          color: isSelected
+              ? AppColors.primary
+              : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFEFEFF4)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -360,7 +372,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -374,6 +386,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
                 backgroundColor: imageBackground,
@@ -388,9 +401,29 @@ class _PatientsListPageState extends State<PatientsListPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: riskColorBg,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            risk,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: riskColorText, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 2),
                     Text(
@@ -406,7 +439,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F7),
+              color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -418,6 +451,28 @@ class _PatientsListPageState extends State<PatientsListPage> {
                       Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                       SizedBox(height: 2),
                       Text(gestationAge, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(statusIcon, size: 14, color: statusIconColor),
+                          SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              status,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -459,16 +514,26 @@ class _PatientsListPageState extends State<PatientsListPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    side: BorderSide(color: Colors.grey.shade300, width: 1),
-                    backgroundColor: Colors.grey.shade100,
-                    disabledForegroundColor: Colors.grey,
+                    side: BorderSide(
+                      color: AppColors.isDarkMode ? Colors.transparent : Colors.grey.shade300,
+                      width: 1,
+                    ),
+                    backgroundColor: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade100,
+                    disabledForegroundColor: AppColors.isDarkMode ? AppColors.textMuted : Colors.grey,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.trending_up, size: 16, color: Colors.grey),
+                      Icon(Icons.trending_up, size: 16, color: AppColors.isDarkMode ? AppColors.textMuted : Colors.grey),
                       SizedBox(width: 6),
-                      Text('Progreso', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Progreso',
+                        style: TextStyle(
+                          color: AppColors.isDarkMode ? AppColors.textMuted : Colors.grey,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),

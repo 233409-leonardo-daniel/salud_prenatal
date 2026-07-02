@@ -44,7 +44,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
     final provider = context.watch<UserProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Directorio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,
@@ -53,7 +53,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
       body: Column(
         children: [
           Container(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -125,12 +125,12 @@ class _UserSearchPageState extends State<UserSearchPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: const Color(0xFFFFF0F6),
+              backgroundColor: AppColors.primaryLight,
               backgroundImage: user.profilePicture != null ? NetworkImage(user.profilePicture!) : null,
               child: user.profilePicture == null ? Icon(Icons.person, color: AppColors.primary) : null,
             ),
             title: Text(user.fullName, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            subtitle: Text(user.email),
+            subtitle: Text(user.email, style: TextStyle(color: AppColors.textMuted)),
             trailing: IconButton(
               icon: Icon(Icons.chat, color: AppColors.primary),
               onPressed: () {

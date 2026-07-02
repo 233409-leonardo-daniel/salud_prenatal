@@ -68,7 +68,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.otherUserName, style: TextStyle(fontSize: 16)),
+            Text(widget.otherUserName, style: TextStyle(fontSize: 16, color: Colors.white)),
             Text(
               chatProvider.isConnected ? 'En línea' : 'Desconectado',
               style: TextStyle(
@@ -139,14 +139,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           Expanded(
             child: TextField(
               controller: _messageController,
+              style: TextStyle(color: AppColors.textDark),
               decoration: InputDecoration(
                 hintText: 'Escribe un mensaje...',
+                hintStyle: TextStyle(color: AppColors.textMuted),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               onSubmitted: (_) {

@@ -202,7 +202,9 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? activeColor.withOpacity(0.08) : const Color(0xFFF5F5F7),
+            color: isSelected
+              ? (AppColors.isDarkMode ? AppColors.primaryLight : activeColor.withOpacity(0.08))
+              : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7)),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? activeColor : Colors.transparent,
@@ -302,11 +304,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withOpacity(AppColors.isDarkMode ? 0.15 : 0.03),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -560,9 +562,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.cardBackground,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.pink.shade50),
+                              border: Border.all(
+                                color: AppColors.isDarkMode ? Colors.white.withOpacity(0.06) : Colors.pink.shade50,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,9 +598,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.cardBackground,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.pink.shade50),
+                              border: Border.all(
+                                color: AppColors.isDarkMode ? Colors.white.withOpacity(0.06) : Colors.pink.shade50,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

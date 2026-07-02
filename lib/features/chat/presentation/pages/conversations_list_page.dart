@@ -30,7 +30,7 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
     final currentUserId = context.watch<LoginProvider>().userId ?? 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Mensajes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,
@@ -72,12 +72,12 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
           margin: EdgeInsets.only(bottom: 12),
           child: ListTile(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFFFFF0F6),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primaryLight,
               child: Icon(Icons.person, color: AppColors.primary),
             ),
             title: Text(otherName, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textMuted)),
             trailing: conv.unreadCount > 0 
                 ? Container(
                     padding: EdgeInsets.all(6),

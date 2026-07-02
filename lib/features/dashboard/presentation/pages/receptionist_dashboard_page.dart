@@ -78,8 +78,8 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
         IconButton(
           icon: Container(
             padding: EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF0EFF4),
+            decoration: BoxDecoration(
+              color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0EFF4),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
@@ -88,7 +88,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
         ),
         SizedBox(width: 12),
       ],
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       elevation: 0,
     );
   }
@@ -163,7 +163,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
@@ -213,7 +213,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
       unselectedItemColor: AppColors.textMuted,
       showSelectedLabels: true,
       showUnselectedLabels: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Inicio'),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), activeIcon: Icon(Icons.calendar_today), label: 'Citas'),

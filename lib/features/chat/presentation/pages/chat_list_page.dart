@@ -158,7 +158,7 @@ class _ChatListPageState extends State<ChatListPage> {
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
@@ -166,7 +166,7 @@ class _ChatListPageState extends State<ChatListPage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppColors.textDark),
         ),
         elevation: 0,
-        backgroundColor: const Color(0xFFF9F9FB),
+        backgroundColor: AppColors.background,
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_outlined, color: AppColors.primary),
@@ -196,7 +196,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.cardBackground,
                   hintText: isDoctorOrReceptionist ? 'Buscar contacto...' : 'Buscar médico o recepcionista...',
                   prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
                   suffixIcon: _searchQuery.isNotEmpty
@@ -212,11 +212,11 @@ class _ChatListPageState extends State<ChatListPage> {
                       : null,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Colors.pink.shade50),
+                    borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.transparent : Colors.pink.shade50),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Colors.pink.shade50),
+                    borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.transparent : Colors.pink.shade50),
                   ),
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
@@ -565,9 +565,9 @@ class _ChatListPageState extends State<ChatListPage> {
             Container(
               padding: EdgeInsets.all(24.0),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F6),
+                color: AppColors.isDarkMode ? const Color(0xFF351A25) : const Color(0xFFFFF0F6),
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.pink.shade100, width: 1.5),
+                border: Border.all(color: AppColors.isDarkMode ? const Color(0xFF5C2E42) : Colors.pink.shade100, width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withAlpha(10),

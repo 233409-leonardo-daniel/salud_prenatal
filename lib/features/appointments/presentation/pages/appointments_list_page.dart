@@ -35,7 +35,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     final loginProvider = context.watch<LoginProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Todas las Citas',

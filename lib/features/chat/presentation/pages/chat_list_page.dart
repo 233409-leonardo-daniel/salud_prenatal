@@ -7,9 +7,8 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../../patients/presentation/providers/patients_list_provider.dart';
-import '../../../patients/presentation/pages/patient_state.dart';
 import '../../di/chat_module.dart';
-import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_entity.dart';
 import 'chat_room_page.dart';
 import '../../../../core/network/api_client.dart';
 
@@ -25,9 +24,9 @@ class _ChatListPageState extends State<ChatListPage> {
   String _searchQuery = '';
 
   late final ChatModule _chatModule;
-  Map<int, List<ChatMessage>> _conversations = {};
+  List<Conversation> _inboxConversations = [];
   bool _loadingLastMessages = false;
-  StreamSubscription<ChatMessage>? _listMessageSubscription;
+  StreamSubscription<dynamic>? _listMessageSubscription;
 
   @override
   void initState() {
@@ -49,26 +48,12 @@ class _ChatListPageState extends State<ChatListPage> {
         await context.read<PatientsListProvider>().loadPatients(doctorId);
       }
 
-      // 2. Cargar historial y últimos mensajes para todos
+      // 2. Cargar historial de conversaciones desde la bandeja de entrada (Inbox)
       await _loadLastMessages();
 
-      // 3. Suscribirse a mensajes en tiempo real para todos
+      // 3. Suscribirse a mensajes en tiempo real para actualizar la bandeja de entrada
       _listMessageSubscription = _chatModule.remoteDataSource.messageStream.listen((message) {
-        final currentUserIdLocal = loginProvider.userId;
-        if (currentUserIdLocal == null) return;
-        final otherUserId = message.senderId == currentUserIdLocal ? message.receiverId : message.senderId;
-        
-        if (_conversations.containsKey(otherUserId)) {
-          setState(() {
-            final exists = _conversations[otherUserId]!.any((msg) => msg.messageId == message.messageId);
-            if (!exists) {
-              _conversations[otherUserId]!.add(message);
-              _conversations[otherUserId]!.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-            }
-          });
-        } else {
-          _loadLastMessages();
-        }
+        _loadLastMessages();
       });
       
       // Cargar panel y usuarios para autocompletar o búsquedas
@@ -81,60 +66,24 @@ class _ChatListPageState extends State<ChatListPage> {
     final currentUserId = loginProvider.userId;
     if (currentUserId == null) return;
 
-    final patientsProvider = context.read<PatientsListProvider>();
-    final dashboardProvider = context.read<DashboardProvider>();
-    
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
-    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
-
     setState(() {
       _loadingLastMessages = true;
     });
 
     try {
-      final Map<int, List<ChatMessage>> loadedConversations = {};
+      final conversations = await _chatModule.repository.getConversations(currentUserId);
       
-      if (isDoctor || isReceptionist) {
-        // Cargar conversaciones con pacientes
-        final patients = patientsProvider.patients;
-        for (final patient in patients) {
-          final history = await _chatModule.repository.getChatHistory(patient.userId, currentUserId);
-          loadedConversations[patient.userId] = history;
-        }
-
-        // Si es recepcionista, también cargar conversaciones con doctores
-        if (isReceptionist) {
-          final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
-          for (final doctor in doctors) {
-            if (doctor.userId != null) {
-              final history = await _chatModule.repository.getChatHistory(doctor.userId!, currentUserId);
-              loadedConversations[doctor.userId!] = history;
-            }
-          }
-        }
-      } else {
-        // Es un paciente. Cargar historial con doctores y recepcionistas.
-        final contacts = dashboardProvider.users.where((u) {
-          final r = u.role.toLowerCase();
-          return r.contains('doctor') || r == 'receptionist' || r == 'recepcionista';
-        }).toList();
-        
-        for (final contact in contacts) {
-          if (contact.userId != null) {
-            final history = await _chatModule.repository.getChatHistory(contact.userId!, currentUserId);
-            loadedConversations[contact.userId!] = history;
-          }
-        }
-      }
+      // Ordenar por fecha de actualización descendente (los más recientes primero)
+      conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
       if (mounted) {
         setState(() {
-          _conversations = loadedConversations;
+          _inboxConversations = conversations;
           _loadingLastMessages = false;
         });
       }
     } catch (e) {
-      debugPrint('Error loading last messages: $e');
+      debugPrint('Error loading conversations inbox: $e');
       if (mounted) {
         setState(() {
           _loadingLastMessages = false;
@@ -245,64 +194,23 @@ class _ChatListPageState extends State<ChatListPage> {
 
   // --- DOCTOR & RECEPTIONIST VIEW: Active Conversations ---
   Widget _buildDoctorChatList() {
-    final patientsProvider = context.watch<PatientsListProvider>();
-    final dashboardProvider = context.watch<DashboardProvider>();
     final loginProvider = context.watch<LoginProvider>();
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final dashboardProvider = context.watch<DashboardProvider>();
 
-    switch (patientsProvider.status) {
-      case PatientsListStatus.initial:
-      case PatientsListStatus.loading:
-        return Center(child: CircularProgressIndicator(color: AppColors.primary));
-      case PatientsListStatus.error:
-        return Center(child: Text(patientsProvider.error ?? 'Error'));
-      case PatientsListStatus.success:
-        if (_loadingLastMessages) {
-          return Center(child: CircularProgressIndicator(color: AppColors.primary));
-        }
-        break;
+    if (_loadingLastMessages && _inboxConversations.isEmpty) {
+      return Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
-    final patients = patientsProvider.patients;
-    
-    // Construir lista de usuarios activos con los que se tiene conversación
-    final List<UserProfile> activeContacts = [];
-    if (isReceptionist) {
-      // Recepcionista: mostrar pacientes y médicos con historial activo
-      for (final user in dashboardProvider.users) {
-        if (user.userId == loginProvider.userId) continue;
-        final history = _conversations[user.userId] ?? [];
-        if (history.isNotEmpty) {
-          activeContacts.add(user);
-        }
-      }
-    } else {
-      // Doctor: mostrar pacientes con historial activo
-      for (final patient in patients) {
-        final patientUser = dashboardProvider.users.firstWhere(
-          (u) => u.userId == patient.userId,
-          orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-        );
-        final history = _conversations[patient.userId] ?? [];
-        if (history.isNotEmpty) {
-          activeContacts.add(patientUser);
-        }
-      }
-    }
-
-    if (activeContacts.isEmpty && patients.isEmpty) {
+    if (_inboxConversations.isEmpty) {
       return _buildEmptyState(
         icon: Icons.chat_bubble_outline,
-        title: isReceptionist ? 'Sin conversaciones' : 'Sin pacientes aún',
-        description: isReceptionist 
-            ? 'Inicia un chat con un paciente o doctor usando el botón de contactos abajo.'
-            : 'Tus pacientes aparecerán aquí una vez que se vinculen a tu cuenta.',
+        title: 'Sin conversaciones',
+        description: 'Inicia un chat con un paciente o doctor usando el botón de contactos abajo.',
       );
     }
 
-    final filtered = activeContacts.where((contact) {
-      final fullName = '${contact.name} ${contact.lastName}'.toLowerCase();
-      return fullName.contains(_searchQuery);
+    final filtered = _inboxConversations.where((conv) {
+      return conv.participant2Name.toLowerCase().contains(_searchQuery);
     }).toList();
 
     if (filtered.isEmpty) {
@@ -325,21 +233,27 @@ class _ChatListPageState extends State<ChatListPage> {
       padding: EdgeInsets.all(16.0),
       itemCount: filtered.length,
       itemBuilder: (context, index) {
-        final contactUser = filtered[index];
-        final isDoc = contactUser.role.toLowerCase().contains('doctor');
+        final conv = filtered[index];
+        final otherUserId = conv.participant2Id;
         
+        // Obtener rol del usuario
+        final contactUser = dashboardProvider.users.firstWhere(
+          (u) => u.userId == otherUserId,
+          orElse: () => UserProfile(name: '', lastName: '', email: '', role: 'paciente'),
+        );
+        
+        final isDoc = contactUser.role.toLowerCase().contains('doctor') || conv.participant2Name.contains('Dra.');
         final fullName = isDoc 
-            ? 'Dra. ${contactUser.name} ${contactUser.lastName}'.trim()
-            : '${contactUser.name} ${contactUser.lastName}'.trim();
+            ? 'Dra. ${conv.participant2Name.replaceAll('Dra. ', '').replaceAll('Dr. ', '')}'.trim()
+            : conv.participant2Name;
             
-        final initials = '${contactUser.name.isNotEmpty ? contactUser.name[0] : 'U'}${contactUser.lastName.isNotEmpty ? contactUser.lastName[0] : ''}';
+        final initials = fullName.isNotEmpty ? fullName.substring(0, 1).toUpperCase() : 'U';
         
-        final history = _conversations[contactUser.userId] ?? [];
         String lastMessageContent = 'Sin mensajes';
         String lastMessageTime = '';
         
-        if (history.isNotEmpty) {
-          final lastMsg = history.last;
+        final lastMsg = conv.lastMessage;
+        if (lastMsg != null) {
           final isSentByMe = lastMsg.senderId == loginProvider.userId;
           final prefix = isSentByMe ? 'Tú: ' : '';
           lastMessageContent = '$prefix${lastMsg.content}';
@@ -369,22 +283,47 @@ class _ChatListPageState extends State<ChatListPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
-                    otherUserId: contactUser.userId!,
+                    otherUserId: otherUserId,
                     otherUserName: fullName,
-                    otherUserRole: contactUser.role,
+                    otherUserRole: contactUser.role.isNotEmpty ? contactUser.role : 'paciente',
                   ),
                 ),
               );
               _loadLastMessages();
             },
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              radius: 26,
-              backgroundColor: AppColors.primaryLight,
-              child: Text(
-                initials,
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+            leading: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: AppColors.primaryLight,
+                  child: Text(
+                    initials,
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                if (conv.unreadCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '${conv.unreadCount}',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -633,59 +572,62 @@ class _ChatListPageState extends State<ChatListPage> {
       );
     }
 
-    // 1. Agregar el médico asignado como contacto fijo
-    final List<UserProfile> contacts = [];
-    final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
-    if (doctors.isEmpty) {
-      doctors.add(UserProfile(
-        userId: 1,
-        name: docName.replaceAll('Dra. ', '').replaceAll('Dr. ', ''),
-        lastName: '',
-        email: 'doctor@example.com',
-        role: 'doctor',
-      ));
-    }
-    contacts.addAll(doctors);
+    // 1. Obtener la lista de conversaciones del inbox
+    final List<Conversation> conversations = _inboxConversations;
 
-    // 2. Agregar cualquier otro usuario que tenga conversación activa con el paciente (como la recepcionista)
-    if (currentUserId != null) {
-      for (final user in dashboardProvider.users) {
-        if (user.userId == currentUserId) continue;
-        if (contacts.any((c) => c.userId == user.userId)) continue;
-        
-        final history = _conversations[user.userId] ?? [];
-        if (history.isNotEmpty) {
-          contacts.add(user);
-        }
-      }
+    // 2. Asegurarse de que el médico asignado siempre aparezca, incluso si no hay mensajes en el inbox
+    final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
+    final assignedDoc = doctors.isNotEmpty ? doctors.first : null;
+    final assignedDocUserId = assignedDoc?.userId ?? 1;
+    final assignedDocName = hasDoctor ? docName : 'Dra. Gómez';
+
+    final List<Conversation> displayConversations = List.from(conversations);
+
+    // Si el médico asignado no está en el inbox, lo agregamos como una conversación vacía
+    final hasDocInInbox = displayConversations.any((c) => c.participant2Id == assignedDocUserId);
+    if (!hasDocInInbox) {
+      displayConversations.add(Conversation(
+        conversationId: assignedDocUserId,
+        participant1Id: currentUserId ?? 0,
+        participant2Id: assignedDocUserId,
+        participant1Name: '',
+        participant2Name: assignedDocName.replaceAll('Dra. ', '').replaceAll('Dr. ', ''),
+        unreadCount: 0,
+        updatedAt: DateTime.now().subtract(const Duration(days: 365)), // Al final
+      ));
     }
 
     // 3. Filtrar según la búsqueda
-    final filteredContacts = contacts.where((contact) {
-      final fullName = '${contact.name} ${contact.lastName}'.toLowerCase();
-      return fullName.contains(_searchQuery);
+    final filteredContacts = displayConversations.where((conv) {
+      return conv.participant2Name.toLowerCase().contains(_searchQuery);
     }).toList();
 
     return ListView.builder(
       padding: EdgeInsets.all(16.0),
       itemCount: filteredContacts.length,
       itemBuilder: (context, index) {
-        final contact = filteredContacts[index];
-        final isDoctorRole = contact.role.toLowerCase().contains('doctor');
-        final isReceptionistRole = contact.role.toLowerCase() == 'receptionist' || contact.role.toLowerCase() == 'recepcionista';
+        final conv = filteredContacts[index];
+        final otherUserId = conv.participant2Id;
+        
+        final contactUser = dashboardProvider.users.firstWhere(
+          (u) => u.userId == otherUserId,
+          orElse: () => UserProfile(name: '', lastName: '', email: '', role: 'paciente'),
+        );
+        
+        final isDoctorRole = contactUser.role.toLowerCase().contains('doctor') || conv.participant2Name.contains('Dra.');
+        final isReceptionistRole = contactUser.role.toLowerCase() == 'receptionist' || contactUser.role.toLowerCase() == 'recepcionista';
         
         final String displayName = isDoctorRole 
-            ? 'Dra. ${contact.name} ${contact.lastName}'.trim()
-            : (isReceptionistRole ? 'Recepcionista: ${contact.name} ${contact.lastName}'.trim() : '${contact.name} ${contact.lastName}'.trim());
+            ? 'Dra. ${conv.participant2Name.replaceAll('Dra. ', '').replaceAll('Dr. ', '')}'.trim()
+            : (isReceptionistRole ? 'Recepcionista: ${conv.participant2Name}' : conv.participant2Name);
             
-        final initials = '${contact.name.isNotEmpty ? contact.name[0] : 'U'}${contact.lastName.isNotEmpty ? contact.lastName[0] : ''}';
-        final isAssigned = isDoctorRole && (docName.contains(contact.name) || contact.userId == 1);
+        final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
+        final isAssigned = isDoctorRole && (otherUserId == assignedDocUserId);
 
-        // Obtener último mensaje para mostrarlo en el subtítulo
-        final history = _conversations[contact.userId] ?? [];
+        // Obtener último mensaje
         String subtitleText = isDoctorRole ? docSpecialty : 'Personal Administrativo';
-        if (history.isNotEmpty) {
-          final lastMsg = history.last;
+        final lastMsg = conv.lastMessage;
+        if (lastMsg != null) {
           final isSentByMe = lastMsg.senderId == currentUserId;
           final prefix = isSentByMe ? 'Tú: ' : '';
           subtitleText = '$prefix${lastMsg.content}';
@@ -730,6 +672,27 @@ class _ChatListPageState extends State<ChatListPage> {
                     ),
                   ),
                 ),
+                if (conv.unreadCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '${conv.unreadCount}',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
               ],
             ),
             title: Row(
@@ -769,9 +732,9 @@ class _ChatListPageState extends State<ChatListPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
-                    otherUserId: contact.userId ?? 1,
+                    otherUserId: otherUserId,
                     otherUserName: displayName,
-                    otherUserRole: contact.role,
+                    otherUserRole: contactUser.role.isNotEmpty ? contactUser.role : 'doctor',
                   ),
                 ),
               );

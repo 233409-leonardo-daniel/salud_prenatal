@@ -21,6 +21,26 @@ class ConversationDto {
   });
 
   factory ConversationDto.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('other_user_id')) {
+      final otherId = json['other_user_id'] ?? 0;
+      final name = json['other_user_name'] ?? '';
+      final lastName = json['other_user_lastname'] ?? '';
+      final fullName = '$name $lastName'.trim();
+      final lastMsg = json['last_message'];
+      final time = lastMsg != null ? lastMsg['created_at'] : null;
+      
+      return ConversationDto(
+        id: otherId,
+        participant1Id: 0,
+        participant2Id: otherId,
+        participant1Name: '',
+        participant2Name: fullName,
+        lastMessage: lastMsg,
+        unreadCount: json['unread_count'] ?? 0,
+        updatedAt: time ?? DateTime.now().toIso8601String(),
+      );
+    }
+
     return ConversationDto(
       id: json['id'] ?? 0,
       participant1Id: json['participant_1_id'] ?? 0,

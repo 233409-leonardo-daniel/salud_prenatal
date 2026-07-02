@@ -43,7 +43,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Future<List<ConversationDto>> getConversations(int currentUserId) async {
     try {
-      final response = await _apiClient.get('/chat/conversations?user_id=$currentUserId');
+      final response = await _apiClient.get('/chat/inbox?current_user_id=$currentUserId');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((item) => ConversationDto.fromJson(item)).toList();

@@ -32,6 +32,9 @@ import 'features/users/presentation/providers/user_provider.dart';
 import 'features/chat/di/chat_module.dart';
 import 'features/chat/presentation/providers/chat_provider.dart';
 import 'features/chat/presentation/providers/conversations_provider.dart';
+import 'features/forums/di/forums_module.dart';
+import 'features/forums/presentation/providers/forums_provider.dart';
+import 'features/forums/presentation/pages/forums_hub_page.dart';
 
 import 'core/widgets/session_timeout_listener.dart';
 
@@ -55,6 +58,7 @@ class MyApp extends StatelessWidget {
     final userModule = UserModule(apiClient);
     final chatModule = ChatModule(apiClient);
     final dashboardModule = DashboardModule(apiClient);
+    final forumsModule = ForumsModule(apiClient);
 
     return MultiProvider(
       providers: [
@@ -144,6 +148,20 @@ class MyApp extends StatelessWidget {
           create: (_) =>
               ConversationsProvider(chatModule.getConversationsUseCase),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ForumsProvider(
+            getSocialProfileUseCase: forumsModule.getSocialProfileUseCase,
+            createSocialProfileUseCase: forumsModule.createSocialProfileUseCase,
+            createGroupUseCase: forumsModule.createGroupUseCase,
+            getGroupsUseCase: forumsModule.getGroupsUseCase,
+            createPostUseCase: forumsModule.createPostUseCase,
+            getGlobalFeedUseCase: forumsModule.getGlobalFeedUseCase,
+            getGroupFeedUseCase: forumsModule.getGroupFeedUseCase,
+            createCommentUseCase: forumsModule.createCommentUseCase,
+            getCommentsUseCase: forumsModule.getCommentsUseCase,
+            createReportUseCase: forumsModule.createReportUseCase,
+          ),
+        ),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
@@ -164,6 +182,7 @@ class MyApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardPage(),
           '/home': (context) => const DashboardPage(),
           '/patient-diaries': (context) => const PatientDiaryPage(),
+          '/forums': (context) => const ForumsHubPage(),
         },
       ),
     );

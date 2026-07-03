@@ -253,6 +253,7 @@ class _ChatListPageState extends State<ChatListPage> {
         String lastMessageTime = '';
         
         final lastMsg = conv.lastMessage;
+        final unreadCount = (lastMsg != null && lastMsg.senderId == loginProvider.userId) ? 0 : conv.unreadCount;
         if (lastMsg != null) {
           final isSentByMe = lastMsg.senderId == loginProvider.userId;
           final prefix = isSentByMe ? 'Tú: ' : '';
@@ -279,6 +280,22 @@ class _ChatListPageState extends State<ChatListPage> {
           ),
           child: ListTile(
             onTap: () async {
+              setState(() {
+                final idx = _inboxConversations.indexWhere((c) => c.participant2Id == otherUserId);
+                if (idx != -1) {
+                  final old = _inboxConversations[idx];
+                  _inboxConversations[idx] = Conversation(
+                    conversationId: old.conversationId,
+                    participant1Id: old.participant1Id,
+                    participant2Id: old.participant2Id,
+                    participant1Name: old.participant1Name,
+                    participant2Name: old.participant2Name,
+                    lastMessage: old.lastMessage,
+                    unreadCount: 0,
+                    updatedAt: old.updatedAt,
+                  );
+                }
+              });
               await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -302,7 +319,7 @@ class _ChatListPageState extends State<ChatListPage> {
                     style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                if (conv.unreadCount > 0)
+                if (unreadCount > 0)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -317,7 +334,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         minHeight: 16,
                       ),
                       child: Text(
-                        '${conv.unreadCount}',
+                        '$unreadCount',
                         style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
@@ -572,6 +589,10 @@ class _ChatListPageState extends State<ChatListPage> {
       );
     }
 
+    if (_loadingLastMessages && _inboxConversations.isEmpty) {
+      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+
     // 1. Obtener la lista de conversaciones del inbox
     final List<Conversation> conversations = _inboxConversations;
 
@@ -627,6 +648,7 @@ class _ChatListPageState extends State<ChatListPage> {
         // Obtener último mensaje
         String subtitleText = isDoctorRole ? docSpecialty : 'Personal Administrativo';
         final lastMsg = conv.lastMessage;
+        final unreadCount = (lastMsg != null && lastMsg.senderId == currentUserId) ? 0 : conv.unreadCount;
         if (lastMsg != null) {
           final isSentByMe = lastMsg.senderId == currentUserId;
           final prefix = isSentByMe ? 'Tú: ' : '';
@@ -672,7 +694,7 @@ class _ChatListPageState extends State<ChatListPage> {
                     ),
                   ),
                 ),
-                if (conv.unreadCount > 0)
+                if (unreadCount > 0)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -687,7 +709,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         minHeight: 16,
                       ),
                       child: Text(
-                        '${conv.unreadCount}',
+                        '$unreadCount',
                         style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
@@ -727,8 +749,24 @@ class _ChatListPageState extends State<ChatListPage> {
               ),
             ),
             trailing: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              setState(() {
+                final idx = _inboxConversations.indexWhere((c) => c.participant2Id == otherUserId);
+                if (idx != -1) {
+                  final old = _inboxConversations[idx];
+                  _inboxConversations[idx] = Conversation(
+                    conversationId: old.conversationId,
+                    participant1Id: old.participant1Id,
+                    participant2Id: old.participant2Id,
+                    participant1Name: old.participant1Name,
+                    participant2Name: old.participant2Name,
+                    lastMessage: old.lastMessage,
+                    unreadCount: 0,
+                    updatedAt: old.updatedAt,
+                  );
+                }
+              });
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
@@ -738,6 +776,7 @@ class _ChatListPageState extends State<ChatListPage> {
                   ),
                 ),
               );
+              _loadLastMessages();
             },
           ),
         );

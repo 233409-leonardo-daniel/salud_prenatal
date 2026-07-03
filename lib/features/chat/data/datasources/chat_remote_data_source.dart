@@ -188,15 +188,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   void sendMessage(int receiverId, String content) {
-    if (_webSocket != null && _webSocket!.readyState == WebSocket.open) {
-      final messageJson = {
-        'receiver_id': receiverId,
-        'content': content,
-      };
-      _webSocket!.add(jsonEncode(messageJson));
-      debugPrint('Mensaje enviado vía WebSocket: $messageJson');
-    } else {
-      debugPrint('Error: El WebSocket no está listo. Intentando reconectar...');
+    try {
+      if (_webSocket != null && _webSocket!.readyState == WebSocket.open) {
+        final messageJson = {
+          'receiver_id': receiverId,
+          'content': content,
+        };
+        _webSocket!.add(jsonEncode(messageJson));
+        debugPrint('Mensaje enviado vía WebSocket: $messageJson');
+      } else {
+        debugPrint('Error: El WebSocket no está listo. Intentando reconectar...');
+        _handleDisconnect();
+      }
+    } catch (e) {
+      debugPrint('Error enviando mensaje por WebSocket: $e');
       _handleDisconnect();
     }
   }

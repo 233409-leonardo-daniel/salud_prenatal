@@ -17,6 +17,7 @@ import '../../../patient_diaries/presentation/providers/patient_diaries_provider
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../chat/presentation/pages/chat_list_page.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
+import '../../../forums/presentation/pages/forums_hub_page.dart';
 import 'receptionist_dashboard_page.dart';
 import '../../../../core/enums/appointment_status.dart';
 
@@ -209,10 +210,12 @@ class _DashboardPageState extends State<DashboardPage> {
           return const PatientsListPage();
         case 2:
           return const AppointmentsPage();
-        case 4:
-          return const ProfilePage();
         case 3:
+          return const ForumsHubPage();
+        case 4:
           return const ChatListPage();
+        case 5:
+          return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de comunicación y perfil médico.');
       }
@@ -222,10 +225,12 @@ class _DashboardPageState extends State<DashboardPage> {
           return _buildPatientDashboard();
         case 1:
           return const AppointmentsPage();
-        case 3:
-          return const ProfilePage();
         case 2:
+          return const ForumsHubPage();
+        case 3:
           return const ChatListPage();
+        case 4:
+          return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de salud prenatal.');
       }
@@ -300,59 +305,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final citasHoyStr = todayAppointments.length.toString();
 
-    final priorityAlerts = <Widget>[];
-    if (dashboardProvider.isCriticalPatientsLoading && dashboardProvider.criticalPatients.isEmpty) {
-      priorityAlerts.add(
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.0),
-          child: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
-        ),
-      );
-    } else {
-      for (final critical in dashboardProvider.criticalPatients) {
-        final name = critical['name'] as String? ?? 'Paciente';
-        final diagnosis = critical['diagnosis'] as String? ?? 'Riesgo Alto';
-        final patientId = critical['patientId'];
-        final nameParts = name.trim().split(RegExp(r'\s+'));
-        final initials = nameParts.isNotEmpty
-            ? '${nameParts.first.isNotEmpty ? nameParts.first[0] : 'P'}${nameParts.length > 1 && nameParts.last.isNotEmpty ? nameParts.last[0] : ''}'
-            : 'P';
-        priorityAlerts.add(
-          _buildAlertCard(
-            name,
-            diagnosis,
-            initials,
-            onDetailPressed: patientId != null
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PatientRecordPage(
-                          patientName: name,
-                          patientId: '#SP-$patientId',
-                        ),
-                      ),
-                    );
-                  }
-                : null,
-          ),
-        );
-        priorityAlerts.add(SizedBox(height: 12));
-      }
-      if (priorityAlerts.isEmpty) {
-        priorityAlerts.add(
-          Card(
-            elevation: 0,
-            color: AppColors.cardBackground,
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text('No hay alertas de riesgo alto el día de hoy.', style: TextStyle(color: AppColors.textMuted)),
-            ),
-          ),
-        );
-      }
-    }
-
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.0),
       child: Column(
@@ -365,28 +317,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildDoctorStatCard('Citas Hoy', citasHoyStr, Icons.calendar_today_outlined, Colors.teal),
             ],
           ),
-          SizedBox(height: 12),
-
-          // Alertas Prioritarias Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Alertas Prioritarias',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'Ver todas',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          ...priorityAlerts,
-          SizedBox(height: 12),
+          const SizedBox(height: 24),
 
           // Próximas Citas Section
           Row(
@@ -446,7 +377,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ],
               );
             }),
-          SizedBox(height: 40),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -1222,7 +1153,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-          SizedBox(height: 40),
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -1285,6 +1216,11 @@ class _DashboardPageState extends State<DashboardPage> {
             label: 'Citas',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.forum_outlined),
+            activeIcon: Icon(Icons.forum),
+            label: 'Foros',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.message_outlined),
             activeIcon: Icon(Icons.message),
             label: 'Mensajes',
@@ -1306,6 +1242,7 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             _buildPatientTabItem(0, Icons.home_outlined, Icons.home, 'Inicio'),
             _buildPatientTabItem(1, Icons.calendar_today_outlined, Icons.calendar_today, 'Citas'),
+            _buildPatientTabItem(2, Icons.forum_outlined, Icons.forum, 'Foros'),
             // Central floating circular add button
             GestureDetector(
               onTap: () {
@@ -1330,8 +1267,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
             ),
-            _buildPatientTabItem(2, Icons.message_outlined, Icons.message, 'Mensajes'),
-            _buildPatientTabItem(3, Icons.person_outline, Icons.person, 'Perfil'),
+            _buildPatientTabItem(3, Icons.message_outlined, Icons.message, 'Mensajes'),
+            _buildPatientTabItem(4, Icons.person_outline, Icons.person, 'Perfil'),
           ],
         ),
       );

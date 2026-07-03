@@ -39,9 +39,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final loginProvider = context.read<LoginProvider>();
-      final currentUserId = loginProvider.userId ?? 2;
-      
-      _chatProvider.initChat(currentUserId, widget.otherUserId);
+      final currentUserId = loginProvider.userId;
+      if (currentUserId != null) {
+        _chatProvider.initChat(currentUserId, widget.otherUserId);
+      }
     });
   }
 
@@ -154,7 +155,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       child: Consumer<ChatProvider>(
         builder: (context, provider, child) {
           final loginProvider = context.read<LoginProvider>();
-          final currentUserId = loginProvider.userId ?? 2;
+          final currentUserId = loginProvider.userId;
           final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
           final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
 
@@ -327,7 +328,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   // --- MESSAGE LIST BUILDER WITH DATE HEADERS ---
-  Widget _buildMessageList(List<ChatMessage> messages, int currentUserId) {
+  Widget _buildMessageList(List<ChatMessage> messages, int? currentUserId) {
     final listItems = <Widget>[];
     DateTime? lastDate;
 

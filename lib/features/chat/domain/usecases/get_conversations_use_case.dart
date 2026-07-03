@@ -1,3 +1,4 @@
+import '../entities/chat_contact.dart';
 import '../entities/conversation_entity.dart';
 import '../repositories/chat_repository.dart';
 
@@ -6,7 +7,7 @@ class GetConversationsUseCase {
 
   GetConversationsUseCase(this.repository);
 
-  Future<List<Conversation>> call(int currentUserId) async {
-    return await repository.getConversations(currentUserId);
+  Future<List<Conversation>> call(int currentUserId, List<ChatContact> contacts) async {
+    return await repository.getConversations(currentUserId, contacts);
   }
 }

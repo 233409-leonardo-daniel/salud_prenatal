@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../login/presentation/providers/login_provider.dart';
+import '../../../login/domain/entities/user_profile.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../domain/entities/appointment.dart';
 import '../providers/create_appointment_provider.dart';
 import 'appointment_state.dart';
 
-// Este formulario simplificado asume que un médico (doctorId: 1) y paciente (patientId: 2)
-// son elegidos o pasados al formulario, y se centra en seleccionar la fecha y hora.
 class AppointmentFormPage extends StatefulWidget {
   const AppointmentFormPage({super.key});
 
@@ -18,6 +19,27 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   final _reasonController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  int? _selectedPatientId;
+  bool _isLoadingPatients = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPatientsIfNeeded());
+  }
+
+  Future<void> _loadPatientsIfNeeded() async {
+    final dashboardProvider = context.read<DashboardProvider>();
+    if (dashboardProvider.patients.isNotEmpty) return;
+
+    final doctorId = context.read<LoginProvider>().doctorId;
+    if (doctorId == null) return;
+
+    setState(() => _isLoadingPatients = true);
+    await dashboardProvider.loadDoctorDashboard(doctorId);
+    if (!mounted) return;
+    setState(() => _isLoadingPatients = false);
+  }
 
   @override
   void dispose() {
@@ -26,6 +48,17 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   }
 
   void _submit() {
+    final doctorId = context.read<LoginProvider>().doctorId;
+    if (doctorId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),
+      );
+      return;
+    }
+    if (_selectedPatientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona un paciente.')));
+      return;
+    }
     if (_selectedDate == null || _selectedTime == null || _reasonController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor complete todos los campos')));
       return;
@@ -41,15 +74,16 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
 
     final appointment = Appointment(
       id: 0,
-      doctorId: 1, // Ejemplo estático (requeriría un dropdown con UserSearch en una app completa)
-      patientId: 2, // Ejemplo estático
-      doctorName: '1', // Fake para backend si todavía usa names como ids
-      patientName: '2', // Fake
+      doctorId: doctorId,
+      patientId: _selectedPatientId!,
+      doctorName: doctorId.toString(),
+      patientName: _selectedPatientId.toString(),
       dateTime: finalDateTime,
       reason: _reasonController.text,
     );
 
     context.read<CreateAppointmentProvider>().createAppointment(appointment).then((_) {
+      if (!mounted) return;
       final error = context.read<CreateAppointmentProvider>().error;
       if (error == null) {
         Navigator.pop(context, true); // Devuelve true para recargar la lista anterior
@@ -62,6 +96,8 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CreateAppointmentProvider>();
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final patientsList = dashboardProvider.patients;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -74,6 +110,37 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
         padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
+            if (_isLoadingPatients)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (patientsList.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No hay pacientes registrados para agendar citas.',
+                  style: TextStyle(color: AppColors.textMuted),
+                ),
+              )
+            else
+              DropdownButtonFormField<int>(
+                value: _selectedPatientId,
+                decoration: const InputDecoration(labelText: 'Paciente'),
+                items: patientsList.map((patient) {
+                  final pId = patient['patient_id'] as int;
+                  final user = dashboardProvider.users.firstWhere(
+                    (u) => u.userId == patient['user_id'],
+                    orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
+                  );
+                  return DropdownMenuItem<int>(
+                    value: pId,
+                    child: Text('${user.name} ${user.lastName}'.trim()),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() => _selectedPatientId = val),
+              ),
+            SizedBox(height: 16),
             TextField(
               controller: _reasonController,
               decoration: const InputDecoration(labelText: 'Motivo de la Cita'),

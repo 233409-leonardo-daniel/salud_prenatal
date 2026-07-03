@@ -50,9 +50,4 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   Future<void> deleteAppointment(int id) async {
     await remoteDataSource.deleteAppointment(id);
   }
-
-  @override
-  Future<Map<String, dynamic>> checkAvailability(int doctorId, String date) async {
-    return remoteDataSource.checkAvailability(doctorId, date);
-  }
 }

@@ -26,9 +26,8 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
       final invitationProvider = context.read<InvitationProvider>();
       invitationProvider.reset();
 
-      if (isDoctor) {
-        final doctorId = loginProvider.doctorId ?? 1;
-        invitationProvider.generateInvitationCode(doctorId);
+      if (isDoctor && loginProvider.doctorId != null) {
+        invitationProvider.generateInvitationCode(loginProvider.doctorId!);
       }
     });
   }
@@ -104,8 +103,10 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
               ],
             InvitationCodeStatus.error => [
                 _buildErrorCard(invitationProvider.error ?? 'Error al generar código', () {
-                  final doctorId = context.read<LoginProvider>().doctorId ?? 1;
-                  invitationProvider.generateInvitationCode(doctorId);
+                  final doctorId = context.read<LoginProvider>().doctorId;
+                  if (doctorId != null) {
+                    invitationProvider.generateInvitationCode(doctorId);
+                  }
                 }),
               ],
             InvitationCodeStatus.success => [
@@ -116,8 +117,10 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      final doctorId = context.read<LoginProvider>().doctorId ?? 1;
-                      invitationProvider.generateInvitationCode(doctorId);
+                      final doctorId = context.read<LoginProvider>().doctorId;
+                      if (doctorId != null) {
+                        invitationProvider.generateInvitationCode(doctorId);
+                      }
                     },
                     icon: Icon(Icons.refresh_rounded),
                     label: Text('Generar nuevo código'),
@@ -367,7 +370,18 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
                               return;
                             }
                             final loginProvider = context.read<LoginProvider>();
-                            final patientId = loginProvider.patientId ?? 0;
+                            final patientId = loginProvider.patientId;
+                            if (patientId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('No se pudo identificar tu sesión de paciente.'),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                              return;
+                            }
                             final success = await invitationProvider.redeemCode(patientId, code);
                             if (success && mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

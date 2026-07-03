@@ -69,7 +69,6 @@ class MyApp extends StatelessWidget {
             appointmentModule.getAppointmentsByUserIdUsecase,
             appointmentModule.getAppointmentsUseCase,
             appointmentModule.updateAppointmentStatusUseCase,
-            appointmentModule.checkAvailabilityUseCase,
           ),
         ),
         ChangeNotifierProvider(

@@ -9,5 +9,4 @@ abstract class AppointmentRepository {
   Future<void> updateAppointment(Appointment appointment);
   Future<void> updateAppointmentStatus(int id, AppointmentStatus status);
   Future<void> deleteAppointment(int id);
-  Future<Map<String, dynamic>> checkAvailability(int doctorId, String date);
 }

@@ -32,8 +32,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     _parsedPatientId = int.tryParse(widget.patientId.replaceAll('#SP-', '').trim()) ?? 1;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final loginProvider = context.read<LoginProvider>();
-      final docId = loginProvider.doctorId ?? 1;
-      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
+      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: loginProvider.doctorId);
     });
   }
 
@@ -543,7 +542,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               );
               if (result == true) {
                 if (context.mounted) {
-                  final docId = context.read<LoginProvider>().doctorId ?? 1;
+                  final docId = context.read<LoginProvider>().doctorId;
                   context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
                 }
               }

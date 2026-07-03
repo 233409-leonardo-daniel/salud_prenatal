@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
+import '../../domain/entities/chat_contact.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_remote_data_source.dart';
-import '../mappers/conversation_mapper.dart';
+import '../models/chat_message_model.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
   final ChatRemoteDataSource _remoteDataSource;
@@ -17,14 +18,40 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<bool> get connectionStatusStream => _remoteDataSource.connectionStatusStream;
 
   @override
-  Future<List<Conversation>> getConversations(int currentUserId) async {
-    try {
-      final dtos = await _remoteDataSource.getConversations(currentUserId);
-      return dtos.map((dto) => ConversationMapper.dtoToEntity(dto)).toList();
-    } catch (e) {
-      debugPrint('Error en getConversations: $e');
-      throw Exception('Error al obtener conversaciones: $e');
-    }
+  Future<List<Conversation>> getConversations(int currentUserId, List<ChatContact> contacts) async {
+    // El backend no expone un endpoint de "inbox": se reconstruye la lista de
+    // conversaciones pidiendo, en paralelo, el historial real de cada contacto
+    // conocido (GET /chat/history/{other_user_id}) y quedándose con el último
+    // mensaje y el conteo de no leídos de cada uno.
+    final results = await Future.wait(contacts.map((contact) async {
+      try {
+        final history = await _remoteDataSource.getChatHistory(contact.userId, currentUserId);
+        if (history.isEmpty) return null;
+
+        final sorted = List<ChatMessageModel>.from(history)
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        final last = sorted.last;
+        final unreadCount = sorted
+            .where((m) => m.receiverId == currentUserId && !m.isRead)
+            .length;
+
+        return Conversation(
+          conversationId: contact.userId,
+          participant1Id: currentUserId,
+          participant2Id: contact.userId,
+          participant1Name: '',
+          participant2Name: contact.name,
+          lastMessage: last,
+          unreadCount: unreadCount,
+          updatedAt: last.createdAt,
+        );
+      } catch (e) {
+        debugPrint('Error al obtener historial con ${contact.userId}: $e');
+        return null;
+      }
+    }));
+
+    return results.whereType<Conversation>().toList();
   }
 
   @override

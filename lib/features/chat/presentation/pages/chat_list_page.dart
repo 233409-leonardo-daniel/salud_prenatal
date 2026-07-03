@@ -6,6 +6,7 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../../patients/presentation/providers/patients_list_provider.dart';
+import '../../domain/entities/chat_contact.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../providers/conversations_provider.dart';
 import 'chat_room_page.dart';
@@ -32,28 +33,8 @@ class _ChatListPageState extends State<ChatListPage> {
     _conversationsProvider.addListener(_onConversationsChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final loginProvider = context.read<LoginProvider>();
-      final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
-      final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
-      final isDoctorOrReceptionist = isDoctor || isReceptionist;
-      final dashboardProvider = context.read<DashboardProvider>();
-      final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      final currentUserId = loginProvider.userId ?? 2;
-
-      // 1. Cargar pacientes si es doctor o recepcionista
-      if (isDoctorOrReceptionist) {
-        final doctorId = loginProvider.doctorId?.toString() ?? '1';
-        await context.read<PatientsListProvider>().loadPatients(doctorId);
-      }
-
-      // 2. Cargar historial de conversaciones desde la bandeja de entrada (Inbox)
-      await _loadLastMessages();
-
-      // 3. Suscribirse a mensajes en tiempo real para actualizar la bandeja de entrada
+      await _refreshInbox();
       _conversationsProvider.startWatchingInbox();
-
-      // Cargar panel y usuarios para autocompletar o búsquedas
-      dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
     });
   }
 
@@ -65,14 +46,109 @@ class _ChatListPageState extends State<ChatListPage> {
     });
   }
 
-  Future<void> _loadLastMessages() async {
+  /// El backend no expone un endpoint de "inbox": primero se refresca la
+  /// información real de la sesión (pacientes del doctor, o el dashboard del
+  /// paciente con el nombre de su doctor asignado) y con eso se resuelve la
+  /// lista de contactos reales antes de pedir sus conversaciones.
+  Future<void> _refreshInbox() async {
     final loginProvider = context.read<LoginProvider>();
     final currentUserId = loginProvider.userId;
-    if (currentUserId == null) return;
+    if (currentUserId == null) return; // Sesión no disponible: nada que cargar.
 
-    // loadConversations ya notifica loading/success/error; _onConversationsChanged
-    // se encarga de reflejarlo en el estado local de este widget.
-    await _conversationsProvider.loadConversations(currentUserId);
+    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
+    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final isDoctorOrReceptionist = isDoctor || isReceptionist;
+    final dashboardProvider = context.read<DashboardProvider>();
+    final patientsProvider = context.read<PatientsListProvider>();
+    final patId = loginProvider.patientId ?? currentUserId;
+
+    // 1. Cargar pacientes si es doctor o recepcionista
+    if (isDoctorOrReceptionist && loginProvider.doctorId != null) {
+      await patientsProvider.loadPatients(loginProvider.doctorId.toString());
+    }
+
+    // 2. Cargar el dashboard: para el doctor/recepcionista puebla la lista de
+    // usuarios (necesaria para resolver nombres); para el paciente además
+    // trae el nombre de su doctor asignado (current_doctor).
+    await dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId);
+    if (!mounted) return;
+
+    // 3. Resolver los contactos reales con los que puede haber conversaciones
+    // y pedir su historial (el backend no tiene endpoint de inbox).
+    final contacts = _resolveContacts(
+      isDoctorOrReceptionist: isDoctorOrReceptionist,
+      isReceptionist: isReceptionist,
+      currentUserId: currentUserId,
+      dashboardProvider: dashboardProvider,
+      patientsProvider: patientsProvider,
+    );
+    await _conversationsProvider.loadConversations(currentUserId, contacts);
+  }
+
+  Future<void> _loadLastMessages() => _refreshInbox();
+
+  /// Construye la lista de contactos reales con los que el usuario actual
+  /// puede tener una conversación, sin inventar ningún ID.
+  List<ChatContact> _resolveContacts({
+    required bool isDoctorOrReceptionist,
+    required bool isReceptionist,
+    required int currentUserId,
+    required DashboardProvider dashboardProvider,
+    required PatientsListProvider patientsProvider,
+  }) {
+    if (isDoctorOrReceptionist) {
+      final contacts = patientsProvider.patients.map((patient) {
+        final user = dashboardProvider.users.firstWhere(
+          (u) => u.userId == patient.userId,
+          orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
+        );
+        return ChatContact(
+          userId: patient.userId,
+          name: '${user.name} ${user.lastName}'.trim(),
+          role: user.role,
+        );
+      }).toList();
+
+      // La recepcionista también puede tener conversaciones con los médicos.
+      if (isReceptionist) {
+        contacts.addAll(
+          dashboardProvider.users
+              .where((u) => u.role.toLowerCase().contains('doctor') && u.userId != null && u.userId != currentUserId)
+              .map((u) => ChatContact(userId: u.userId!, name: '${u.name} ${u.lastName}'.trim(), role: u.role)),
+        );
+      }
+      return contacts;
+    }
+
+    // Vista de paciente: su único contacto posible es su doctor asignado.
+    final assignedDoc = _matchAssignedDoctor(dashboardProvider);
+    if (assignedDoc?.userId == null) return [];
+    return [
+      ChatContact(userId: assignedDoc!.userId!, name: '${assignedDoc.name} ${assignedDoc.lastName}'.trim(), role: assignedDoc.role),
+    ];
+  }
+
+  /// Empareja el nombre del doctor asignado (`current_doctor`, la única
+  /// referencia que da el dashboard del paciente) contra la lista de
+  /// usuarios ya cargada, para obtener su user_id real. El backend no
+  /// expone ese ID directamente, así que este es el único mecanismo
+  /// disponible; si no hay coincidencia, se devuelve null (nunca se inventa
+  /// un ID).
+  UserProfile? _matchAssignedDoctor(DashboardProvider dashboardProvider) {
+    final docName = dashboardProvider.dashboardData?['current_doctor'] as String?;
+    if (docName == null || docName.isEmpty) return null;
+
+    final normalized = docName.trim().toLowerCase();
+    final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor'));
+
+    for (final doc in doctors) {
+      final fullName = '${doc.name} ${doc.lastName}'.trim().toLowerCase();
+      if (fullName.isNotEmpty && fullName == normalized) return doc;
+    }
+    for (final doc in doctors) {
+      if (doc.name.isNotEmpty && normalized.contains(doc.name.toLowerCase())) return doc;
+    }
+    return null;
   }
 
   @override
@@ -103,18 +179,7 @@ class _ChatListPageState extends State<ChatListPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_outlined, color: AppColors.primary),
-            onPressed: () async {
-              final dashboardProvider = context.read<DashboardProvider>();
-              final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-              final currentUserId = loginProvider.userId ?? 2;
-              
-              if (isDoctorOrReceptionist) {
-                final doctorId = loginProvider.doctorId?.toString() ?? '1';
-                await context.read<PatientsListProvider>().loadPatients(doctorId);
-              }
-              await _loadLastMessages();
-              dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
-            },
+            onPressed: _refreshInbox,
           ),
           SizedBox(width: 8),
         ],
@@ -545,11 +610,13 @@ class _ChatListPageState extends State<ChatListPage> {
                         context,
                         MaterialPageRoute(builder: (context) => const InvitationCodePage()),
                       );
-                      if (result == true && mounted) {
+                      final patientId = loginProvider.patientId;
+                      final userId = loginProvider.userId;
+                      if (result == true && mounted && patientId != null && userId != null) {
                         context.read<DashboardProvider>().loadPatientDashboard(
-                              loginProvider.patientId ?? 0,
-                              loginProvider.userId ?? 0,
-                              doctorId: loginProvider.doctorId ?? 1,
+                              patientId,
+                              userId,
+                              doctorId: loginProvider.doctorId,
                             );
                       }
                     },
@@ -580,26 +647,29 @@ class _ChatListPageState extends State<ChatListPage> {
     // 1. Obtener la lista de conversaciones del inbox
     final List<Conversation> conversations = _inboxConversations;
 
-    // 2. Asegurarse de que el médico asignado siempre aparezca, incluso si no hay mensajes en el inbox
-    final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
-    final assignedDoc = doctors.isNotEmpty ? doctors.first : null;
-    final assignedDocUserId = assignedDoc?.userId ?? 1;
-    final assignedDocName = hasDoctor ? docName : 'Dra. Gómez';
+    // 2. Asegurarse de que el médico asignado siempre aparezca, incluso si no hay mensajes en el inbox.
+    // El backend no da el user_id del doctor asignado directamente, así que se
+    // resuelve emparejando su nombre (current_doctor) contra la lista de
+    // usuarios ya cargada; si no hay coincidencia, no se inventa un ID.
+    final assignedDocUserId = _matchAssignedDoctor(dashboardProvider)?.userId;
+    final assignedDocName = docName ?? '';
 
     final List<Conversation> displayConversations = List.from(conversations);
 
     // Si el médico asignado no está en el inbox, lo agregamos como una conversación vacía
-    final hasDocInInbox = displayConversations.any((c) => c.participant2Id == assignedDocUserId);
-    if (!hasDocInInbox) {
-      displayConversations.add(Conversation(
-        conversationId: assignedDocUserId,
-        participant1Id: currentUserId ?? 0,
-        participant2Id: assignedDocUserId,
-        participant1Name: '',
-        participant2Name: assignedDocName.replaceAll('Dra. ', '').replaceAll('Dr. ', ''),
-        unreadCount: 0,
-        updatedAt: DateTime.now().subtract(const Duration(days: 365)), // Al final
-      ));
+    if (assignedDocUserId != null && currentUserId != null) {
+      final hasDocInInbox = displayConversations.any((c) => c.participant2Id == assignedDocUserId);
+      if (!hasDocInInbox) {
+        displayConversations.add(Conversation(
+          conversationId: assignedDocUserId,
+          participant1Id: currentUserId,
+          participant2Id: assignedDocUserId,
+          participant1Name: '',
+          participant2Name: assignedDocName.replaceAll('Dra. ', '').replaceAll('Dr. ', ''),
+          unreadCount: 0,
+          updatedAt: DateTime.now().subtract(const Duration(days: 365)), // Al final
+        ));
+      }
     }
 
     // 3. Filtrar según la búsqueda

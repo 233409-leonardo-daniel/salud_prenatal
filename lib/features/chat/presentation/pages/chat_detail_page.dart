@@ -27,8 +27,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentUserId = context.read<LoginProvider>().userId ?? 0;
-      if (currentUserId > 0) {
+      final currentUserId = context.read<LoginProvider>().userId;
+      if (currentUserId != null) {
         context.read<ChatProvider>().initChat(currentUserId, widget.otherUserId);
       }
     });
@@ -54,7 +54,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   Widget build(BuildContext context) {
     final chatProvider = context.watch<ChatProvider>();
-    final currentUserId = context.watch<LoginProvider>().userId ?? 0;
+    final currentUserId = context.watch<LoginProvider>().userId;
 
     // Scroll to bottom when new messages arrive
     WidgetsBinding.instance.addPostFrameCallback((_) {

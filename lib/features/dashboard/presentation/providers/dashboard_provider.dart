@@ -125,10 +125,16 @@ class DashboardProvider with ChangeNotifier {
         };
       }
 
-      try {
-        _medicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId ?? 0);
-      } catch (e) {
-        print('Error fetching medical record: $e');
+      if (doctorId != null) {
+        try {
+          _medicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId);
+        } catch (e) {
+          print('Error fetching medical record: $e');
+          _medicalRecord = null;
+        }
+      } else {
+        // Sin doctorId no podemos pedir el expediente (la API lo exige); no
+        // inventamos uno para no consultar el expediente de otro doctor.
         _medicalRecord = null;
       }
 
@@ -155,9 +161,17 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _activeMedicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId ?? 0);
+      if (doctorId == null) {
+        // Sin doctorId no podemos pedir el expediente (la API lo exige); no
+        // inventamos uno para no consultar el expediente de otro doctor.
+        _activeMedicalRecord = null;
+        _activeConsultations = [];
+        _detailsStatus = DashboardDetailsStatus.success;
+        return;
+      }
+      _activeMedicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId);
       if (_activeMedicalRecord != null) {
-        _activeConsultations = await _getConsultationsFromPatientEndpointUseCase.call(patientId, doctorId: doctorId ?? 0);
+        _activeConsultations = await _getConsultationsFromPatientEndpointUseCase.call(patientId, doctorId: doctorId);
       }
       _detailsStatus = DashboardDetailsStatus.success;
     } catch (e) {

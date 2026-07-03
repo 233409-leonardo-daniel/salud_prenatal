@@ -855,8 +855,8 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
               ElevatedButton(
                 onPressed: registerProvider.isLoading ? null : () async {
                   if (_formKey.currentState!.validate()) {
-                    final doctorId = loginProvider.doctorId ?? 0;
-                    if (doctorId == 0) {
+                    final doctorId = loginProvider.doctorId;
+                    if (doctorId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: No se pudo obtener el ID del médico.'), backgroundColor: Colors.red),
                       );

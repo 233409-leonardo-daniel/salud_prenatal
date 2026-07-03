@@ -36,7 +36,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
     final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId ?? 0;
+    final currentUserId = loginProvider.userId;
 
     final authorName = widget.post.authorAlias ?? 'Usuario';
     final isDoctor = widget.post.authorRole?.toLowerCase().contains('doctor') ?? false;
@@ -188,7 +188,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     icon: Icon(Icons.send, color: AppColors.primary),
                     onPressed: () async {
                       final text = _commentController.text.trim();
-                      if (text.isNotEmpty) {
+                      if (text.isNotEmpty && currentUserId != null) {
                         _commentController.clear();
                         final focus = FocusScope.of(context);
                         final success = await forumsProvider.createComment(
@@ -296,7 +296,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final reasonController = TextEditingController();
     final forumsProvider = context.read<ForumsProvider>();
     final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId ?? 0;
+    final currentUserId = loginProvider.userId;
+    if (currentUserId == null) return; // Sesión no disponible.
 
     showDialog(
       context: context,

@@ -317,6 +317,13 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                           onPressed: _isSubmittingMedicalRecord
                               ? null
                               : () async {
+                                  final doctorId = loginProvider.doctorId;
+                                  if (doctorId == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),
+                                    );
+                                    return;
+                                  }
                                   setState(() => _isSubmittingMedicalRecord = true);
                                   final recordData = {
                                     "previous_hypertension": _previousHypertension,
@@ -335,7 +342,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                                     "family_history_heart_disease": _familyHistoryHeartDisease,
                                     "active_smoking": _activeSmoking,
                                     "patient_id": widget.patientEntity.patientId,
-                                    "doctor_id": loginProvider.doctorId ?? 0,
+                                    "doctor_id": doctorId,
                                   };
 
                                   // Se delega la creación del expediente a DashboardProvider

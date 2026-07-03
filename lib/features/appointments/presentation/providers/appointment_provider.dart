@@ -3,7 +3,6 @@ import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/get_appointments_usecase.dart';
 import '../../domain/usecases/get_appointments_use_case.dart';
 import '../../domain/usecases/update_appointment_status_use_case.dart';
-import '../../domain/usecases/check_availability_use_case.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../pages/appointment_state.dart';
 
@@ -11,26 +10,22 @@ class AppointmentsProvider with ChangeNotifier {
   final GetAppointmentsByUserIdUsecase _getAppointmentsByUserIdUsecase;
   final GetAppointmentsUseCase _getAppointmentsUseCase;
   final UpdateAppointmentStatusUseCase _updateAppointmentStatusUseCase;
-  final CheckAvailabilityUseCase _checkAvailabilityUseCase;
 
   AppointmentsProvider(
     this._getAppointmentsByUserIdUsecase,
     this._getAppointmentsUseCase,
     this._updateAppointmentStatusUseCase,
-    this._checkAvailabilityUseCase,
   );
 
   AppointmentsListStatus _status = AppointmentsListStatus.initial;
   AppointmentActionStatus _viewState = AppointmentActionStatus.initial;
   String? _error;
   List<Appointment> _appointments = [];
-  Map<String, dynamic> _availability = {};
 
   AppointmentsListStatus get status => _status;
   AppointmentActionStatus get viewState => _viewState;
   String? get error => _error;
   List<Appointment> get appointments => _appointments;
-  Map<String, dynamic> get availability => _availability;
 
   Future<void> loadAppointments(String userId, {bool isDoctor = false}) async {
     _status = AppointmentsListStatus.loading;
@@ -102,28 +97,11 @@ class AppointmentsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> checkAvailability(int doctorId, String date) async {
-    _viewState = AppointmentActionStatus.loading;
-    _error = null;
-    notifyListeners();
-
-    try {
-      _availability = await _checkAvailabilityUseCase.call(doctorId, date);
-      _viewState = AppointmentActionStatus.success;
-    } catch (e) {
-      _viewState = AppointmentActionStatus.error;
-      _error = e.toString();
-    } finally {
-      notifyListeners();
-    }
-  }
-
   void reset() {
     _status = AppointmentsListStatus.initial;
     _viewState = AppointmentActionStatus.initial;
     _error = null;
     _appointments = [];
-    _availability = {};
     notifyListeners();
   }
 }

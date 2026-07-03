@@ -327,6 +327,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       );
                       return;
                     }
+                    if (selectedPatientId == null) {
+                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                        const SnackBar(content: Text('Por favor, selecciona un paciente.')),
+                      );
+                      return;
+                    }
+                    final doctorId = loginProvider.doctorId;
+                    if (doctorId == null) {
+                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                        const SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),
+                      );
+                      return;
+                    }
 
                     setDialogState(() {
                       isSaving = true;
@@ -334,9 +347,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
                     final newApp = Appointment(
                       id: 0,
-                      doctorId: loginProvider.doctorId ?? 1,
-                      patientId: selectedPatientId ?? 0,
-                      doctorName: (loginProvider.doctorId ?? 1).toString(),
+                      doctorId: doctorId,
+                      patientId: selectedPatientId!,
+                      doctorName: doctorId.toString(),
                       patientName: selectedPatientId.toString(),
                       dateTime: selectedDateTime,
                       status: AppointmentStatus.pending,

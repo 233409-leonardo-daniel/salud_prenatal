@@ -88,14 +88,11 @@ class LoginProvider with ChangeNotifier {
       try {
         _userProfile = await _getProfileUseCase.execute(response.userId);
       } catch (e) {
-        print('Error al obtener perfil de usuario de la API: $e');
-        // Fallback offline con datos compatibles con el mockup
-        _userProfile = UserProfile(
-          name: isDoctor ? 'Lucía' : 'Ana',
-          lastName: isDoctor ? 'Mendoza' : 'García',
-          email: email,
-          role: _role ?? 'paciente',
-        );
+        // No se pudo obtener el perfil tras un login exitoso: se deja en null
+        // en vez de inventar un nombre falso. La UI que consume userProfile
+        // ya maneja el caso null (p. ej. 'No especificado').
+        debugPrint('Error al obtener perfil de usuario de la API: $e');
+        _userProfile = null;
       }
 
       _status = LoginStatus.success;

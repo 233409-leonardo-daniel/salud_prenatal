@@ -56,7 +56,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
   }
 
   Widget _buildBody(AppointmentsProvider provider) {
-    if (provider.viewState == ViewState.loading || provider.status == AppointmentsListStatus.loading) {
+    if (provider.viewState == AppointmentActionStatus.loading || provider.status == AppointmentsListStatus.loading) {
       return Center(child: CircularProgressIndicator());
     }
     

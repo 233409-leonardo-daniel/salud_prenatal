@@ -20,3 +20,13 @@ class RegisterDoctorUseCase {
     return repository.registerDoctor(request);
   }
 }
+
+class RegisterReceptionistUseCase {
+  final RegisterRepository repository;
+
+  const RegisterReceptionistUseCase({required this.repository});
+
+  Future<String> execute(ReceptionistRegisterRequest request, int doctorId) {
+    return repository.registerReceptionist(request, doctorId);
+  }
+}

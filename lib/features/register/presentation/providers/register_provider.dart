@@ -2,18 +2,19 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/register_request.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../pages/register_state.dart';
-import '../../../../core/network/api_client.dart';
-import 'dart:convert';
 
 class RegisterProvider with ChangeNotifier {
   final RegisterPatientUseCase _registerPatientUseCase;
   final RegisterDoctorUseCase _registerDoctorUseCase;
+  final RegisterReceptionistUseCase _registerReceptionistUseCase;
 
   RegisterProvider({
     required RegisterPatientUseCase registerPatientUseCase,
     required RegisterDoctorUseCase registerDoctorUseCase,
+    required RegisterReceptionistUseCase registerReceptionistUseCase,
   })  : _registerPatientUseCase = registerPatientUseCase,
-        _registerDoctorUseCase = registerDoctorUseCase;
+        _registerDoctorUseCase = registerDoctorUseCase,
+        _registerReceptionistUseCase = registerReceptionistUseCase;
 
   String _selectedRole = 'patient'; // 'patient' | 'doctor'
   String get selectedRole => _selectedRole;
@@ -138,29 +139,17 @@ class RegisterProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final body = {
-        'name': name,
-        'last_name': lastName,
-        'email': email,
-        'phone': phone,
-        'password': password,
-      };
-      final response = await ApiClient().post(
-        '/doctors/$doctorId/receptionists',
-        body,
+      final request = ReceptionistRegisterRequest(
+        name: name,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        password: password,
       );
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        _token = 'receptionist_registered';
-        _status = RegisterStatus.success;
-        notifyListeners();
-        return true;
-      } else {
-        final decoded = jsonDecode(response.body);
-        _errorMessage = decoded['detail']?.toString() ?? 'Error al registrar recepcionista';
-        _status = RegisterStatus.error;
-        notifyListeners();
-        return false;
-      }
+      _token = await _registerReceptionistUseCase.execute(request, doctorId);
+      _status = RegisterStatus.success;
+      notifyListeners();
+      return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _status = RegisterStatus.error;

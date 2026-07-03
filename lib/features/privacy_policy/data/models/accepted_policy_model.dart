@@ -1,14 +1,11 @@
-class AcceptedPolicyModel {
-  final String policyId;
-  final String policyTitle;
-  final String userEmail;
-  final String acceptedAt;
+import '../../domain/entities/accepted_policy.dart';
 
+class AcceptedPolicyModel extends AcceptedPolicy {
   AcceptedPolicyModel({
-    required this.policyId,
-    required this.policyTitle,
-    required this.userEmail,
-    required this.acceptedAt,
+    required super.policyId,
+    required super.policyTitle,
+    required super.userEmail,
+    required super.acceptedAt,
   });
 
   Map<String, dynamic> toJson() => {
@@ -24,6 +21,15 @@ class AcceptedPolicyModel {
       policyTitle: json['policyTitle'] as String,
       userEmail: json['userEmail'] as String,
       acceptedAt: json['acceptedAt'] as String,
+    );
+  }
+
+  factory AcceptedPolicyModel.fromEntity(AcceptedPolicy policy) {
+    return AcceptedPolicyModel(
+      policyId: policy.policyId,
+      policyTitle: policy.policyTitle,
+      userEmail: policy.userEmail,
+      acceptedAt: policy.acceptedAt,
     );
   }
 }

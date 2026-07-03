@@ -5,6 +5,7 @@ import '../models/register_request.dart';
 abstract class RegisterRemoteDataSource {
   Future<Map<String, dynamic>> registerPatient(PatientRegisterRequest request);
   Future<String> registerDoctor(DoctorRegisterRequest request);
+  Future<String> registerReceptionist(ReceptionistRegisterRequest request, int doctorId);
 }
 
 class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
@@ -149,11 +150,56 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
 
       throw Exception(errorMsg);
     } catch (e) {
-      if (e.toString().contains('SocketException') || 
-          e.toString().contains('Connection refused') || 
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('Connection refused') ||
           e.toString().contains('ClientException')) {
         await Future.delayed(const Duration(seconds: 1));
         return 'mock_doctor_token_offline';
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String> registerReceptionist(ReceptionistRegisterRequest request, int doctorId) async {
+    try {
+      final response = await _apiClient.post(
+        '/doctors/$doctorId/receptionists',
+        request.toJson(),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return 'receptionist_registered';
+      }
+
+      String errorMsg = 'Error al registrar recepcionista (Status: ${response.statusCode})';
+      try {
+        final errorJson = jsonDecode(response.body);
+        final detail = errorJson['detail'];
+        if (detail is String) {
+          errorMsg = detail;
+        } else if (detail is List && detail.isNotEmpty) {
+          errorMsg = detail.map((e) {
+            final loc = e['loc'] is List ? e['loc'].join('.') : 'campo';
+            final msg = e['msg'] ?? 'inválido';
+            return "$loc: $msg";
+          }).join('\n');
+        } else if (errorJson['message'] != null) {
+          errorMsg = errorJson['message'];
+        } else {
+          errorMsg = response.body;
+        }
+      } catch (_) {
+        errorMsg = response.body;
+      }
+
+      throw Exception(errorMsg);
+    } catch (e) {
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('ClientException')) {
+        await Future.delayed(const Duration(seconds: 1));
+        return 'mock_receptionist_token_offline';
       }
       rethrow;
     }

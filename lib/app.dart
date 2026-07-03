@@ -98,11 +98,18 @@ class MyApp extends StatelessWidget {
           create: (_) => RegisterProvider(
             registerPatientUseCase: registerModule.registerPatientUseCase,
             registerDoctorUseCase: registerModule.registerDoctorUseCase,
+            registerReceptionistUseCase: registerModule.registerReceptionistUseCase,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(
-            remoteDataSource: dashboardModule.remoteDataSource,
+            getAllUsersUseCase: dashboardModule.getAllUsersUseCase,
+            getPatientsByDoctorUseCase: dashboardModule.getPatientsByDoctorUseCase,
+            getMedicalRecordByPatientUseCase: dashboardModule.getMedicalRecordByPatientUseCase,
+            getConsultationsByMedicalRecordUseCase: dashboardModule.getConsultationsByMedicalRecordUseCase,
+            getConsultationsFromPatientEndpointUseCase: dashboardModule.getConsultationsFromPatientEndpointUseCase,
+            getPatientDashboardUseCase: dashboardModule.getPatientDashboardUseCase,
+            createMedicalRecordUseCase: dashboardModule.createMedicalRecordUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -115,7 +122,8 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => InvitationProvider(
-            dataSource: patientsModule.invitationRemoteDataSource,
+            generateInvitationCodeUseCase: patientsModule.generateInvitationCodeUseCase,
+            redeemInvitationCodeUseCase: patientsModule.redeemInvitationCodeUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -145,8 +153,10 @@ class MyApp extends StatelessWidget {
           create: (_) => ChatProvider(chatModule.repository),
         ),
         ChangeNotifierProvider(
-          create: (_) =>
-              ConversationsProvider(chatModule.getConversationsUseCase),
+          create: (_) => ConversationsProvider(
+            chatModule.getConversationsUseCase,
+            chatModule.repository,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ForumsProvider(

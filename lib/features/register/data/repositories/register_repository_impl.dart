@@ -16,4 +16,9 @@ class RegisterRepositoryImpl implements RegisterRepository {
   Future<String> registerDoctor(DoctorRegisterRequest request) {
     return remoteDataSource.registerDoctor(request);
   }
+
+  @override
+  Future<String> registerReceptionist(ReceptionistRegisterRequest request, int doctorId) {
+    return remoteDataSource.registerReceptionist(request, doctorId);
+  }
 }

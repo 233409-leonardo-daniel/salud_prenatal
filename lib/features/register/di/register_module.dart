@@ -8,6 +8,7 @@ class RegisterModule {
   late final RegisterRepository registerRepository;
   late final RegisterPatientUseCase registerPatientUseCase;
   late final RegisterDoctorUseCase registerDoctorUseCase;
+  late final RegisterReceptionistUseCase registerReceptionistUseCase;
 
   RegisterModule(ApiClient apiClient) {
     _initDependencies(apiClient);
@@ -21,5 +22,7 @@ class RegisterModule {
         RegisterPatientUseCase(repository: registerRepository);
     registerDoctorUseCase =
         RegisterDoctorUseCase(repository: registerRepository);
+    registerReceptionistUseCase =
+        RegisterReceptionistUseCase(repository: registerRepository);
   }
 }

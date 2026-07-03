@@ -141,7 +141,7 @@ class AppointmentDetailPage extends StatelessWidget {
   }
 
   List<Widget> _buildActionButtons(BuildContext context, Appointment appointment, AppointmentsProvider provider) {
-    if (provider.viewState == ViewState.loading) {
+    if (provider.viewState == AppointmentActionStatus.loading) {
       return [Center(child: CircularProgressIndicator())];
     }
     
@@ -150,7 +150,7 @@ class AppointmentDetailPage extends StatelessWidget {
     void updateStatus(AppointmentStatus newStatus) async {
       await provider.updateAppointmentStatus(appointment.id, newStatus);
       if (!context.mounted) return;
-      if (provider.viewState == ViewState.success) {
+      if (provider.viewState == AppointmentActionStatus.success) {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

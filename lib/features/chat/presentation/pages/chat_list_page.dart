@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
@@ -7,10 +6,9 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../../patients/presentation/providers/patients_list_provider.dart';
-import '../../di/chat_module.dart';
 import '../../domain/entities/conversation_entity.dart';
+import '../providers/conversations_provider.dart';
 import 'chat_room_page.dart';
-import '../../../../core/network/api_client.dart';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
@@ -23,16 +21,16 @@ class _ChatListPageState extends State<ChatListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  late final ChatModule _chatModule;
+  late final ConversationsProvider _conversationsProvider;
   List<Conversation> _inboxConversations = [];
   bool _loadingLastMessages = false;
-  StreamSubscription<dynamic>? _listMessageSubscription;
 
   @override
   void initState() {
     super.initState();
-    final apiClient = context.read<ApiClient>();
-    _chatModule = ChatModule(apiClient);
+    _conversationsProvider = context.read<ConversationsProvider>();
+    _conversationsProvider.addListener(_onConversationsChanged);
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final loginProvider = context.read<LoginProvider>();
       final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
@@ -41,7 +39,7 @@ class _ChatListPageState extends State<ChatListPage> {
       final dashboardProvider = context.read<DashboardProvider>();
       final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
       final currentUserId = loginProvider.userId ?? 2;
-      
+
       // 1. Cargar pacientes si es doctor o recepcionista
       if (isDoctorOrReceptionist) {
         final doctorId = loginProvider.doctorId?.toString() ?? '1';
@@ -52,12 +50,18 @@ class _ChatListPageState extends State<ChatListPage> {
       await _loadLastMessages();
 
       // 3. Suscribirse a mensajes en tiempo real para actualizar la bandeja de entrada
-      _listMessageSubscription = _chatModule.remoteDataSource.messageStream.listen((message) {
-        _loadLastMessages();
-      });
-      
+      _conversationsProvider.startWatchingInbox();
+
       // Cargar panel y usuarios para autocompletar o búsquedas
       dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId ?? 1);
+    });
+  }
+
+  void _onConversationsChanged() {
+    if (!mounted) return;
+    setState(() {
+      _inboxConversations = List<Conversation>.from(_conversationsProvider.conversations);
+      _loadingLastMessages = _conversationsProvider.viewState == ConversationsViewState.loading;
     });
   }
 
@@ -66,35 +70,15 @@ class _ChatListPageState extends State<ChatListPage> {
     final currentUserId = loginProvider.userId;
     if (currentUserId == null) return;
 
-    setState(() {
-      _loadingLastMessages = true;
-    });
-
-    try {
-      final conversations = await _chatModule.repository.getConversations(currentUserId);
-      
-      // Ordenar por fecha de actualización descendente (los más recientes primero)
-      conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-
-      if (mounted) {
-        setState(() {
-          _inboxConversations = conversations;
-          _loadingLastMessages = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading conversations inbox: $e');
-      if (mounted) {
-        setState(() {
-          _loadingLastMessages = false;
-        });
-      }
-    }
+    // loadConversations ya notifica loading/success/error; _onConversationsChanged
+    // se encarga de reflejarlo en el estado local de este widget.
+    await _conversationsProvider.loadConversations(currentUserId);
   }
 
   @override
   void dispose() {
-    _listMessageSubscription?.cancel();
+    _conversationsProvider.removeListener(_onConversationsChanged);
+    _conversationsProvider.stopWatchingInbox();
     _searchController.dispose();
     super.dispose();
   }

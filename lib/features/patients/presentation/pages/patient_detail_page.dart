@@ -7,7 +7,7 @@ import '../../domain/entities/patient.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../../core/enums/appointment_status.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 class PatientDetailPage extends StatefulWidget {
   final String patientName;
@@ -318,43 +318,47 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                               ? null
                               : () async {
                                   setState(() => _isSubmittingMedicalRecord = true);
-                                  try {
-                                    final body = {
-                                      "previous_hypertension": _previousHypertension,
-                                      "diabetes": _diabetes,
-                                      "family_history_hypertension": _familyHistoryHypertension,
-                                      "previous_pregnancies": _previousPregnancies,
-                                      "previous_deliveries": _previousDeliveries,
-                                      "previous_miscarriages": _previousMiscarriages,
-                                      "previous_cesareans": _previousCesareans,
-                                      "previous_preeclampsia": _previousPreeclampsia,
-                                      "chronic_kidney_disease": _chronicKidneyDisease,
-                                      "chronic_hypertension": _chronicHypertension,
-                                      "multiple_pregnancy": _multiplePregnancy,
-                                      "fetal_death": _fetalDeath,
-                                      "fetal_growth_restriction": _fetalGrowthRestriction,
-                                      "family_history_heart_disease": _familyHistoryHeartDisease,
-                                      "active_smoking": _activeSmoking,
-                                      "patient_id": widget.patientEntity.patientId,
-                                      "doctor_id": loginProvider.doctorId ?? 0
-                                    };
-                                    final response = await ApiClient().post('/medical-records/', body);
-                                    if (response.statusCode >= 200 && response.statusCode < 300) {
-                                      if (mounted) {
-                                        context.read<PatientDetailProvider>().setMedicalRecordCreated();
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Expediente creado con éxito')));
-                                      }
+                                  final recordData = {
+                                    "previous_hypertension": _previousHypertension,
+                                    "diabetes": _diabetes,
+                                    "family_history_hypertension": _familyHistoryHypertension,
+                                    "previous_pregnancies": _previousPregnancies,
+                                    "previous_deliveries": _previousDeliveries,
+                                    "previous_miscarriages": _previousMiscarriages,
+                                    "previous_cesareans": _previousCesareans,
+                                    "previous_preeclampsia": _previousPreeclampsia,
+                                    "chronic_kidney_disease": _chronicKidneyDisease,
+                                    "chronic_hypertension": _chronicHypertension,
+                                    "multiple_pregnancy": _multiplePregnancy,
+                                    "fetal_death": _fetalDeath,
+                                    "fetal_growth_restriction": _fetalGrowthRestriction,
+                                    "family_history_heart_disease": _familyHistoryHeartDisease,
+                                    "active_smoking": _activeSmoking,
+                                    "patient_id": widget.patientEntity.patientId,
+                                    "doctor_id": loginProvider.doctorId ?? 0,
+                                  };
+
+                                  // Se delega la creación del expediente a DashboardProvider
+                                  // (provider -> datasource ya encapsulado), en vez de golpear
+                                  // ApiClient directo desde el widget.
+                                  final success = await context
+                                      .read<DashboardProvider>()
+                                      .createMedicalRecord(recordData);
+
+                                  if (mounted) {
+                                    if (success) {
+                                      context.read<PatientDetailProvider>().setMedicalRecordCreated();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Expediente creado con éxito')),
+                                      );
                                     } else {
-                                      throw Exception('Error: ${response.statusCode}');
+                                      final error = context.read<DashboardProvider>().errorMessage ??
+                                          'Error al crear expediente';
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(error)),
+                                      );
                                     }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al crear expediente: $e')));
-                                    }
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isSubmittingMedicalRecord = false);
-                                    }
+                                    setState(() => _isSubmittingMedicalRecord = false);
                                   }
                                 },
                           style: ElevatedButton.styleFrom(

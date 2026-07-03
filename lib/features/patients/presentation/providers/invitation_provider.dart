@@ -1,12 +1,17 @@
 import 'package:flutter/foundation.dart';
-import '../../data/datasources/invitation_remote_data_source.dart';
+import '../../domain/usecases/generate_invitation_code_usecase.dart';
+import '../../domain/usecases/redeem_invitation_code_usecase.dart';
 import '../pages/patient_state.dart';
 
 class InvitationProvider with ChangeNotifier {
-  final InvitationRemoteDataSource _dataSource;
+  final GenerateInvitationCodeUseCase _generateInvitationCodeUseCase;
+  final RedeemInvitationCodeUseCase _redeemInvitationCodeUseCase;
 
-  InvitationProvider({required InvitationRemoteDataSource dataSource})
-      : _dataSource = dataSource;
+  InvitationProvider({
+    required GenerateInvitationCodeUseCase generateInvitationCodeUseCase,
+    required RedeemInvitationCodeUseCase redeemInvitationCodeUseCase,
+  })  : _generateInvitationCodeUseCase = generateInvitationCodeUseCase,
+        _redeemInvitationCodeUseCase = redeemInvitationCodeUseCase;
 
   InvitationCodeStatus _generateStatus = InvitationCodeStatus.initial;
   InvitationCodeStatus _redeemStatus = InvitationCodeStatus.initial;
@@ -28,7 +33,7 @@ class InvitationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _dataSource.generateInvitationCode(doctorId);
+      final result = await _generateInvitationCodeUseCase.call(doctorId);
       _generatedCode = result['code'] as String?;
       _expiresAt = result['expires_at']?.toString();
       _generateStatus = InvitationCodeStatus.success;
@@ -46,7 +51,7 @@ class InvitationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _dataSource.redeemCode(patientId, code);
+      await _redeemInvitationCodeUseCase.call(patientId, code);
       _redeemStatus = InvitationCodeStatus.success;
       notifyListeners();
       return true;

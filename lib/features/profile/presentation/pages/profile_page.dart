@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/providers/privacy_policy_provider.dart';
-import '../../../privacy_policy/data/models/accepted_policy_model.dart';
+import '../../../privacy_policy/domain/entities/accepted_policy.dart';
 import '../../../register/presentation/providers/register_provider.dart';
 import 'edit_profile_page.dart';
 
@@ -387,7 +387,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
     );
   }
 
-  Widget _buildPolicyCard(AcceptedPolicyModel policy) {
+  Widget _buildPolicyCard(AcceptedPolicy policy) {
     final date = DateTime.tryParse(policy.acceptedAt);
     String formattedDate = policy.acceptedAt;
     if (date != null) {

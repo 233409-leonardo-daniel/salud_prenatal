@@ -162,18 +162,6 @@ class _RegisterPageState extends State<RegisterPage> {
               context.read<LoginProvider>().setPatientId(registeredPatientId);
             }
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text('¡Registro Exitoso como ${role.toUpperCase()}!'),
-                ],
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
           Navigator.pushReplacementNamed(context, '/login');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

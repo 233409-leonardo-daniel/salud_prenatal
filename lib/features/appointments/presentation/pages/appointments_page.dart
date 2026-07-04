@@ -29,19 +29,32 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     _selectedDay = _focusedDay;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAppointmentsData();
+      _loadPatientsIfNeeded();
     });
+  }
+
+  // Carga la lista real de pacientes del doctor (y el listado de usuarios
+  // para resolver nombres) si aún no está en memoria. Sin esto, tanto el
+  // botón de "Agendar Cita" como la resolución de nombres en las tarjetas
+  // fallaban con falsos negativos si no se había visitado antes el dashboard.
+  Future<void> _loadPatientsIfNeeded() async {
+    final dashboardProvider = context.read<DashboardProvider>();
+    if (dashboardProvider.patients.isNotEmpty) return;
+    final doctorId = context.read<LoginProvider>().doctorId;
+    if (doctorId == null) return;
+    await dashboardProvider.loadDoctorDashboard(doctorId);
   }
 
   void _loadAppointmentsData() {
     final loginProvider = context.read<LoginProvider>();
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
-    
+
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
-    final idStr = isDoctorOrReceptionist 
+    final idStr = isDoctorOrReceptionist
         ? (loginProvider.doctorId?.toString() ?? '1')
         : (loginProvider.userId?.toString() ?? '2');
-    
+
     context.read<AppointmentsProvider>().loadAppointments(idStr, isDoctor: isDoctorOrReceptionist);
   }
 
@@ -164,30 +177,38 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     );
   }
 
+  // Resuelve los nombres reales a partir de los IDs de la cita (patientId /
+  // doctorId), en vez de intentar adivinarlos desde el string patientName/
+  // doctorName (que el backend nunca llena: AppointmentResponse solo trae IDs).
   Appointment _resolveAppointmentNames(Appointment app, BuildContext context) {
     try {
       final dashboardProvider = context.read<DashboardProvider>();
-      
+      final loginProvider = context.read<LoginProvider>();
+
       String resolvedPatient = app.patientName;
-      final pId = int.tryParse(app.patientName);
-      if (pId != null) {
-        final match = dashboardProvider.patients.firstWhere(
-          (p) => p['patient_id'] == pId,
-          orElse: () => <String, dynamic>{},
+      final patientMatch = dashboardProvider.patients.firstWhere(
+        (p) => p['patient_id'] == app.patientId,
+        orElse: () => <String, dynamic>{},
+      );
+      if (patientMatch.isNotEmpty) {
+        final user = dashboardProvider.users.firstWhere(
+          (u) => u.userId == patientMatch['user_id'],
+          orElse: () => UserProfile(name: '', lastName: '', email: '', role: 'paciente'),
         );
-        if (match.isNotEmpty) {
-          final user = dashboardProvider.users.firstWhere(
-            (u) => u.userId == match['user_id'],
-            orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
-          );
-          resolvedPatient = '${user.name} ${user.lastName}'.trim();
-        }
+        final fullName = '${user.name} ${user.lastName}'.trim();
+        if (fullName.isNotEmpty) resolvedPatient = fullName;
       }
 
+      // El backend no expone un endpoint para resolver doctor_id -> nombre.
+      // Solo podemos afirmar el nombre real cuando quien ve la cita es ese
+      // mismo doctor (su propio perfil ya cargado). Para otros casos (p. ej.
+      // la recepcionista viendo la agenda) no inventamos un nombre.
       String resolvedDoctor = app.doctorName;
-      final dId = int.tryParse(app.doctorName);
-      if (dId != null) {
-        resolvedDoctor = 'Dra. Lucía Mendoza';
+      if (loginProvider.role == 'doctor' && loginProvider.doctorId == app.doctorId) {
+        final fullName = '${loginProvider.name} ${loginProvider.lastName}'.trim();
+        if (fullName.isNotEmpty) resolvedDoctor = fullName;
+      } else {
+        resolvedDoctor = '';
       }
 
       return Appointment(
@@ -205,10 +226,18 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
   }
 
-  void _showCreateAppointmentDialog(BuildContext context) {
+  Future<void> _showCreateAppointmentDialog(BuildContext context) async {
     final dashboardProvider = context.read<DashboardProvider>();
     final loginProvider = context.read<LoginProvider>();
-    
+
+    // Defensivo: si por alguna razón aún no se cargaron los pacientes
+    // (p. ej. la carga inicial no ha terminado), lo intentamos aquí antes
+    // de asumir que no hay pacientes registrados.
+    if (dashboardProvider.patients.isEmpty && loginProvider.doctorId != null) {
+      await dashboardProvider.loadDoctorDashboard(loginProvider.doctorId!);
+      if (!context.mounted) return;
+    }
+
     final patientsList = dashboardProvider.patients;
     if (patientsList.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -364,9 +393,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     if (createProvider.status == CreateAppointmentStatus.success) {
                       Navigator.pop(dialogCtx); // Close dialog
                       _loadAppointmentsData(); // Reload
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cita agendada exitosamente.'), backgroundColor: Colors.green),
-                      );
                     } else {
                       setDialogState(() {
                         isSaving = false;
@@ -526,11 +552,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     String statusText;
 
     switch (app.status) {
-      case AppointmentStatus.completed:
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        statusText = 'COMPLETADA';
-        break;
       case AppointmentStatus.cancelled:
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
@@ -540,11 +561,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         statusColor = Colors.blue;
         statusIcon = Icons.check;
         statusText = 'CONFIRMADA';
-        break;
-      case AppointmentStatus.in_progress:
-        statusColor = Colors.teal;
-        statusIcon = Icons.timelapse;
-        statusText = 'EN CURSO';
         break;
       case AppointmentStatus.pending:
         statusColor = Colors.orange;

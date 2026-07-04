@@ -26,7 +26,59 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
       final loginProvider = context.read<LoginProvider>();
       final doctorId = loginProvider.doctorId;
       context.read<AppointmentsProvider>().loadAllAppointments(doctorId: doctorId);
+      _loadPatientsIfNeeded();
     });
+  }
+
+  // Carga la lista real de pacientes (y usuarios) del doctor si aún no está
+  // en memoria. La necesitamos tanto para el botón de "Agendar Cita" como
+  // para resolver los nombres reales de paciente/médico en cada tarjeta.
+  Future<void> _loadPatientsIfNeeded() async {
+    final dashboardProvider = context.read<DashboardProvider>();
+    if (dashboardProvider.patients.isNotEmpty) return;
+    final doctorId = context.read<LoginProvider>().doctorId;
+    if (doctorId == null) return;
+    await dashboardProvider.loadDoctorDashboard(doctorId);
+  }
+
+  // Resuelve los nombres reales a partir de los IDs de la cita (patientId /
+  // doctorId). El backend nunca llena patientName/doctorName (AppointmentResponse
+  // solo trae IDs), así que no podemos mostrarlos directamente.
+  Appointment _resolveAppointmentNames(Appointment app, DashboardProvider dashboardProvider, LoginProvider loginProvider) {
+    String resolvedPatient = app.patientName;
+    final patientMatch = dashboardProvider.patients.firstWhere(
+      (p) => p['patient_id'] == app.patientId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (patientMatch.isNotEmpty) {
+      final user = dashboardProvider.users.firstWhere(
+        (u) => u.userId == patientMatch['user_id'],
+        orElse: () => UserProfile(name: '', lastName: '', email: '', role: 'paciente'),
+      );
+      final fullName = '${user.name} ${user.lastName}'.trim();
+      if (fullName.isNotEmpty) resolvedPatient = fullName;
+    }
+
+    // No hay endpoint que resuelva doctor_id -> nombre. Solo lo mostramos
+    // cuando quien ve la cita es ese mismo doctor (su propio perfil).
+    String resolvedDoctor = app.doctorName;
+    if (loginProvider.role == 'doctor' && loginProvider.doctorId == app.doctorId) {
+      final fullName = '${loginProvider.name} ${loginProvider.lastName}'.trim();
+      resolvedDoctor = fullName.isNotEmpty ? fullName : '';
+    } else {
+      resolvedDoctor = '';
+    }
+
+    return Appointment(
+      id: app.id,
+      doctorId: app.doctorId,
+      patientId: app.patientId,
+      doctorName: resolvedDoctor,
+      patientName: resolvedPatient,
+      dateTime: app.dateTime,
+      status: app.status,
+      reason: app.reason,
+    );
   }
 
   @override
@@ -69,11 +121,14 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
       );
     }
     
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final loginProvider = context.watch<LoginProvider>();
+
     return ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: provider.appointments.length,
       itemBuilder: (context, index) {
-        final appointment = provider.appointments[index];
+        final appointment = _resolveAppointmentNames(provider.appointments[index], dashboardProvider, loginProvider);
         return AppointmentCard(
           appointment: appointment,
           onTap: () async {
@@ -94,10 +149,18 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     );
   }
 
-  void _showCreateAppointmentDialog(BuildContext context) {
+  Future<void> _showCreateAppointmentDialog(BuildContext context) async {
     final dashboardProvider = context.read<DashboardProvider>();
     final loginProvider = context.read<LoginProvider>();
-    
+
+    // Si aún no se cargaron los pacientes del doctor (p. ej. porque no se
+    // visitó antes el dashboard), los cargamos antes de asumir que no hay
+    // pacientes registrados.
+    if (dashboardProvider.patients.isEmpty && loginProvider.doctorId != null) {
+      await dashboardProvider.loadDoctorDashboard(loginProvider.doctorId!);
+      if (!context.mounted) return;
+    }
+
     final patientsList = dashboardProvider.patients;
     if (patientsList.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -255,9 +318,6 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
                       // Reload appointments
                       final docId = loginProvider.doctorId;
                       context.read<AppointmentsProvider>().loadAllAppointments(doctorId: docId);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cita agendada exitosamente.'), backgroundColor: Colors.green),
-                      );
                     } else {
                       setDialogState(() {
                         isSaving = false;

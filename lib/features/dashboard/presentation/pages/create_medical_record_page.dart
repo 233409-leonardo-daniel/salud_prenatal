@@ -288,12 +288,6 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
 
                       if (success) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Expediente clínico guardado exitosamente.'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
                           Navigator.pop(context, true);
                         }
                       } else {

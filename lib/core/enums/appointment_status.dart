@@ -1,8 +1,9 @@
+// Estados soportados por el backend (app/core/enums.py -> AppointmentStatusEnum).
+// No incluye "en curso" ni "completada": el backend no los acepta y rechaza
+// el PUT con 422 si se envían.
 enum AppointmentStatus {
   pending,
   confirmed,
-  in_progress,
-  completed,
   cancelled
 }
 
@@ -13,10 +14,6 @@ extension AppointmentStatusExtension on AppointmentStatus {
         return 'pendiente';
       case AppointmentStatus.confirmed:
         return 'confirmada';
-      case AppointmentStatus.in_progress:
-        return 'en_curso';
-      case AppointmentStatus.completed:
-        return 'completada';
       case AppointmentStatus.cancelled:
         return 'cancelada';
     }
@@ -27,12 +24,6 @@ extension AppointmentStatusExtension on AppointmentStatus {
       case 'confirmada':
       case 'confirmed':
         return AppointmentStatus.confirmed;
-      case 'en_curso':
-      case 'in_progress':
-        return AppointmentStatus.in_progress;
-      case 'completada':
-      case 'completed':
-        return AppointmentStatus.completed;
       case 'cancelada':
       case 'cancelled':
         return AppointmentStatus.cancelled;
@@ -49,10 +40,6 @@ extension AppointmentStatusExtension on AppointmentStatus {
         return 'Pendiente';
       case AppointmentStatus.confirmed:
         return 'Confirmada';
-      case AppointmentStatus.in_progress:
-        return 'En curso';
-      case AppointmentStatus.completed:
-        return 'Completada';
       case AppointmentStatus.cancelled:
         return 'Cancelada';
     }

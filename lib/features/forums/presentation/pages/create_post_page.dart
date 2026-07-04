@@ -104,12 +104,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
                             _contentController.text.trim(),
                           );
                           if (success && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('¡Publicación creada con éxito!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
                             Navigator.pop(context, true);
                           } else if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(

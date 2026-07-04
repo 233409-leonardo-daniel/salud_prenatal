@@ -874,9 +874,6 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
 
                     if (success && mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Recepcionista creado exitosamente.'), backgroundColor: Colors.green),
-                      );
                     } else if (!success && mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(registerProvider.errorMessage ?? 'Error al crear recepcionista.'), backgroundColor: Colors.red),

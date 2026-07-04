@@ -59,28 +59,32 @@ class AppointmentCard extends StatelessWidget {
                 AppointmentStatusChip(status: appointment.status),
               ],
             ),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.person_outline, size: 16, color: AppColors.textMuted),
-                SizedBox(width: 8),
-                Text(
-                  'Paciente: ${appointment.patientName}',
-                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.medical_services_outlined, size: 16, color: AppColors.textMuted),
-                SizedBox(width: 8),
-                Text(
-                  'Médico: ${appointment.doctorName}',
-                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
-                ),
-              ],
-            ),
+            if (appointment.patientName.isNotEmpty) ...[
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.person_outline, size: 16, color: AppColors.textMuted),
+                  SizedBox(width: 8),
+                  Text(
+                    'Paciente: ${appointment.patientName}',
+                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ],
+            if (appointment.doctorName.isNotEmpty) ...[
+              SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.medical_services_outlined, size: 16, color: AppColors.textMuted),
+                  SizedBox(width: 8),
+                  Text(
+                    'Médico: ${appointment.doctorName}',
+                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ],
             if (appointment.reason.isNotEmpty) ...[
               SizedBox(height: 8),
               Text(

@@ -204,12 +204,6 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                               final navigator = Navigator.of(context);
                               final success = await forumsProvider.saveSocialProfile(profile);
                               if (success) {
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text('¡Perfil guardado con éxito!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
                                 navigator.pop(true);
                               } else {
                                 messenger.showSnackBar(

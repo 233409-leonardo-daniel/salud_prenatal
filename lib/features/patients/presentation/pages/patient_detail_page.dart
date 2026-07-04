@@ -113,8 +113,12 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     // Filter appointments for this patient
     final allAppointments = appointmentsProvider.appointments;
     
-    // Consultas previas (Completed)
-    final pastAppointments = allAppointments.where((app) => app.status == AppointmentStatus.completed).toList();
+    // Consultas previas: el backend no tiene un estado "completada", así que
+    // se consideran pasadas las citas no canceladas cuya fecha ya ocurrió.
+    final now = DateTime.now();
+    final pastAppointments = allAppointments
+        .where((app) => app.status != AppointmentStatus.cancelled && app.dateTime.isBefore(now))
+        .toList();
     
     // Citas pendientes (Pending)
     final pendingAppointments = allAppointments.where((app) => app.status == AppointmentStatus.pending).toList();
@@ -126,7 +130,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     final email = userProfile?.email ?? 'No especificado';
     final role = userProfile?.role ?? 'paciente';
 
-    // 2. Previous consultations (completed appointments)
+    // 2. Previous consultations (past, non-cancelled appointments)
     final consultationsWidgets = <Widget>[];
     if (pastAppointments.isEmpty) {
       consultationsWidgets.add(Text('No hay consultas registradas aún.', style: TextStyle(color: AppColors.textMuted)));
@@ -143,7 +147,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$day/$month/$year - Consulta Completada',
+                  '$day/$month/$year - Consulta',
                   style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
                 SizedBox(height: 2),

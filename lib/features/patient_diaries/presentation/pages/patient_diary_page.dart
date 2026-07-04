@@ -300,16 +300,6 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
                     if (success) {
                       Navigator.pop(dialogCtx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            diary == null
-                                ? 'Medición registrada correctamente.'
-                                : 'Medición actualizada correctamente.',
-                          ),
-                          backgroundColor: Colors.green.shade600,
-                        ),
-                      );
                     } else {
                       setDialogState(() {
                         isSubmitting = false;
@@ -375,12 +365,6 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
                     if (success) {
                       Navigator.pop(dialogCtx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Registro eliminado de tu bitácora.'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
                     } else {
                       setDialogState(() {
                         isSubmitting = false;

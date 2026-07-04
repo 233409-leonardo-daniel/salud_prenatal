@@ -351,12 +351,6 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
                   Navigator.pop(context);
                   final success = await forumsProvider.createGroup(name, desc, currentUserId);
                   if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('¡Foro comunitario creado con éxito!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
                     _refreshData();
                   }
                 }

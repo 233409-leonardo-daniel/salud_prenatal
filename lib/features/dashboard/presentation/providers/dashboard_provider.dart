@@ -114,14 +114,14 @@ class DashboardProvider with ChangeNotifier {
         _currentPatientData = {
           'patient_id': patientId,
           'user_id': userId,
-          'current_gestational_weeks': _dashboardData?['current_gestational_weeks'] ?? 28,
+          'current_gestational_weeks': _dashboardData?['current_gestational_weeks'],
         };
       } catch (e) {
         print('Error fetching patient dashboard: $e');
         _currentPatientData = {
           'patient_id': patientId,
           'user_id': userId,
-          'current_gestational_weeks': 28,
+          'current_gestational_weeks': null,
         };
       }
 

@@ -735,19 +735,7 @@ class _ChatListPageState extends State<ChatListPage> {
                     style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                ),
+
                 if (unreadCount > 0)
                   Positioned(
                     right: 0,

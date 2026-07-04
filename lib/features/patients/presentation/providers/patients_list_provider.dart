@@ -16,10 +16,17 @@ class PatientsListProvider with ChangeNotifier {
   String? get error => _error;
   List<PatientEntity> get patients => _patients;
 
-  Future<void> loadPatients(String doctorId) async {
+  Future<void> loadPatients(String? doctorId) async {
     _status = PatientsListStatus.loading;
     _error = null;
     notifyListeners();
+
+    if (doctorId == null || doctorId.isEmpty) {
+      _status = PatientsListStatus.error;
+      _error = 'El ID de médico no está disponible para consultar la lista de pacientes.';
+      notifyListeners();
+      return;
+    }
 
     try {
       final results = await _getDoctorPatientsUseCase.call(doctorId);

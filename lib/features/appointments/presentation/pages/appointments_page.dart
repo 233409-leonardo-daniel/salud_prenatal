@@ -52,8 +52,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
     final idStr = isDoctorOrReceptionist
-        ? (loginProvider.doctorId?.toString() ?? '1')
-        : (loginProvider.userId?.toString() ?? '2');
+        ? loginProvider.doctorId?.toString()
+        : loginProvider.userId?.toString();
 
     context.read<AppointmentsProvider>().loadAppointments(idStr, isDoctor: isDoctorOrReceptionist);
   }

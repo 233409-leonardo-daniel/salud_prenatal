@@ -47,6 +47,7 @@ class LoginProvider with ChangeNotifier {
 
   String get name => _userProfile?.name ?? '';
   String get lastName => _userProfile?.lastName ?? '';
+  String get email => _userProfile?.email ?? '';
   String get fullName => '$name $lastName'.trim();
 
   /// Compatibilidad con código que usa [isLoading] directamente.

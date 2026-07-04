@@ -26,21 +26,38 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   }
 
   Future<void> _onAcceptAndContinue() async {
-    if (widget.userEmail != null && widget.userEmail!.isNotEmpty) {
-      final provider = context.read<PrivacyPolicyProvider>();
-      await provider.saveAcceptedPolicies(
-        userEmail: widget.userEmail!,
-        acceptedPrivacy: _acceptedPrivacy,
-        acceptedSensitiveData: _acceptedSensitiveData,
-      );
-    }
-    if (mounted) {
+    if (widget.userEmail == null || widget.userEmail!.isEmpty) {
+      // Sin correo aún (p. ej. formulario de registro incompleto): no hay
+      // nada que guardar todavía, se deja continuar el flujo normalmente.
       Navigator.pop(context, true);
+      return;
+    }
+
+    final provider = context.read<PrivacyPolicyProvider>();
+    final success = await provider.saveAcceptedPolicies(
+      userEmail: widget.userEmail!,
+      acceptedPrivacy: _acceptedPrivacy,
+      acceptedSensitiveData: _acceptedSensitiveData,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.errorMessage ?? 'No se pudo guardar tu consentimiento. Intenta de nuevo.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isSaving = context.watch<PrivacyPolicyProvider>().isLoading;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F8),
       appBar: AppBar(
@@ -184,7 +201,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _canContinue ? _onAcceptAndContinue : null,
+                    onPressed: (_canContinue && !isSaving) ? _onAcceptAndContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       disabledBackgroundColor: const Color(0xFFE0E0E0),
@@ -193,25 +210,31 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       ),
                       padding: EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          color: _canContinue ? Colors.white : AppColors.textMuted,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Acepto y Continúo',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _canContinue ? Colors.white : AppColors.textMuted,
+                    child: isSaving
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle_outline,
+                                color: _canContinue ? Colors.white : AppColors.textMuted,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Acepto y Continúo',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: _canContinue ? Colors.white : AppColors.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ],

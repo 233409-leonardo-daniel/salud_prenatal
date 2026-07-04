@@ -251,7 +251,16 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               onPressed: dashboardProvider.isSavingRecord
                   ? null
                   : () async {
-                      final docId = loginProvider.doctorId ?? 1;
+                      final docId = loginProvider.doctorId;
+                      if (docId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No se pudo identificar al médico de la sesión. Vuelve a iniciar sesión.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
 
                       final Map<String, dynamic> recordPayload = {
                         "previous_hypertension": _previousHypertension,
@@ -279,12 +288,6 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
 
                       if (success) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Expediente clínico guardado exitosamente.'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
                           Navigator.pop(context, true);
                         }
                       } else {

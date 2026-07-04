@@ -32,8 +32,11 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     final diariesProvider = context.read<PatientDiariesProvider>();
 
     if (dashboardProvider.medicalRecord == null) {
-      final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: loginProvider.doctorId ?? 1);
+      final userId = loginProvider.userId;
+      if (userId != null) {
+        final patId = loginProvider.patientId ?? userId;
+        await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: loginProvider.doctorId);
+      }
     }
 
     final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
@@ -297,16 +300,6 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
                     if (success) {
                       Navigator.pop(dialogCtx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            diary == null
-                                ? 'Medición registrada correctamente.'
-                                : 'Medición actualizada correctamente.',
-                          ),
-                          backgroundColor: Colors.green.shade600,
-                        ),
-                      );
                     } else {
                       setDialogState(() {
                         isSubmitting = false;
@@ -372,12 +365,6 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
                     if (success) {
                       Navigator.pop(dialogCtx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Registro eliminado de tu bitácora.'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
                     } else {
                       setDialogState(() {
                         isSubmitting = false;

@@ -10,7 +10,6 @@ abstract class AppointmentRemoteDataSource {
   Future<void> updateAppointment(AppointmentDto dto);
   Future<void> updateAppointmentStatus(int id, StatusUpdateDto statusDto);
   Future<void> deleteAppointment(int id);
-  Future<Map<String, dynamic>> checkAvailability(int doctorId, String date);
 }
 
 class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
@@ -43,7 +42,8 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
     } else if (patientId != null) {
       endpoint = '/appointments/patient/$patientId';
     } else {
-      // Fallback/Mock behavior if both are null, returning empty since backend doesn't support list all.
+      // El backend no tiene un endpoint para listar todas las citas sin
+      // filtro; sin doctorId ni patientId no hay nada que pedir.
       return [];
     }
     
@@ -97,18 +97,9 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
   @override
   Future<void> deleteAppointment(int id) async {
     final response = await _apiClient.delete('/appointments/$id');
-    
+
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Error al eliminar cita (Status: ${response.statusCode})');
     }
-  }
-
-  @override
-  Future<Map<String, dynamic>> checkAvailability(int doctorId, String date) async {
-    final response = await _apiClient.get('/appointments/availability?doctor_id=$doctorId&date=$date');
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    throw Exception('Error al verificar disponibilidad (Status: ${response.statusCode})');
   }
 }

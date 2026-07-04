@@ -19,7 +19,6 @@ class PatientsListPage extends StatefulWidget {
 
 class _PatientsListPageState extends State<PatientsListPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'Todas';
   int _currentPage = 1;
   static const int _pageSize = 5;
 
@@ -67,23 +66,12 @@ class _PatientsListPageState extends State<PatientsListPage> {
 
     final totalPatientsStr = patientsProvider.patients.length.toString();
 
-    // Map and sort patients by risk
-    // Risk definition: High (0), Medium (1), Low (2)
-    int getRiskLevel(int pId) {
-      if (pId % 3 == 0) return 0; // Alto
-      if (pId % 3 == 1) return 1; // Medio
-      return 2; // Bajo
-    }
-
-    final sortedPatients = List<PatientEntity>.from(patientsProvider.patients);
-    sortedPatients.sort((a, b) => getRiskLevel(a.patientId).compareTo(getRiskLevel(b.patientId)));
-
-    // Build the view-model list and apply search/risk filters BEFORE paginating,
+    // Build the view-model list and apply the search filter BEFORE paginating,
     // so pagination always reflects the actually visible set of patients.
     final searchQuery = _searchController.text.trim().toLowerCase();
     final filteredPatients = <Map<String, dynamic>>[];
 
-    for (final patient in sortedPatients) {
+    for (final patient in patientsProvider.patients) {
       final pId = patient.patientId;
       final userId = patient.userId;
 
@@ -101,33 +89,10 @@ class _PatientsListPageState extends State<PatientsListPage> {
       final patientCode = '#SP-$pId';
       final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
 
-      String risk = 'Bajo Riesgo';
-      Color riskBg = AppColors.riskLowBg;
-      Color riskText = AppColors.riskLowText;
-      Color imgBg = AppColors.riskLowBg;
-
-      if (getRiskLevel(pId) == 0) {
-        risk = 'Alto Riesgo';
-        riskBg = AppColors.riskHighBg;
-        riskText = AppColors.riskHighText;
-        imgBg = AppColors.riskHighBg;
-      } else if (getRiskLevel(pId) == 1) {
-        risk = 'Medio Riesgo';
-        riskBg = AppColors.riskMediumBg;
-        riskText = AppColors.riskMediumText;
-        imgBg = AppColors.riskMediumBg;
-      }
-
       if (searchQuery.isNotEmpty &&
           !patientName.toLowerCase().contains(searchQuery) &&
           !patientCode.toLowerCase().contains(searchQuery)) {
         continue;
-      }
-
-      if (_activeFilter != 'Todas') {
-        if (_activeFilter == 'Riesgo Alto' && risk != 'Alto Riesgo') continue;
-        if (_activeFilter == 'Riesgo Medio' && risk != 'Medio Riesgo') continue;
-        if (_activeFilter == 'Riesgo Bajo' && risk != 'Bajo Riesgo') continue;
       }
 
       filteredPatients.add({
@@ -135,12 +100,8 @@ class _PatientsListPageState extends State<PatientsListPage> {
         'id': patientCode,
         'userId': userId,
         'patientEntity': patient,
-        'risk': risk,
-        'riskBg': riskBg,
-        'riskText': riskText,
         'gestationAge': '${patient.currentGestationalWeeks ?? 28} sem',
         'initials': initials,
-        'imgBg': imgBg,
       });
     }
 
@@ -166,15 +127,8 @@ class _PatientsListPageState extends State<PatientsListPage> {
           id: item['id'] as String,
           userId: item['userId'] as int,
           patientEntity: item['patientEntity'] as PatientEntity,
-          risk: item['risk'] as String,
-          riskColorBg: item['riskBg'] as Color,
-          riskColorText: item['riskText'] as Color,
           gestationAge: item['gestationAge'] as String,
-          status: 'Estable',
-          statusIcon: Icons.check_circle_outline,
-          statusIconColor: Colors.teal,
           avatarInitials: item['initials'] as String,
-          imageBackground: item['imgBg'] as Color,
         ),
       );
       patientCards.add(SizedBox(height: 12));
@@ -258,23 +212,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
           ),
           SizedBox(height: 16),
 
-          // Scrollable Filter Tags
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('Todas'),
-                SizedBox(width: 8),
-                _buildFilterChip('Riesgo Alto'),
-                SizedBox(width: 8),
-                _buildFilterChip('Riesgo Medio'),
-                SizedBox(width: 8),
-                _buildFilterChip('Riesgo Bajo'),
-              ],
-            ),
-          ),
-          SizedBox(height: 16),
-
           ...patientCards,
           SizedBox(height: 24),
 
@@ -324,51 +261,15 @@ class _PatientsListPageState extends State<PatientsListPage> {
     );
   }
 
-  Widget _buildFilterChip(String label) {
-    final isSelected = _activeFilter == label;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activeFilter = label;
-          _currentPage = 1;
-        });
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFEFEFF4)),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPatientListCard({
     required String name,
     required String id,
     required int userId,
     required PatientEntity patientEntity,
-    required String risk,
-    required Color riskColorBg,
-    required Color riskColorText,
     required String gestationAge,
-    required String status,
-    required IconData statusIcon,
-    required Color statusIconColor,
     required String avatarInitials,
-    required Color imageBackground,
   }) {
-    // El filtrado por búsqueda y riesgo ya se aplica antes de paginar en build().
+    // El filtrado por búsqueda ya se aplica antes de paginar en build().
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -389,11 +290,11 @@ class _PatientsListPageState extends State<PatientsListPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                backgroundColor: imageBackground,
+                backgroundColor: AppColors.primaryLight,
                 radius: 24,
                 child: Text(
                   avatarInitials,
-                  style: TextStyle(color: riskColorText, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
               SizedBox(width: 12),
@@ -401,29 +302,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: riskColorBg,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            risk,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: riskColorText, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      name,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
                     ),
                     SizedBox(height: 2),
                     Text(
@@ -442,40 +323,12 @@ class _PatientsListPageState extends State<PatientsListPage> {
               color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      SizedBox(height: 2),
-                      Text(gestationAge, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusIconColor),
-                          SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              status,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                SizedBox(height: 2),
+                Text(gestationAge, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
               ],
             ),
           ),

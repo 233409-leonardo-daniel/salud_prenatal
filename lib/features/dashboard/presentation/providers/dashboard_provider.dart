@@ -1,15 +1,40 @@
 import 'package:flutter/foundation.dart';
-import '../../data/datasources/dashboard_remote_data_source.dart';
 import '../../data/models/medical_record_response.dart';
 import '../../data/models/consultation_response.dart';
 import '../../../login/domain/entities/user_profile.dart';
+import '../../domain/usecases/get_all_users_usecase.dart';
+import '../../domain/usecases/get_patients_by_doctor_usecase.dart';
+import '../../domain/usecases/get_medical_record_by_patient_usecase.dart';
+import '../../domain/usecases/get_consultations_by_medical_record_usecase.dart';
+import '../../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
+import '../../domain/usecases/get_patient_dashboard_usecase.dart';
+import '../../domain/usecases/create_medical_record_usecase.dart';
 import '../pages/dashboard_state.dart';
 
 class DashboardProvider with ChangeNotifier {
-  final DashboardRemoteDataSource _remoteDataSource;
+  final GetAllUsersUseCase _getAllUsersUseCase;
+  final GetPatientsByDoctorUseCase _getPatientsByDoctorUseCase;
+  final GetMedicalRecordByPatientUseCase _getMedicalRecordByPatientUseCase;
+  final GetConsultationsByMedicalRecordUseCase _getConsultationsByMedicalRecordUseCase;
+  final GetConsultationsFromPatientEndpointUseCase _getConsultationsFromPatientEndpointUseCase;
+  final GetPatientDashboardUseCase _getPatientDashboardUseCase;
+  final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
 
-  DashboardProvider({required DashboardRemoteDataSource remoteDataSource})
-      : _remoteDataSource = remoteDataSource;
+  DashboardProvider({
+    required GetAllUsersUseCase getAllUsersUseCase,
+    required GetPatientsByDoctorUseCase getPatientsByDoctorUseCase,
+    required GetMedicalRecordByPatientUseCase getMedicalRecordByPatientUseCase,
+    required GetConsultationsByMedicalRecordUseCase getConsultationsByMedicalRecordUseCase,
+    required GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase,
+    required GetPatientDashboardUseCase getPatientDashboardUseCase,
+    required CreateMedicalRecordUseCase createMedicalRecordUseCase,
+  })  : _getAllUsersUseCase = getAllUsersUseCase,
+        _getPatientsByDoctorUseCase = getPatientsByDoctorUseCase,
+        _getMedicalRecordByPatientUseCase = getMedicalRecordByPatientUseCase,
+        _getConsultationsByMedicalRecordUseCase = getConsultationsByMedicalRecordUseCase,
+        _getConsultationsFromPatientEndpointUseCase = getConsultationsFromPatientEndpointUseCase,
+        _getPatientDashboardUseCase = getPatientDashboardUseCase,
+        _createMedicalRecordUseCase = createMedicalRecordUseCase;
 
   DashboardStatus _status = DashboardStatus.initial;
   DashboardDetailsStatus _detailsStatus = DashboardDetailsStatus.initial;
@@ -61,8 +86,8 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _users = await _remoteDataSource.getAllUsers();
-      _patients = await _remoteDataSource.getPatientsByDoctor(doctorId);
+      _users = await _getAllUsersUseCase.call();
+      _patients = await _getPatientsByDoctorUseCase.call(doctorId);
       _status = DashboardStatus.success;
     } catch (e) {
       _status = DashboardStatus.error;
@@ -82,10 +107,10 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _users = await _remoteDataSource.getAllUsers();
+      _users = await _getAllUsersUseCase.call();
 
       try {
-        _dashboardData = await _remoteDataSource.getPatientDashboard(patientId);
+        _dashboardData = await _getPatientDashboardUseCase.call(patientId);
         _currentPatientData = {
           'patient_id': patientId,
           'user_id': userId,
@@ -100,15 +125,21 @@ class DashboardProvider with ChangeNotifier {
         };
       }
 
-      try {
-        _medicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId ?? 0);
-      } catch (e) {
-        print('Error fetching medical record: $e');
+      if (doctorId != null) {
+        try {
+          _medicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId);
+        } catch (e) {
+          print('Error fetching medical record: $e');
+          _medicalRecord = null;
+        }
+      } else {
+        // Sin doctorId no podemos pedir el expediente (la API lo exige); no
+        // inventamos uno para no consultar el expediente de otro doctor.
         _medicalRecord = null;
       }
 
       if (_medicalRecord != null) {
-        _consultations = await _remoteDataSource.getConsultationsByMedicalRecord(
+        _consultations = await _getConsultationsByMedicalRecordUseCase.call(
           _medicalRecord!.medicalRecordId,
         );
       } else {
@@ -130,9 +161,17 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _activeMedicalRecord = await _remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId ?? 0);
+      if (doctorId == null) {
+        // Sin doctorId no podemos pedir el expediente (la API lo exige); no
+        // inventamos uno para no consultar el expediente de otro doctor.
+        _activeMedicalRecord = null;
+        _activeConsultations = [];
+        _detailsStatus = DashboardDetailsStatus.success;
+        return;
+      }
+      _activeMedicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId);
       if (_activeMedicalRecord != null) {
-        _activeConsultations = await _remoteDataSource.getConsultationsFromPatientEndpoint(patientId, doctorId: doctorId ?? 0);
+        _activeConsultations = await _getConsultationsFromPatientEndpointUseCase.call(patientId, doctorId: doctorId);
       }
       _detailsStatus = DashboardDetailsStatus.success;
     } catch (e) {
@@ -150,7 +189,7 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final record = await _remoteDataSource.createMedicalRecord(recordData);
+      final record = await _createMedicalRecordUseCase.call(recordData);
       _activeMedicalRecord = record;
       _activeConsultations = [];
       _saveStatus = SaveRecordStatus.success;
@@ -191,8 +230,8 @@ class DashboardProvider with ChangeNotifier {
     try {
       final results = await Future.wait(
         patientIds.map(
-          (pid) => _remoteDataSource
-              .getMedicalRecordByPatient(pid, doctorId: doctorId)
+          (pid) => _getMedicalRecordByPatientUseCase
+              .call(pid, doctorId: doctorId)
               .catchError((_) => null),
         ),
       );

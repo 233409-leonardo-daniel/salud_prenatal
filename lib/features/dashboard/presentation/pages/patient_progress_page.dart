@@ -21,21 +21,22 @@ class PatientProgressPage extends StatefulWidget {
 }
 
 class _PatientProgressPageState extends State<PatientProgressPage> {
-  int _parsedPatientId = 1;
+  int? _parsedPatientId;
 
   @override
   void initState() {
     super.initState();
     final pIdStr = widget.patientId;
     if (pIdStr != null) {
-      _parsedPatientId = int.tryParse(pIdStr.replaceAll('#SP-', '').trim()) ?? 1;
+      _parsedPatientId = int.tryParse(pIdStr.replaceAll('#SP-', '').trim());
     } else {
-      _parsedPatientId = context.read<LoginProvider>().patientId ?? 1;
+      _parsedPatientId = context.read<LoginProvider>().patientId;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final patientId = _parsedPatientId;
+      if (patientId == null) return;
       final loginProvider = context.read<LoginProvider>();
-      final docId = loginProvider.doctorId ?? 1;
-      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
+      context.read<DashboardProvider>().loadPatientDetails(patientId, doctorId: loginProvider.doctorId);
     });
   }
 

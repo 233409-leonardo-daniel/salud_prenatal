@@ -20,14 +20,6 @@ class AppointmentStatusChip extends StatelessWidget {
         bgColor = Colors.blue.shade100;
         textColor = Colors.blue.shade800;
         break;
-      case AppointmentStatus.in_progress:
-        bgColor = Colors.indigo.shade100;
-        textColor = Colors.indigo.shade800;
-        break;
-      case AppointmentStatus.completed:
-        bgColor = Colors.green.shade100;
-        textColor = Colors.green.shade800;
-        break;
       case AppointmentStatus.cancelled:
         bgColor = Colors.red.shade100;
         textColor = Colors.red.shade800;

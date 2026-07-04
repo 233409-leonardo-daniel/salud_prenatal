@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/providers/privacy_policy_provider.dart';
-import '../../../privacy_policy/data/models/accepted_policy_model.dart';
+import '../../../privacy_policy/domain/entities/accepted_policy.dart';
 import '../../../register/presentation/providers/register_provider.dart';
 import 'edit_profile_page.dart';
 
@@ -387,7 +387,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
     );
   }
 
-  Widget _buildPolicyCard(AcceptedPolicyModel policy) {
+  Widget _buildPolicyCard(AcceptedPolicy policy) {
     final date = DateTime.tryParse(policy.acceptedAt);
     String formattedDate = policy.acceptedAt;
     if (date != null) {
@@ -855,8 +855,8 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
               ElevatedButton(
                 onPressed: registerProvider.isLoading ? null : () async {
                   if (_formKey.currentState!.validate()) {
-                    final doctorId = loginProvider.doctorId ?? 0;
-                    if (doctorId == 0) {
+                    final doctorId = loginProvider.doctorId;
+                    if (doctorId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: No se pudo obtener el ID del médico.'), backgroundColor: Colors.red),
                       );
@@ -874,9 +874,6 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
 
                     if (success && mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Recepcionista creado exitosamente.'), backgroundColor: Colors.green),
-                      );
                     } else if (!success && mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(registerProvider.errorMessage ?? 'Error al crear recepcionista.'), backgroundColor: Colors.red),

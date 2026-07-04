@@ -1,6 +1,6 @@
-import '../../data/models/accepted_policy_model.dart';
+import '../entities/accepted_policy.dart';
 
 abstract class PrivacyPolicyRepository {
-  Future<void> saveAcceptedPolicies(List<AcceptedPolicyModel> policies);
-  Future<List<AcceptedPolicyModel>> getAcceptedPolicies(String userEmail);
+  Future<void> saveAcceptedPolicies(List<AcceptedPolicy> policies);
+  Future<List<AcceptedPolicy>> getAcceptedPolicies(String userEmail);
 }

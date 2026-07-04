@@ -39,6 +39,32 @@ class PatientRegisterRequest {
   }
 }
 
+class ReceptionistRegisterRequest {
+  final String name;
+  final String lastName;
+  final String email;
+  final String phone;
+  final String password;
+
+  const ReceptionistRegisterRequest({
+    required this.name,
+    required this.lastName,
+    required this.email,
+    required this.phone,
+    required this.password,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'last_name': lastName,
+      'email': email,
+      'phone': phone,
+      'password': password,
+    };
+  }
+}
+
 class DoctorRegisterRequest {
   final String name;
   final String lastName;

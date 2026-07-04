@@ -56,7 +56,8 @@ class _DashboardPageState extends State<DashboardPage> {
     final diariesProvider = context.read<PatientDiariesProvider>();
 
     if (_userRole == 'doctor') {
-      final docId = loginProvider.doctorId ?? 1;
+      final docId = loginProvider.doctorId;
+      if (docId == null) return; // Sesión sin doctorId: nada que cargar.
       await dashboardProvider.loadDoctorDashboard(docId);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
@@ -64,14 +65,17 @@ class _DashboardPageState extends State<DashboardPage> {
       // sola (vía notifyListeners) en cuanto terminen las peticiones en paralelo.
       dashboardProvider.loadCriticalPatients(docId);
     } else {
-      final patId = loginProvider.patientId ?? loginProvider.userId ?? 2;
-      final docId = loginProvider.doctorId ?? 1;
-      await dashboardProvider.loadPatientDashboard(patId, loginProvider.userId ?? 2, doctorId: docId);
+      final userId = loginProvider.userId;
+      if (userId == null) return; // Sesión sin userId: nada que cargar.
+      final patId = loginProvider.patientId ?? userId;
+      await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: loginProvider.doctorId);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
-      
-      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId ?? 1;
-      diariesProvider.loadDiaries(medicalRecordId);
+
+      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId;
+      if (medicalRecordId != null) {
+        diariesProvider.loadDiaries(medicalRecordId);
+      }
     }
   }
 
@@ -825,7 +829,11 @@ class _DashboardPageState extends State<DashboardPage> {
                       );
                       if (result == true && mounted) {
                         final loginProvider = context.read<LoginProvider>();
-                        context.read<DashboardProvider>().loadPatientDashboard(loginProvider.patientId ?? 0, loginProvider.userId ?? 0);
+                        final patientId = loginProvider.patientId;
+                        final userId = loginProvider.userId;
+                        if (patientId != null && userId != null) {
+                          context.read<DashboardProvider>().loadPatientDashboard(patientId, userId);
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -1055,17 +1063,34 @@ class _DashboardPageState extends State<DashboardPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          int docUserId = 1; // Default mock doctor ID
-                          if (dashboardProvider.users.isNotEmpty) {
-                            final matchedDoc = dashboardProvider.users.firstWhere(
-                              (u) => u.role.toLowerCase().contains('doctor') && 
-                                     docNameStr.toLowerCase().contains(u.name.toLowerCase()),
-                              orElse: () => dashboardProvider.users.firstWhere(
-                                (u) => u.role.toLowerCase().contains('doctor'),
-                                orElse: () => UserProfile(userId: 1, name: 'Pedro', lastName: 'Gomez', email: '', role: 'doctor'),
-                              ),
+                          // El backend no da el user_id del doctor asignado
+                          // directamente; se empareja su nombre contra la lista de
+                          // usuarios ya cargada. Si no hay coincidencia, no se
+                          // navega con un ID inventado.
+                          UserProfile? matchedDoc;
+                          final normalized = docNameStr.trim().toLowerCase();
+                          final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor'));
+                          for (final doc in doctors) {
+                            final fullName = '${doc.name} ${doc.lastName}'.trim().toLowerCase();
+                            if (fullName.isNotEmpty && fullName == normalized) {
+                              matchedDoc = doc;
+                              break;
+                            }
+                          }
+                          if (matchedDoc == null) {
+                            for (final doc in doctors) {
+                              if (doc.name.isNotEmpty && normalized.contains(doc.name.toLowerCase())) {
+                                matchedDoc = doc;
+                                break;
+                              }
+                            }
+                          }
+                          final docUserId = matchedDoc?.userId;
+                          if (docUserId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('No se pudo identificar a tu médico.')),
                             );
-                            docUserId = matchedDoc.userId ?? 1;
+                            return;
                           }
                           Navigator.push(
                             context,

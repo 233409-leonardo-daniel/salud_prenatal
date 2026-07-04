@@ -1,4 +1,4 @@
-import '../../data/models/accepted_policy_model.dart';
+import '../entities/accepted_policy.dart';
 import '../repositories/privacy_policy_repository.dart';
 
 class GetAcceptedPoliciesUseCase {
@@ -6,7 +6,7 @@ class GetAcceptedPoliciesUseCase {
 
   GetAcceptedPoliciesUseCase({required this.repository});
 
-  Future<List<AcceptedPolicyModel>> execute(String userEmail) {
+  Future<List<AcceptedPolicy>> execute(String userEmail) {
     return repository.getAcceptedPolicies(userEmail);
   }
 }

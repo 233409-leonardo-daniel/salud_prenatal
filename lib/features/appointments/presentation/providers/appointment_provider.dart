@@ -3,36 +3,29 @@ import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/get_appointments_usecase.dart';
 import '../../domain/usecases/get_appointments_use_case.dart';
 import '../../domain/usecases/update_appointment_status_use_case.dart';
-import '../../domain/usecases/check_availability_use_case.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../pages/appointment_state.dart';
-
-enum ViewState { initial, loading, success, error }
 
 class AppointmentsProvider with ChangeNotifier {
   final GetAppointmentsByUserIdUsecase _getAppointmentsByUserIdUsecase;
   final GetAppointmentsUseCase _getAppointmentsUseCase;
   final UpdateAppointmentStatusUseCase _updateAppointmentStatusUseCase;
-  final CheckAvailabilityUseCase _checkAvailabilityUseCase;
 
   AppointmentsProvider(
     this._getAppointmentsByUserIdUsecase,
     this._getAppointmentsUseCase,
     this._updateAppointmentStatusUseCase,
-    this._checkAvailabilityUseCase,
   );
 
   AppointmentsListStatus _status = AppointmentsListStatus.initial;
-  ViewState _viewState = ViewState.initial;
+  AppointmentActionStatus _viewState = AppointmentActionStatus.initial;
   String? _error;
   List<Appointment> _appointments = [];
-  Map<String, dynamic> _availability = {};
 
   AppointmentsListStatus get status => _status;
-  ViewState get viewState => _viewState;
+  AppointmentActionStatus get viewState => _viewState;
   String? get error => _error;
   List<Appointment> get appointments => _appointments;
-  Map<String, dynamic> get availability => _availability;
 
   Future<void> loadAppointments(String userId, {bool isDoctor = false}) async {
     _status = AppointmentsListStatus.loading;
@@ -52,7 +45,7 @@ class AppointmentsProvider with ChangeNotifier {
   }
 
   Future<void> loadAllAppointments({int? doctorId, int? patientId, String? status, String? date}) async {
-    _viewState = ViewState.loading;
+    _viewState = AppointmentActionStatus.loading;
     _error = null;
     _appointments = [];
     notifyListeners();
@@ -64,9 +57,9 @@ class AppointmentsProvider with ChangeNotifier {
         status: status,
         date: date,
       );
-      _viewState = ViewState.success;
+      _viewState = AppointmentActionStatus.success;
     } catch (e) {
-      _viewState = ViewState.error;
+      _viewState = AppointmentActionStatus.error;
       _error = e.toString();
     } finally {
       notifyListeners();
@@ -74,7 +67,7 @@ class AppointmentsProvider with ChangeNotifier {
   }
 
   Future<void> updateAppointmentStatus(int id, AppointmentStatus status) async {
-    _viewState = ViewState.loading;
+    _viewState = AppointmentActionStatus.loading;
     _error = null;
     notifyListeners();
 
@@ -95,25 +88,9 @@ class AppointmentsProvider with ChangeNotifier {
           reason: old.reason,
         );
       }
-      _viewState = ViewState.success;
+      _viewState = AppointmentActionStatus.success;
     } catch (e) {
-      _viewState = ViewState.error;
-      _error = e.toString();
-    } finally {
-      notifyListeners();
-    }
-  }
-
-  Future<void> checkAvailability(int doctorId, String date) async {
-    _viewState = ViewState.loading;
-    _error = null;
-    notifyListeners();
-
-    try {
-      _availability = await _checkAvailabilityUseCase.call(doctorId, date);
-      _viewState = ViewState.success;
-    } catch (e) {
-      _viewState = ViewState.error;
+      _viewState = AppointmentActionStatus.error;
       _error = e.toString();
     } finally {
       notifyListeners();
@@ -122,10 +99,9 @@ class AppointmentsProvider with ChangeNotifier {
 
   void reset() {
     _status = AppointmentsListStatus.initial;
-    _viewState = ViewState.initial;
+    _viewState = AppointmentActionStatus.initial;
     _error = null;
     _appointments = [];
-    _availability = {};
     notifyListeners();
   }
 }

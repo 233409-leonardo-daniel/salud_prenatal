@@ -141,7 +141,7 @@ class AppointmentDetailPage extends StatelessWidget {
   }
 
   List<Widget> _buildActionButtons(BuildContext context, Appointment appointment, AppointmentsProvider provider) {
-    if (provider.viewState == ViewState.loading) {
+    if (provider.viewState == AppointmentActionStatus.loading) {
       return [Center(child: CircularProgressIndicator())];
     }
     
@@ -150,7 +150,7 @@ class AppointmentDetailPage extends StatelessWidget {
     void updateStatus(AppointmentStatus newStatus) async {
       await provider.updateAppointmentStatus(appointment.id, newStatus);
       if (!context.mounted) return;
-      if (provider.viewState == ViewState.success) {
+      if (provider.viewState == AppointmentActionStatus.success) {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -160,6 +160,25 @@ class AppointmentDetailPage extends StatelessWidget {
           ),
         );
       }
+    }
+
+    void cancelAppointment() async {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Cancelar cita'),
+          content: Text('¿Deseas marcar esta cita como cancelada? El registro se conserva, solo cambia su estado.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('No')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Sí, cancelar', style: TextStyle(color: Colors.orange)),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true || !context.mounted) return;
+      updateStatus(AppointmentStatus.cancelled);
     }
 
     void deleteAndGoBack() async {
@@ -193,13 +212,11 @@ class AppointmentDetailPage extends StatelessWidget {
     if (appointment.status == AppointmentStatus.pending) {
       buttons.add(_actionButton('Confirmar Asistencia', Colors.blue, () => updateStatus(AppointmentStatus.confirmed)));
       buttons.add(SizedBox(height: 8));
-      buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
-    } else if (appointment.status == AppointmentStatus.confirmed) {
-      buttons.add(_actionButton('Marcar En Curso', Colors.indigo, () => updateStatus(AppointmentStatus.in_progress)));
+      buttons.add(_actionButton('Cancelar Cita', Colors.orange, cancelAppointment));
       buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
-    } else if (appointment.status == AppointmentStatus.in_progress) {
-      buttons.add(_actionButton('Marcar Completada', Colors.green, () => updateStatus(AppointmentStatus.completed)));
+    } else if (appointment.status == AppointmentStatus.confirmed) {
+      buttons.add(_actionButton('Cancelar Cita', Colors.orange, cancelAppointment));
       buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
     } else {

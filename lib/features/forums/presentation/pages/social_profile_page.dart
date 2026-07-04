@@ -63,7 +63,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
     final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId ?? 0;
+    final currentUserId = loginProvider.userId;
     final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
 
     return Scaffold(
@@ -185,6 +185,12 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                     onPressed: forumsProvider.isSaving
                         ? null
                         : () async {
+                            if (currentUserId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('No se pudo identificar tu sesión.')),
+                              );
+                              return;
+                            }
                             if (_formKey.currentState!.validate()) {
                               final profile = SocialProfile(
                                 userId: currentUserId,
@@ -198,12 +204,6 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                               final navigator = Navigator.of(context);
                               final success = await forumsProvider.saveSocialProfile(profile);
                               if (success) {
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text('¡Perfil guardado con éxito!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
                                 navigator.pop(true);
                               } else {
                                 messenger.showSnackBar(

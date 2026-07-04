@@ -30,7 +30,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
     final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId ?? 0;
+    final currentUserId = loginProvider.userId;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
@@ -90,6 +90,12 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 onPressed: forumsProvider.isSaving
                     ? null
                     : () async {
+                        if (currentUserId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No se pudo identificar tu sesión.')),
+                          );
+                          return;
+                        }
                         if (_formKey.currentState!.validate()) {
                           final success = await forumsProvider.createPost(
                             currentUserId,
@@ -98,12 +104,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
                             _contentController.text.trim(),
                           );
                           if (success && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('¡Publicación creada con éxito!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
                             Navigator.pop(context, true);
                           } else if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(

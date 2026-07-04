@@ -308,7 +308,8 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
     final descController = TextEditingController();
     final loginProvider = context.read<LoginProvider>();
     final forumsProvider = context.read<ForumsProvider>();
-    final currentUserId = loginProvider.userId ?? 0;
+    final currentUserId = loginProvider.userId;
+    if (currentUserId == null) return; // Sesión no disponible.
 
     showDialog(
       context: context,
@@ -350,12 +351,6 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
                   Navigator.pop(context);
                   final success = await forumsProvider.createGroup(name, desc, currentUserId);
                   if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('¡Foro comunitario creado con éxito!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
                     _refreshData();
                   }
                 }

@@ -46,20 +46,6 @@ class _LoginPageState extends State<LoginPage> {
                       ? 'receptionist'
                       : 'patient';
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                      '¡Sesión Iniciada! Rol: ${role == 'doctor' ? 'Médico' : (role == 'receptionist' ? 'Recepcionista' : 'Paciente')}'),
-                ],
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
-
           Navigator.pushReplacementNamed(
             context,
             '/dashboard',

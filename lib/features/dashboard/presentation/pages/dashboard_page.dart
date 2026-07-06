@@ -104,11 +104,11 @@ class _DashboardPageState extends State<DashboardPage> {
   PreferredSizeWidget _buildAppBar() {
     final loginProvider = context.watch<LoginProvider>();
     final String doctorName = loginProvider.name.isNotEmpty 
-        ? 'Dr. ${loginProvider.name}' 
-        : 'Dr.';
+        ? 'Dr(a). ${loginProvider.name}' 
+        : 'Médico';
     final String doctorInitial = loginProvider.name.isNotEmpty
         ? loginProvider.name[0].toUpperCase()
-        : 'M';
+        : (loginProvider.email.isNotEmpty ? loginProvider.email[0].toUpperCase() : 'D');
 
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
@@ -607,9 +607,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final String displayName = loginProvider.fullName.isNotEmpty
         ? loginProvider.fullName
-        : 'Ana García';
+        : 'Paciente';
 
-    final currentWeeks = dashboardProvider.currentPatientData?['current_gestational_weeks'] ?? 28;
+    final rawWeeks = dashboardProvider.currentPatientData?['current_gestational_weeks'];
+    final String weeksText = rawWeeks != null ? 'Semana $rawWeeks de embarazo' : 'Embarazo en curso';
 
     final medicalRecord = dashboardProvider.medicalRecord;
     String patientRisk = 'Bajo';
@@ -765,8 +766,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
                   SizedBox(height: 2),
-                  Text(
-                    'Semana $currentWeeks de embarazo',
+                   Text(
+                    weeksText,
                     style: TextStyle(color: AppColors.textMuted, fontSize: 14),
                   ),
                 ],

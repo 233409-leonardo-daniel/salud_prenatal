@@ -269,18 +269,7 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
-                  // Help prompt for testing
-                  Center(
-                    child: Text(
-                      'Tip: Usa un correo con "doctor" para entrar como Dra. Mendoza\no cualquier otro para entrar como Paciente Ana García.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+
                   SizedBox(height: 32),
 
                   // Footer navigation

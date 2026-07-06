@@ -171,14 +171,9 @@ class RegisterProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Admin registration not yet backed by API
-      await Future.delayed(const Duration(seconds: 2));
-      _token = 'mock_admin_token_xyz123';
-      _status = RegisterStatus.success;
-      notifyListeners();
-      return true;
+      throw Exception('El registro de administrador no está disponible en la API.');
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       _status = RegisterStatus.error;
       notifyListeners();
       return false;

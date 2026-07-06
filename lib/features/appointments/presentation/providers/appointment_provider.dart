@@ -27,11 +27,18 @@ class AppointmentsProvider with ChangeNotifier {
   String? get error => _error;
   List<Appointment> get appointments => _appointments;
 
-  Future<void> loadAppointments(String userId, {bool isDoctor = false}) async {
+  Future<void> loadAppointments(String? userId, {bool isDoctor = false}) async {
     _status = AppointmentsListStatus.loading;
     _error = null;
     _appointments = [];
     notifyListeners();
+
+    if (userId == null || userId.isEmpty) {
+      _status = AppointmentsListStatus.error;
+      _error = 'El ID de usuario o médico no está disponible para consultar citas.';
+      notifyListeners();
+      return;
+    }
 
     try {
       _appointments = await _getAppointmentsByUserIdUsecase.call(userId, isDoctor: isDoctor);

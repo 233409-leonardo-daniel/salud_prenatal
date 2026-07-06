@@ -65,19 +65,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.otherUserName, style: TextStyle(fontSize: 16, color: Colors.white)),
-            Text(
-              chatProvider.isConnected ? 'En línea' : 'Desconectado',
-              style: TextStyle(
-                fontSize: 12,
-                color: chatProvider.isConnected ? Colors.greenAccent : Colors.redAccent,
-              ),
-            ),
-          ],
-        ),
+        title: Text(widget.otherUserName, style: TextStyle(fontSize: 18, color: Colors.white)),
         backgroundColor: AppColors.primary,
         iconTheme: IconThemeData(color: Colors.white),
       ),

@@ -244,31 +244,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   widget.otherUserName,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: provider.isConnected ? Colors.green : Colors.grey,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      provider.isConnected ? 'En línea' : 'Desconectado',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: provider.isConnected ? Colors.green.shade700 : AppColors.textMuted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                 ),
               ],
             ),

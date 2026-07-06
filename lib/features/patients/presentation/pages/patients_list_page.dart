@@ -27,7 +27,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final loginProvider = context.read<LoginProvider>();
-      final doctorId = loginProvider.doctorId?.toString() ?? '1';
+      final doctorId = loginProvider.doctorId?.toString();
       context.read<PatientsListProvider>().loadPatients(doctorId);
     });
   }
@@ -52,7 +52,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  final doctorId = context.read<LoginProvider>().doctorId?.toString() ?? '1';
+                  final doctorId = context.read<LoginProvider>().doctorId?.toString();
                   context.read<PatientsListProvider>().loadPatients(doctorId);
                 },
                 child: Text('Reintentar'),
@@ -100,7 +100,9 @@ class _PatientsListPageState extends State<PatientsListPage> {
         'id': patientCode,
         'userId': userId,
         'patientEntity': patient,
-        'gestationAge': '${patient.currentGestationalWeeks ?? 28} sem',
+        'gestationAge': patient.currentGestationalWeeks != null 
+            ? '${patient.currentGestationalWeeks} sem' 
+            : 'No reg.',
         'initials': initials,
       });
     }

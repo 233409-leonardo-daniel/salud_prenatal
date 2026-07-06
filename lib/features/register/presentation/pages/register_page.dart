@@ -4,6 +4,7 @@ import '../providers/register_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/pages/privacy_policy_page.dart';
+import 'doctor_plan_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -22,9 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
   
   // Patient fields
   final _birthdateController = TextEditingController();
-  String _selectedBloodType = 'O+';
-  final _weeksController = TextEditingController(text: '0');
-  final _lmpController = TextEditingController();
+  final _patientDoctorIdController = TextEditingController();
 
   // Doctor fields
   final _licenseController = TextEditingController();
@@ -45,8 +44,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _phoneController.dispose();
     _passwordController.dispose();
     _birthdateController.dispose();
-    _lmpController.dispose();
-    _weeksController.dispose();
+    _patientDoctorIdController.dispose();
     _licenseController.dispose();
     _specialtyController.dispose();
     _officeController.dispose();
@@ -110,10 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
           phone: _phoneController.text.trim(),
           password: _passwordController.text,
           birthdate: _birthdateController.text,
-          bloodType: _selectedBloodType,
-          weeksAtRegistration: int.tryParse(_weeksController.text) ?? 0,
-          lastMenstrualPeriod: _lmpController.text,
-          residence: "",
+          doctorId: int.tryParse(_patientDoctorIdController.text.trim()),
         );
       } else if (role == 'doctor') {
         success = await registerProvider.registerDoctor(
@@ -161,7 +156,26 @@ class _RegisterPageState extends State<RegisterPage> {
             if (registeredPatientId != null) {
               context.read<LoginProvider>().setPatientId(registeredPatientId);
             }
+            Navigator.pushReplacementNamed(context, '/login');
+            return;
           }
+
+          if (role == 'doctor') {
+            // El doctor recién registrado ve la selección de plan antes de
+            // entrar al dashboard (el pago no está conectado a un procesador
+            // real; ver DoctorPlanPage).
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DoctorPlanPage(
+                  email: _emailController.text.trim(),
+                  password: _passwordController.text,
+                ),
+              ),
+            );
+            return;
+          }
+
           Navigator.pushReplacementNamed(context, '/login');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -410,39 +424,22 @@ class _RegisterPageState extends State<RegisterPage> {
                               validator: (value) => value == null || value.isEmpty ? 'Selecciona tu fecha de nacimiento' : null,
                             ),
                             SizedBox(height: 16),
-                            DropdownButtonFormField<String>(
-                              value: _selectedBloodType,
-                              decoration: const InputDecoration(
-                                labelText: 'Tipo de Sangre',
-                                prefixIcon: Icon(Icons.bloodtype_outlined),
-                              ),
-                              items: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
-                                  .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                                  .toList(),
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedBloodType = val);
-                              },
-                            ),
-                            SizedBox(height: 16),
                             TextFormField(
-                              controller: _weeksController,
+                              controller: _patientDoctorIdController,
                               keyboardType: TextInputType.number,
                               decoration: const InputDecoration(
-                                labelText: 'Semanas de Embarazo al Registro',
-                                prefixIcon: Icon(Icons.trending_up_outlined),
+                                labelText: 'ID de tu médico (opcional)',
+                                prefixIcon: Icon(Icons.badge_outlined),
                               ),
-                              validator: (value) => value == null || int.tryParse(value) == null ? 'Ingresa un número válido' : null,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) return null;
+                                return int.tryParse(value.trim()) == null ? 'Ingresa un ID numérico válido' : null;
+                              },
                             ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: _lmpController,
-                              readOnly: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Fecha Última Regla (FUM)',
-                                prefixIcon: Icon(Icons.date_range_outlined),
-                              ),
-                              onTap: () => _selectDate(context, _lmpController),
-                              validator: (value) => value == null || value.isEmpty ? 'Selecciona la fecha FUM' : null,
+                            SizedBox(height: 8),
+                            Text(
+                              'Tu expediente clínico lo creará tu médico en tu primera consulta.',
+                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                             ),
                           ] else if (registerProvider.selectedRole == 'doctor') ...[
                             Text(

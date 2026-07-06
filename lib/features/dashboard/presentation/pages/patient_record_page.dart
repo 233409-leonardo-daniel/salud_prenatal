@@ -195,7 +195,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               _buildNoRecordBanner(context, isDoctor),
               SizedBox(height: 16),
             ] else ...[
-              _buildResumenIA(record),
+              _buildResumenIA(context, record, isDoctor),
               SizedBox(height: 16),
             ],
             _buildExpansionSection(
@@ -364,16 +364,124 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     );
   }
 
-  Widget _buildResumenIA(MedicalRecordResponse record) {
+  Widget _buildResumenIA(BuildContext context, MedicalRecordResponse record, bool isDoctor) {
     final riskPrediction = record.riskPrediction;
-    final hasRiskPrediction = riskPrediction != null &&
-        riskPrediction.diagnosis != null &&
-        riskPrediction.diagnosis!.isNotEmpty;
 
-    if (!hasRiskPrediction) return const SizedBox.shrink();
+    // Nunca se ha evaluado: estado vacío + botón (solo doctor puede disparar).
+    if (riskPrediction == null) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.analytics_outlined, color: AppColors.textMuted, size: 22),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Aún no se ha evaluado el riesgo de esta paciente.',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            if (isDoctor) ...[
+              SizedBox(height: 12),
+              _buildEvaluateRiskButton(context, record.medicalRecordId),
+            ],
+          ],
+        ),
+      );
+    }
 
-    final diagnosis = riskPrediction.diagnosis!;
-    final level = _resolveRiskLevel(diagnosis);
+    // Servicio de ML no disponible en el momento de la última evaluación.
+    if (riskPrediction.isMlUnavailable) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.cloud_off_outlined, color: Colors.orange, size: 22),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Servicio de predicción no disponible, intenta más tarde.',
+                    style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            if (isDoctor) ...[
+              SizedBox(height: 12),
+              _buildEvaluateRiskButton(context, record.medicalRecordId, label: 'Reintentar evaluación'),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // Faltan datos críticos para poder evaluar.
+    if (riskPrediction.isInsufficientData) {
+      final missing = riskPrediction.missingFields ?? [];
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.orange, size: 22),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Faltan datos para evaluar el riesgo',
+                    style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            if (missing.isNotEmpty) ...[
+              SizedBox(height: 8),
+              Text(
+                'Campos faltantes: ${missing.join(', ')}',
+                style: TextStyle(color: Colors.orange.shade900, fontSize: 13),
+              ),
+            ],
+            SizedBox(height: 4),
+            Text(
+              'Completa el expediente o registra la presión arterial de la paciente.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
+            if (isDoctor) ...[
+              SizedBox(height: 12),
+              _buildEvaluateRiskButton(context, record.medicalRecordId, label: 'Reintentar evaluación'),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // status == 'ok': hay predicción.
+    final clusterName = riskPrediction.prediction?['cluster_name']?.toString() ?? 'Riesgo indeterminado';
+    final clusterValue = riskPrediction.prediction?['cluster'];
+    final level = _resolveRiskLevel(clusterName);
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -424,7 +532,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                     ],
                   ),
                 ),
-                if (riskPrediction.riskCluster != null)
+                if (clusterValue != null)
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -432,7 +540,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Clúster ${riskPrediction.riskCluster}',
+                      'Clúster $clusterValue',
                       style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -449,7 +557,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               border: Border.all(color: Colors.purple.withOpacity(0.3)),
             ),
             child: Text(
-              'Diagnóstico: $diagnosis',
+              'Diagnóstico: $clusterName',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
@@ -458,7 +566,78 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               ),
             ),
           ),
+          SizedBox(height: 8),
+          if (riskPrediction.predictedAt != null)
+            Text(
+              'Evaluado el ${_formatDateTime(riskPrediction.predictedAt!)}',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
+          if (riskPrediction.stale) ...[
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.update, color: Colors.orange, size: 16),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Hay datos nuevos desde la última evaluación. Re-evalúa para actualizar.',
+                      style: TextStyle(color: Colors.orange.shade800, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (isDoctor) ...[
+            SizedBox(height: 12),
+            _buildEvaluateRiskButton(
+              context,
+              record.medicalRecordId,
+              label: riskPrediction.stale ? 'Re-evaluar riesgo' : 'Evaluar riesgo de nuevo',
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildEvaluateRiskButton(BuildContext context, int medicalRecordId, {String label = 'Evaluar riesgo'}) {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: dashboardProvider.isEvaluatingRisk
+            ? null
+            : () async {
+                final success = await context.read<DashboardProvider>().evaluateRisk(medicalRecordId);
+                if (mounted && !success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.read<DashboardProvider>().errorMessage ?? 'Error al evaluar riesgo'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+        icon: dashboardProvider.isEvaluatingRisk
+            ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+            : Icon(Icons.analytics_outlined, size: 18, color: AppColors.primary),
+        label: Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 14),
+          side: BorderSide(color: AppColors.primary),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
       ),
     );
   }

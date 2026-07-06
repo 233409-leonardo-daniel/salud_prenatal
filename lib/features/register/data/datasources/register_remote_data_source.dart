@@ -15,46 +15,11 @@ class RegisterRemoteDataSourceImpl implements RegisterRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> registerPatient(PatientRegisterRequest request) async {
-    final userMap = {
-      'name': request.name,
-      'last_name': request.lastName,
-      'email': request.email,
-      'phone': request.phone,
-      'password': request.password,
-    };
-
-    // Payload completo incluyendo todos los campos booleanos del esquema de base de datos
-    // y soportando formato plano y anidado.
-    final payload = {
-      'birthdate': request.birthdate,
-      'blood_type': request.bloodType,
-      'weeks_at_registration': request.weeksAtRegistration,
-      'last_menstrual_period': request.lastMenstrualPeriod,
-      'residence': request.residence,
-
-      // Historial clínico requerido (por defecto false para el cascarón)
-      'previous_hypertension': false,
-      'diabetes': false,
-      'family_history_hypertension': false,
-      'previous_pregnancies': false,
-      'previous_deliveries': false,
-      'previous_miscarriages': false,
-      'previous_cesareans': false,
-      'previous_preeclampsia': false,
-      'chronic_kidney_disease': false,
-      'chronic_hypertension': false,
-      'multiple_pregnancy': false,
-      'fetal_death': false,
-      'fetal_growth_restriction': false,
-      'family_history_heart_disease': false,
-
-      'user': userMap,
-      ...userMap,
-    };
-
+    // El expediente clínico ya no se captura en el registro: el paciente solo
+    // manda su identidad + fecha de nacimiento (+ doctor opcional).
     final response = await _apiClient.post(
       '/patients/register',
-      payload,
+      request.toJson(),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {

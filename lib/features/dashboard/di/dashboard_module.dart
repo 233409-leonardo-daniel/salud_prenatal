@@ -8,6 +8,7 @@ import '../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
 import '../domain/usecases/get_patient_dashboard_usecase.dart';
 import '../domain/usecases/create_medical_record_usecase.dart';
+import '../domain/usecases/evaluate_risk_usecase.dart';
 import '../../../../core/network/api_client.dart';
 
 class DashboardModule {
@@ -20,6 +21,7 @@ class DashboardModule {
   late final GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase;
   late final GetPatientDashboardUseCase getPatientDashboardUseCase;
   late final CreateMedicalRecordUseCase createMedicalRecordUseCase;
+  late final EvaluateRiskUseCase evaluateRiskUseCase;
 
   DashboardModule(ApiClient apiClient) {
     remoteDataSource = DashboardRemoteDataSourceImpl(apiClient: apiClient);
@@ -32,5 +34,6 @@ class DashboardModule {
     getConsultationsFromPatientEndpointUseCase = GetConsultationsFromPatientEndpointUseCase(repository);
     getPatientDashboardUseCase = GetPatientDashboardUseCase(repository);
     createMedicalRecordUseCase = CreateMedicalRecordUseCase(repository);
+    evaluateRiskUseCase = EvaluateRiskUseCase(repository);
   }
 }

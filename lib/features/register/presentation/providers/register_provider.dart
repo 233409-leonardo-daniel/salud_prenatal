@@ -49,10 +49,7 @@ class RegisterProvider with ChangeNotifier {
     required String phone,
     required String password,
     required String birthdate,
-    required String bloodType,
-    required int weeksAtRegistration,
-    required String lastMenstrualPeriod,
-    required String residence,
+    int? doctorId,
   }) async {
     _status = RegisterStatus.loading;
     _errorMessage = null;
@@ -68,10 +65,7 @@ class RegisterProvider with ChangeNotifier {
         phone: phone,
         password: password,
         birthdate: birthdate,
-        bloodType: bloodType,
-        weeksAtRegistration: weeksAtRegistration,
-        lastMenstrualPeriod: lastMenstrualPeriod,
-        residence: residence,
+        doctorId: doctorId,
       );
       final result = await _registerPatientUseCase.execute(request);
       _token = result['access_token']?.toString() ?? result['token']?.toString() ?? 'success';

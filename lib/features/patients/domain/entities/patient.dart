@@ -1,19 +1,19 @@
 class PatientEntity {
   final int patientId;
   final int userId;
-  final String dateOfBirth;
-  final int age;
+  final int? doctorId;
+  final String birthdate;
+  final int? age;
+  final String? fullName;
   final int? currentGestationalWeeks;
-  final String bloodType;
-  final String risk;
 
   PatientEntity({
     required this.patientId,
     required this.userId,
-    required this.dateOfBirth,
-    required this.age,
+    this.doctorId,
+    required this.birthdate,
+    this.age,
+    this.fullName,
     this.currentGestationalWeeks,
-    required this.bloodType,
-    this.risk = 'Bajo Riesgo',
   });
 }

@@ -9,6 +9,7 @@ import '../../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
 import '../../domain/usecases/get_patient_dashboard_usecase.dart';
 import '../../domain/usecases/create_medical_record_usecase.dart';
+import '../../domain/usecases/evaluate_risk_usecase.dart';
 import '../pages/dashboard_state.dart';
 
 class DashboardProvider with ChangeNotifier {
@@ -19,6 +20,7 @@ class DashboardProvider with ChangeNotifier {
   final GetConsultationsFromPatientEndpointUseCase _getConsultationsFromPatientEndpointUseCase;
   final GetPatientDashboardUseCase _getPatientDashboardUseCase;
   final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
+  final EvaluateRiskUseCase _evaluateRiskUseCase;
 
   DashboardProvider({
     required GetAllUsersUseCase getAllUsersUseCase,
@@ -28,17 +30,20 @@ class DashboardProvider with ChangeNotifier {
     required GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase,
     required GetPatientDashboardUseCase getPatientDashboardUseCase,
     required CreateMedicalRecordUseCase createMedicalRecordUseCase,
+    required EvaluateRiskUseCase evaluateRiskUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
         _getPatientsByDoctorUseCase = getPatientsByDoctorUseCase,
         _getMedicalRecordByPatientUseCase = getMedicalRecordByPatientUseCase,
         _getConsultationsByMedicalRecordUseCase = getConsultationsByMedicalRecordUseCase,
         _getConsultationsFromPatientEndpointUseCase = getConsultationsFromPatientEndpointUseCase,
         _getPatientDashboardUseCase = getPatientDashboardUseCase,
-        _createMedicalRecordUseCase = createMedicalRecordUseCase;
+        _createMedicalRecordUseCase = createMedicalRecordUseCase,
+        _evaluateRiskUseCase = evaluateRiskUseCase;
 
   DashboardStatus _status = DashboardStatus.initial;
   DashboardDetailsStatus _detailsStatus = DashboardDetailsStatus.initial;
   SaveRecordStatus _saveStatus = SaveRecordStatus.initial;
+  RiskEvaluationStatus _riskEvaluationStatus = RiskEvaluationStatus.initial;
   String? _errorMessage;
   List<UserProfile> _users = [];
   List<Map<String, dynamic>> _patients = [];
@@ -63,6 +68,8 @@ class DashboardProvider with ChangeNotifier {
   bool get isLoading => _status == DashboardStatus.loading;
   bool get isDetailsLoading => _detailsStatus == DashboardDetailsStatus.loading;
   bool get isSavingRecord => _saveStatus == SaveRecordStatus.loading;
+  RiskEvaluationStatus get riskEvaluationStatus => _riskEvaluationStatus;
+  bool get isEvaluatingRisk => _riskEvaluationStatus == RiskEvaluationStatus.loading;
   String? get errorMessage => _errorMessage;
   List<UserProfile> get users => _users;
   List<Map<String, dynamic>> get patients => _patients;
@@ -205,6 +212,31 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
+  /// Dispara la evaluación de riesgo manual (botón "Evaluar riesgo" del
+  /// doctor) vía POST /medical-records/{id}/risk-evaluation y refresca
+  /// `_activeMedicalRecord` con la nueva predicción sin recargar todo el
+  /// expediente.
+  Future<bool> evaluateRisk(int medicalRecordId) async {
+    _riskEvaluationStatus = RiskEvaluationStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final riskPrediction = await _evaluateRiskUseCase.call(medicalRecordId);
+      if (_activeMedicalRecord != null && _activeMedicalRecord!.medicalRecordId == medicalRecordId) {
+        _activeMedicalRecord = _activeMedicalRecord!.copyWithRiskPrediction(riskPrediction);
+      }
+      _riskEvaluationStatus = RiskEvaluationStatus.success;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _riskEvaluationStatus = RiskEvaluationStatus.error;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Carga los pacientes con riesgo alto/crítico para el doctor indicado.
   /// Parte de la lista de pacientes del doctor (ya cargada en `_patients` vía
   /// GET /doctors/{doctor_id}/patients) y consulta en paralelo (Future.wait)
@@ -239,10 +271,13 @@ class DashboardProvider with ChangeNotifier {
       final critical = <Map<String, dynamic>>[];
       for (final record in results) {
         if (record == null) continue;
-        final diagnosis = record.riskPrediction?.diagnosis;
-        if (diagnosis == null || diagnosis.isEmpty) continue;
+        final riskPrediction = record.riskPrediction;
+        if (riskPrediction == null || !riskPrediction.isOk) continue;
 
-        final lower = diagnosis.toLowerCase();
+        final clusterName = riskPrediction.prediction?['cluster_name']?.toString();
+        if (clusterName == null || clusterName.isEmpty) continue;
+
+        final lower = clusterName.toLowerCase();
         final isHighRisk = lower.contains('alto') ||
             lower.contains('crítico') ||
             lower.contains('critico');
@@ -252,8 +287,8 @@ class DashboardProvider with ChangeNotifier {
         critical.add({
           'patientId': record.patientId,
           'name': fullName.isNotEmpty ? fullName : 'Paciente #${record.patientId}',
-          'diagnosis': diagnosis,
-          'riskCluster': record.riskPrediction?.riskCluster,
+          'diagnosis': clusterName,
+          'riskCluster': riskPrediction.prediction?['cluster'],
         });
       }
 

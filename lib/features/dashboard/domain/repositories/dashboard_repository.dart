@@ -19,4 +19,5 @@ abstract class DashboardRepository {
   Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId});
   Future<Map<String, dynamic>> getPatientDashboard(int patientId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
+  Future<RiskPrediction> evaluateRisk(int medicalRecordId);
 }

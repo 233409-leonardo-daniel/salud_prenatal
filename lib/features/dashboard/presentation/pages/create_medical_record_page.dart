@@ -19,6 +19,18 @@ class CreateMedicalRecordPage extends StatefulWidget {
 }
 
 class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
+  // Perfil clínico base (ahora vive en el expediente, no en el registro)
+  final _residenceController = TextEditingController();
+  String _selectedBloodType = 'O+';
+  final _heightController = TextEditingController();
+  final _initialWeightController = TextEditingController();
+  final _initialSystolicController = TextEditingController();
+  final _initialDiastolicController = TextEditingController();
+  final _weeksController = TextEditingController();
+  final _lmpController = TextEditingController();
+  final _educationController = TextEditingController();
+  final _maritalStatusController = TextEditingController();
+
   // Counters for history
   int _previousPregnancies = 0;
   int _previousDeliveries = 0;
@@ -37,6 +49,46 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
   bool _fetalGrowthRestriction = false;
   bool _familyHistoryHeartDisease = false;
   bool _activeSmoking = false;
+
+  @override
+  void dispose() {
+    _residenceController.dispose();
+    _heightController.dispose();
+    _initialWeightController.dispose();
+    _initialSystolicController.dispose();
+    _initialDiastolicController.dispose();
+    _weeksController.dispose();
+    _lmpController.dispose();
+    _educationController.dispose();
+    _maritalStatusController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +153,126 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               ),
             ),
             SizedBox(height: 24),
+
+            // Section 0: Perfil clínico base
+            Text(
+              'Perfil Clínico',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
+            SizedBox(height: 12),
+            TextFormField(
+              controller: _residenceController,
+              decoration: const InputDecoration(
+                labelText: 'Residencia',
+                prefixIcon: Icon(Icons.home_outlined),
+              ),
+            ),
+            SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedBloodType,
+              decoration: const InputDecoration(
+                labelText: 'Tipo de Sangre',
+                prefixIcon: Icon(Icons.bloodtype_outlined),
+              ),
+              items: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+                  .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                  .toList(),
+              onChanged: (val) {
+                if (val != null) setState(() => _selectedBloodType = val);
+              },
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _heightController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Altura (cm)',
+                      prefixIcon: Icon(Icons.height_outlined),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _initialWeightController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Peso inicial (kg)',
+                      prefixIcon: Icon(Icons.monitor_weight_outlined),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _initialSystolicController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Presión sistólica inicial',
+                      prefixIcon: Icon(Icons.favorite_border),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _initialDiastolicController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Presión diastólica inicial',
+                      prefixIcon: Icon(Icons.favorite_border),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _weeksController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Semanas de Embarazo al Registro',
+                prefixIcon: Icon(Icons.trending_up_outlined),
+              ),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _lmpController,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Fecha Última Regla (FUM)',
+                prefixIcon: Icon(Icons.date_range_outlined),
+              ),
+              onTap: () => _selectDate(context, _lmpController),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _educationController,
+              decoration: const InputDecoration(
+                labelText: 'Escolaridad',
+                prefixIcon: Icon(Icons.school_outlined),
+              ),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _maritalStatusController,
+              decoration: const InputDecoration(
+                labelText: 'Estado Civil',
+                prefixIcon: Icon(Icons.people_outline),
+              ),
+            ),
+            SizedBox(height: 28),
 
             // Section 1: History Counters (Editable text fields)
             Text(
@@ -263,6 +435,16 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                       }
 
                       final Map<String, dynamic> recordPayload = {
+                        "residence": _residenceController.text.trim().isEmpty ? null : _residenceController.text.trim(),
+                        "blood_type": _selectedBloodType,
+                        "height_cm": int.tryParse(_heightController.text.trim()),
+                        "initial_weight": double.tryParse(_initialWeightController.text.trim()),
+                        "initial_systolic": int.tryParse(_initialSystolicController.text.trim()),
+                        "initial_diastolic": int.tryParse(_initialDiastolicController.text.trim()),
+                        "weeks_at_registration": int.tryParse(_weeksController.text.trim()),
+                        "last_menstrual_period": _lmpController.text.trim().isEmpty ? null : _lmpController.text.trim(),
+                        "education_level": _educationController.text.trim().isEmpty ? null : _educationController.text.trim(),
+                        "marital_status": _maritalStatusController.text.trim().isEmpty ? null : _maritalStatusController.text.trim(),
                         "previous_hypertension": _previousHypertension,
                         "diabetes": _diabetes,
                         "family_history_hypertension": _familyHistoryHypertension,

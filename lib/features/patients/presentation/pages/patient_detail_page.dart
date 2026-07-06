@@ -124,9 +124,10 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
     final pendingAppointments = allAppointments.where((app) => app.status == AppointmentStatus.pending).toList();
 
     // 1. Details
-    final age = patientData.age.toString(); // From patient entity
-    final bloodType = patientData.bloodType;
-    final residence = 'No especificado'; // or from patientData if it was added
+    final age = (patientData.age ?? '—').toString(); // From patient entity
+    final medicalRecordData = patientDetailProvider.rawRecordResponse?['medical_record'] as Map<String, dynamic>?;
+    final bloodType = medicalRecordData?['blood_type']?.toString() ?? 'No especificado';
+    final residence = medicalRecordData?['residence']?.toString() ?? 'No especificado';
     final email = userProfile?.email ?? 'No especificado';
     final role = userProfile?.role ?? 'paciente';
 

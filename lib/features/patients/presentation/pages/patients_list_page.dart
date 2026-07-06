@@ -75,19 +75,29 @@ class _PatientsListPageState extends State<PatientsListPage> {
       final pId = patient.patientId;
       final userId = patient.userId;
 
-      final patientUser = dashboardProvider.users.firstWhere(
-        (u) => u.userId == userId,
-        orElse: () => UserProfile(
-          name: 'Paciente',
-          lastName: '$pId',
-          email: '',
-          role: 'paciente',
-        ),
-      );
+      // GET /doctors/{id}/patients ya trae full_name resuelto; si no viene
+      // (p. ej. viniera de /patients/search) se cae al listado de usuarios.
+      String patientName;
+      if (patient.fullName != null && patient.fullName!.trim().isNotEmpty) {
+        patientName = patient.fullName!.trim();
+      } else {
+        final patientUser = dashboardProvider.users.firstWhere(
+          (u) => u.userId == userId,
+          orElse: () => UserProfile(
+            name: 'Paciente',
+            lastName: '$pId',
+            email: '',
+            role: 'paciente',
+          ),
+        );
+        patientName = '${patientUser.name} ${patientUser.lastName}'.trim();
+      }
 
-      final patientName = '${patientUser.name} ${patientUser.lastName}'.trim();
       final patientCode = '#SP-$pId';
-      final initials = '${patientUser.name.isNotEmpty ? patientUser.name[0] : 'P'}${patientUser.lastName.isNotEmpty ? patientUser.lastName[0] : ''}';
+      final nameParts = patientName.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+      final initials = nameParts.isNotEmpty
+          ? '${nameParts.first[0]}${nameParts.length > 1 ? nameParts.last[0] : ''}'
+          : 'P';
 
       if (searchQuery.isNotEmpty &&
           !patientName.toLowerCase().contains(searchQuery) &&
@@ -100,10 +110,10 @@ class _PatientsListPageState extends State<PatientsListPage> {
         'id': patientCode,
         'userId': userId,
         'patientEntity': patient,
-        'gestationAge': patient.currentGestationalWeeks != null 
-            ? '${patient.currentGestationalWeeks} sem' 
+        'gestationAge': patient.currentGestationalWeeks != null
+            ? '${patient.currentGestationalWeeks} sem'
             : 'No reg.',
-        'initials': initials,
+        'initials': initials.toUpperCase(),
       });
     }
 

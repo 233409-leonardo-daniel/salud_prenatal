@@ -1,25 +1,52 @@
+/// Predicción de riesgo (preeclampsia) tal como la devuelve el expediente médico
+/// (GET /medical-records/patient/{patient_id}) o la evaluación manual
+/// (POST /medical-records/{id}/risk-evaluation).
+///
+/// OJO: las dos rutas usan una llave distinta para la versión del modelo:
+/// el GET manda `model_version`, el POST manda `ml_model_version`. Aquí se
+/// aceptan ambas para poder reusar esta misma clase en los dos casos.
 class RiskPrediction {
-  final int? riskCluster;
-  final String? diagnosis;
+  final String status; // ok | insufficient_data | ml_unavailable
+  final Map<String, dynamic>? prediction;
+  final List<String>? missingFields;
+  final String? modelVersion;
+  final DateTime? predictedAt;
+  final bool stale;
 
   RiskPrediction({
-    this.riskCluster,
-    this.diagnosis,
+    required this.status,
+    this.prediction,
+    this.missingFields,
+    this.modelVersion,
+    this.predictedAt,
+    this.stale = false,
   });
+
+  bool get isOk => status == 'ok';
+  bool get isInsufficientData => status == 'insufficient_data';
+  bool get isMlUnavailable => status == 'ml_unavailable';
 
   factory RiskPrediction.fromJson(Map<String, dynamic> json) {
     return RiskPrediction(
-      riskCluster: json['risk_cluster'] is int
-          ? json['risk_cluster'] as int
-          : (json['risk_cluster'] != null ? int.tryParse(json['risk_cluster'].toString()) : null),
-      diagnosis: json['diagnosis']?.toString(),
+      status: json['status']?.toString() ?? 'ok',
+      prediction: json['prediction'] is Map<String, dynamic> ? json['prediction'] as Map<String, dynamic> : null,
+      missingFields: json['missing_fields'] is List
+          ? (json['missing_fields'] as List).map((e) => e.toString()).toList()
+          : null,
+      modelVersion: (json['model_version'] ?? json['ml_model_version'])?.toString(),
+      predictedAt: json['predicted_at'] != null ? DateTime.tryParse(json['predicted_at'].toString()) : null,
+      stale: json['stale'] == true,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'risk_cluster': riskCluster,
-      'diagnosis': diagnosis,
+      'status': status,
+      'prediction': prediction,
+      'missing_fields': missingFields,
+      'model_version': modelVersion,
+      'predicted_at': predictedAt?.toIso8601String(),
+      'stale': stale,
     };
   }
 }
@@ -28,6 +55,19 @@ class MedicalRecordResponse {
   final int medicalRecordId;
   final int patientId;
   final int doctorId;
+
+  // Perfil clínico
+  final String? bloodType;
+  final int? weeksAtRegistration;
+  final DateTime? lastMenstrualPeriod;
+  final String? residence;
+  final String? educationLevel;
+  final String? maritalStatus;
+  final int? heightCm;
+  final double? initialWeight;
+  final int? initialSystolic;
+  final int? initialDiastolic;
+
   final bool previousHypertension;
   final bool diabetes;
   final bool familyHistoryHypertension;
@@ -44,7 +84,8 @@ class MedicalRecordResponse {
   final bool familyHistoryHeartDisease;
   final bool activeSmoking;
 
-  // New fields from the updated patient medical record endpoint
+  // Campos que vienen del endpoint de expediente por paciente
+  // (GET /medical-records/patient/{patient_id})
   final int? userId;
   final String? name;
   final String? lastName;
@@ -56,6 +97,16 @@ class MedicalRecordResponse {
     required this.medicalRecordId,
     required this.patientId,
     required this.doctorId,
+    this.bloodType,
+    this.weeksAtRegistration,
+    this.lastMenstrualPeriod,
+    this.residence,
+    this.educationLevel,
+    this.maritalStatus,
+    this.heightCm,
+    this.initialWeight,
+    this.initialSystolic,
+    this.initialDiastolic,
     required this.previousHypertension,
     required this.diabetes,
     required this.familyHistoryHypertension,
@@ -89,10 +140,25 @@ class MedicalRecordResponse {
         ? RiskPrediction.fromJson(riskPredJson)
         : null;
 
+    int? parseInt(dynamic v) => v is int ? v : (v != null ? int.tryParse(v.toString()) : null);
+    double? parseDouble(dynamic v) => v is num ? v.toDouble() : (v != null ? double.tryParse(v.toString()) : null);
+
     return MedicalRecordResponse(
       medicalRecordId: recordJson['medical_record_id'] ?? 0,
       patientId: recordJson['patient_id'] ?? 0,
       doctorId: recordJson['doctor_id'] ?? 0,
+      bloodType: recordJson['blood_type']?.toString(),
+      weeksAtRegistration: parseInt(recordJson['weeks_at_registration']),
+      lastMenstrualPeriod: recordJson['last_menstrual_period'] != null
+          ? DateTime.tryParse(recordJson['last_menstrual_period'].toString())
+          : null,
+      residence: recordJson['residence']?.toString(),
+      educationLevel: recordJson['education_level']?.toString(),
+      maritalStatus: recordJson['marital_status']?.toString(),
+      heightCm: parseInt(recordJson['height_cm']),
+      initialWeight: parseDouble(recordJson['initial_weight']),
+      initialSystolic: parseInt(recordJson['initial_systolic']),
+      initialDiastolic: parseInt(recordJson['initial_diastolic']),
       previousHypertension: recordJson['previous_hypertension'] ?? false,
       diabetes: recordJson['diabetes'] ?? false,
       familyHistoryHypertension: recordJson['family_history_hypertension'] ?? false,
@@ -116,17 +182,53 @@ class MedicalRecordResponse {
       fetalGrowthRestriction: recordJson['fetal_growth_restriction'] ?? false,
       familyHistoryHeartDisease: recordJson['family_history_heart_disease'] ?? false,
       activeSmoking: recordJson['active_smoking'] ?? false,
-      userId: json['user_id'] is int
-          ? json['user_id'] as int
-          : (json['user_id'] != null ? int.tryParse(json['user_id'].toString()) : null),
+      userId: parseInt(json['user_id']),
       name: json['name']?.toString(),
       lastName: json['last_name']?.toString(),
-      currentGestationalWeeks: json['current_gestational_weeks'] is int
-          ? json['current_gestational_weeks'] as int
-          : (json['current_gestational_weeks'] != null ? int.tryParse(json['current_gestational_weeks'].toString()) : null),
-      age: json['age'] is int
-          ? json['age'] as int
-          : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
+      currentGestationalWeeks: parseInt(json['current_gestational_weeks']),
+      age: parseInt(json['age']),
+      riskPrediction: riskPrediction,
+    );
+  }
+
+  /// Devuelve una copia de este expediente con una nueva predicción de riesgo
+  /// (usado tras llamar a POST /medical-records/{id}/risk-evaluation, para no
+  /// tener que recargar todo el expediente solo para refrescar este campo).
+  MedicalRecordResponse copyWithRiskPrediction(RiskPrediction riskPrediction) {
+    return MedicalRecordResponse(
+      medicalRecordId: medicalRecordId,
+      patientId: patientId,
+      doctorId: doctorId,
+      bloodType: bloodType,
+      weeksAtRegistration: weeksAtRegistration,
+      lastMenstrualPeriod: lastMenstrualPeriod,
+      residence: residence,
+      educationLevel: educationLevel,
+      maritalStatus: maritalStatus,
+      heightCm: heightCm,
+      initialWeight: initialWeight,
+      initialSystolic: initialSystolic,
+      initialDiastolic: initialDiastolic,
+      previousHypertension: previousHypertension,
+      diabetes: diabetes,
+      familyHistoryHypertension: familyHistoryHypertension,
+      previousPregnancies: previousPregnancies,
+      previousDeliveries: previousDeliveries,
+      previousMiscarriages: previousMiscarriages,
+      previousCesareans: previousCesareans,
+      previousPreeclampsia: previousPreeclampsia,
+      chronicKidneyDisease: chronicKidneyDisease,
+      chronicHypertension: chronicHypertension,
+      multiplePregnancy: multiplePregnancy,
+      fetalDeath: fetalDeath,
+      fetalGrowthRestriction: fetalGrowthRestriction,
+      familyHistoryHeartDisease: familyHistoryHeartDisease,
+      activeSmoking: activeSmoking,
+      userId: userId,
+      name: name,
+      lastName: lastName,
+      currentGestationalWeeks: currentGestationalWeeks,
+      age: age,
       riskPrediction: riskPrediction,
     );
   }
@@ -136,6 +238,16 @@ class MedicalRecordResponse {
       'medical_record_id': medicalRecordId,
       'patient_id': patientId,
       'doctor_id': doctorId,
+      'blood_type': bloodType,
+      'weeks_at_registration': weeksAtRegistration,
+      'last_menstrual_period': lastMenstrualPeriod?.toIso8601String(),
+      'residence': residence,
+      'education_level': educationLevel,
+      'marital_status': maritalStatus,
+      'height_cm': heightCm,
+      'initial_weight': initialWeight,
+      'initial_systolic': initialSystolic,
+      'initial_diastolic': initialDiastolic,
       'previous_hypertension': previousHypertension,
       'diabetes': diabetes,
       'family_history_hypertension': familyHistoryHypertension,

@@ -12,6 +12,7 @@ abstract class DashboardRemoteDataSource {
   Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId});
   Future<Map<String, dynamic>> getPatientDashboard(int patientId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
+  Future<RiskPrediction> evaluateRisk(int medicalRecordId);
 }
 
 class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
@@ -122,6 +123,31 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           final msg = e['msg'] ?? 'inválido';
           return "$loc: $msg";
         }).join('\n');
+      } else if (errorJson['message'] != null) {
+        errorMsg = errorJson['message'];
+      } else {
+        errorMsg = response.body;
+      }
+    } catch (_) {
+      errorMsg = response.body;
+    }
+    throw Exception(errorMsg);
+  }
+
+  @override
+  Future<RiskPrediction> evaluateRisk(int medicalRecordId) async {
+    final response = await _apiClient.post('/medical-records/$medicalRecordId/risk-evaluation', {});
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return RiskPrediction.fromJson(data as Map<String, dynamic>);
+    }
+
+    String errorMsg = 'Error al evaluar riesgo (Status: ${response.statusCode})';
+    try {
+      final errorJson = jsonDecode(response.body);
+      final detail = errorJson['detail'];
+      if (detail is String) {
+        errorMsg = detail;
       } else if (errorJson['message'] != null) {
         errorMsg = errorJson['message'];
       } else {

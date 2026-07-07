@@ -619,7 +619,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final riskPrediction = medicalRecord.riskPrediction;
       String? clusterName;
       if (riskPrediction != null && riskPrediction.isOk) {
-        clusterName = riskPrediction.prediction?['cluster_name']?.toString();
+        clusterName = riskPrediction.diagnosis;
       }
       if (clusterName != null && clusterName.isNotEmpty) {
         final diagnosis = clusterName.toLowerCase();
@@ -1336,7 +1336,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildRiskPredictionBanner(RiskPrediction prediction) {
-    final clusterName = prediction.prediction?['cluster_name']?.toString() ?? 'Riesgo indeterminado';
+    final clusterName = prediction.diagnosis ?? 'Riesgo indeterminado';
     final lower = clusterName.toLowerCase();
     final isHigh = lower.contains('alto') || lower.contains('crítico') || lower.contains('critico');
     final isMedium = lower.contains('medio') || lower.contains('moderado');
@@ -1387,7 +1387,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     SizedBox(width: 6),
-                    if (prediction.prediction?['cluster'] != null)
+                    if (prediction.riskCluster != null)
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -1395,7 +1395,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'C${prediction.prediction?['cluster']}',
+                          'C${prediction.riskCluster}',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

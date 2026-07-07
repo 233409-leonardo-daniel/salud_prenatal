@@ -26,14 +26,54 @@ class RiskPrediction {
   bool get isInsufficientData => status == 'insufficient_data';
   bool get isMlUnavailable => status == 'ml_unavailable';
 
+  // Campos del payload crudo del ML (dentro de `prediction`). El modelo real
+  // usa `diagnosis` / `risk_cluster` (no `cluster_name` / `cluster` como
+  // sugería el ejemplo ilustrativo de la guía del backend).
+  String? get diagnosis => prediction?['diagnosis']?.toString();
+  int? get riskCluster {
+    final v = prediction?['risk_cluster'];
+    return v is int ? v : (v != null ? int.tryParse(v.toString()) : null);
+  }
+
+  String? get interpretation => prediction?['interpretation']?.toString();
+  String? get explicacion => prediction?['explicacion']?.toString();
+  bool get casoLimitrofe => prediction?['caso_limitrofe'] == true;
+
+  /// Afinidad a cada perfil clínico, ej. {"Alto Riesgo Hipertensivo": 73.3}
+  Map<String, double> get afinidad {
+    final raw = prediction?['afinidad'];
+    if (raw is! Map) return {};
+    final result = <String, double>{};
+    raw.forEach((key, value) {
+      final parsed = value is num ? value.toDouble() : double.tryParse(value.toString());
+      if (parsed != null) result[key.toString()] = parsed;
+    });
+    return result;
+  }
+
+  /// Variables clínicas que más influyeron en la clasificación.
+  List<Map<String, dynamic>> get factoresDeterminantes {
+    final raw = prediction?['factores_determinantes'];
+    if (raw is! List) return [];
+    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  /// Pacientes con perfil clínico similar usados de referencia por el modelo.
+  List<Map<String, dynamic>> get pacientesSimilares {
+    final raw = prediction?['pacientes_similares'];
+    if (raw is! List) return [];
+    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
   factory RiskPrediction.fromJson(Map<String, dynamic> json) {
+    final predictionMap = json['prediction'] is Map<String, dynamic> ? json['prediction'] as Map<String, dynamic> : null;
     return RiskPrediction(
       status: json['status']?.toString() ?? 'ok',
-      prediction: json['prediction'] is Map<String, dynamic> ? json['prediction'] as Map<String, dynamic> : null,
+      prediction: predictionMap,
       missingFields: json['missing_fields'] is List
           ? (json['missing_fields'] as List).map((e) => e.toString()).toList()
           : null,
-      modelVersion: (json['model_version'] ?? json['ml_model_version'])?.toString(),
+      modelVersion: (json['model_version'] ?? json['ml_model_version'] ?? predictionMap?['model_version'])?.toString(),
       predictedAt: json['predicted_at'] != null ? DateTime.tryParse(json['predicted_at'].toString()) : null,
       stale: json['stale'] == true,
     );

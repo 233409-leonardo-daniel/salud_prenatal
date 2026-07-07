@@ -84,13 +84,20 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
              app.reason.toLowerCase().contains(widget.patientName.toLowerCase());
     }).toList();
 
-    // 1. Details
-    final age = patientData['age'] ?? '30';
-    final bloodType = patientData['blood_type'] ?? 'O+';
-    final residence = patientData['residence'] ?? 'No especificado';
-    final marital = patientData['marital_status'] ?? 'No especificado';
-    final education = patientData['education_level'] ?? 'No especificado';
-    final initialWeight = patientData['initial_weight'] ?? '60.0';
+    // 1. Details — la edad viene del expediente (GET /medical-records/patient/{id})
+    // o, si aún no hay expediente, del listado de pacientes del doctor. Lo
+    // clínico (tipo de sangre, residencia, etc.) solo existe si ya hay
+    // expediente: si no, se muestra honestamente como "No especificado" en
+    // vez de un valor inventado.
+    final age = record?.age ?? patientData['age'];
+    final bloodType = record?.bloodType ?? 'No especificado';
+    final residence = record?.residence ?? 'No especificado';
+    final marital = record?.maritalStatus ?? 'No especificado';
+    final education = record?.educationLevel ?? 'No especificado';
+    final initialWeight = record?.initialWeight;
+    final heightCm = record?.heightCm;
+    final initialSystolic = record?.initialSystolic;
+    final initialDiastolic = record?.initialDiastolic;
 
     // 2. Flags
     final flags = <Widget>[];
@@ -111,6 +118,19 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     if (flags.isEmpty) {
       flags.add(Text('Sin alertas clínicas reportadas.', style: TextStyle(color: AppColors.textMuted)));
     }
+
+    // 2b. Detalle de la última predicción de riesgo (para los desplegables
+    // opcionales de factores determinantes / pacientes similares / caso
+    // límitrofe — solo se muestran si hay datos).
+    final riskPrediction = record?.riskPrediction;
+    final factoresDeterminantes = (riskPrediction != null && riskPrediction.isOk)
+        ? riskPrediction.factoresDeterminantes
+        : <Map<String, dynamic>>[];
+    final pacientesSimilares = (riskPrediction != null && riskPrediction.isOk)
+        ? riskPrediction.pacientesSimilares
+        : <Map<String, dynamic>>[];
+    final explicacionRiesgo = (riskPrediction != null && riskPrediction.isOk) ? riskPrediction.explicacion : null;
+    final esCasoLimitrofe = riskPrediction != null && riskPrediction.isOk && riskPrediction.casoLimitrofe;
 
     // 3. Previous consultations
     final consultationsWidgets = <Widget>[];
@@ -206,7 +226,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Edad: $age años', style: TextStyle(color: AppColors.textDark)),
+                    Text('Edad: ${age != null ? '$age años' : 'No especificado'}', style: TextStyle(color: AppColors.textDark)),
                     SizedBox(height: 8),
                     Text('Tipo de sangre: $bloodType', style: TextStyle(color: AppColors.textDark)),
                     SizedBox(height: 8),
@@ -216,7 +236,15 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                     SizedBox(height: 8),
                     Text('Escolaridad: $education', style: TextStyle(color: AppColors.textDark)),
                     SizedBox(height: 8),
-                    Text('Peso inicial: $initialWeight kg', style: TextStyle(color: AppColors.textDark)),
+                    Text(
+                      'Talla / Peso inicial: ${heightCm != null ? '$heightCm cm' : 'No especificado'} / ${initialWeight != null ? '$initialWeight kg' : 'No especificado'}',
+                      style: TextStyle(color: AppColors.textDark),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Presión inicial: ${initialSystolic != null && initialDiastolic != null ? '$initialSystolic/$initialDiastolic mmHg' : 'No especificado'}',
+                      style: TextStyle(color: AppColors.textDark),
+                    ),
                   ],
                 ),
               ),
@@ -267,6 +295,114 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                 ),
               ),
             ),
+            // Los siguientes 3 desplegables solo aparecen si la última
+            // evaluación de riesgo trae ese dato — si no, no se muestran
+            // (nada de acordeones vacíos).
+            if (factoresDeterminantes.isNotEmpty) ...[
+              SizedBox(height: 12),
+              _buildExpansionSection(
+                title: 'Factores Determinantes',
+                icon: Icons.insights_outlined,
+                content: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...factoresDeterminantes.map((f) {
+                        final label = f['etiqueta']?.toString() ?? f['variable']?.toString() ?? '';
+                        final valorPaciente = f['valor_paciente'];
+                        final promedioPerfil = f['promedio_perfil'];
+                        final score = f['score'];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.circle, size: 5, color: AppColors.primary),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark)),
+                                    if (valorPaciente != null || promedioPerfil != null)
+                                      Text(
+                                        'Paciente: $valorPaciente · Promedio del perfil: $promedioPerfil${score != null ? ' · Score: $score' : ''}',
+                                        style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      if (explicacionRiesgo != null && explicacionRiesgo.isNotEmpty) ...[
+                        const Divider(height: 24),
+                        Text(
+                          explicacionRiesgo,
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.4, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (pacientesSimilares.isNotEmpty) ...[
+              SizedBox(height: 12),
+              _buildExpansionSection(
+                title: 'Pacientes Similares',
+                icon: Icons.groups_outlined,
+                content: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: pacientesSimilares.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final p = entry.value;
+                      final edad = p['age_years'];
+                      final sys = p['systolic'];
+                      final dia = p['diastolic'];
+                      final bmi = p['bmi_initial'];
+                      final perfil = p['perfil']?.toString();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Paciente similar ${i + 1}${perfil != null ? ' · $perfil' : ''}',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Edad: ${edad ?? 'N/D'} · Presión: ${sys ?? 'N/D'}/${dia ?? 'N/D'} · IMC inicial: ${bmi ?? 'N/D'}',
+                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                            if (i < pacientesSimilares.length - 1) const Divider(height: 16),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+            if (esCasoLimitrofe) ...[
+              SizedBox(height: 12),
+              _buildExpansionSection(
+                title: 'Caso Límitrofe',
+                icon: Icons.warning_amber_rounded,
+                content: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    'Esta paciente quedó en un punto límite entre dos perfiles clínicos (ver "Afinidad a perfiles" en la predicción de riesgo). Se recomienda revisar el caso con criterio clínico adicional antes de decidir el seguimiento.',
+                    style: TextStyle(color: AppColors.textDark, fontSize: 13, height: 1.4),
+                  ),
+                ),
+              ),
+            ],
             SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Consultas Previas',
@@ -479,8 +615,12 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     }
 
     // status == 'ok': hay predicción.
-    final clusterName = riskPrediction.prediction?['cluster_name']?.toString() ?? 'Riesgo indeterminado';
-    final clusterValue = riskPrediction.prediction?['cluster'];
+    // Factores determinantes, pacientes similares y caso límitrofe se
+    // muestran en sus propios desplegables (ver build()), no aquí.
+    final clusterName = riskPrediction.diagnosis ?? 'Riesgo indeterminado';
+    final clusterValue = riskPrediction.riskCluster;
+    final interpretation = riskPrediction.interpretation;
+    final afinidad = riskPrediction.afinidad;
     final level = _resolveRiskLevel(clusterName);
 
     return Container(
@@ -566,6 +706,48 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               ),
             ),
           ),
+          if (interpretation != null && interpretation.isNotEmpty) ...[
+            SizedBox(height: 8),
+            Text(
+              interpretation,
+              style: TextStyle(color: AppColors.textDark, fontSize: 12.5, height: 1.4),
+            ),
+          ],
+          if (afinidad.isNotEmpty) ...[
+            SizedBox(height: 12),
+            Text(
+              'Afinidad a perfiles clínicos',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+            ),
+            SizedBox(height: 6),
+            ...(afinidad.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).map(
+              (e) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(e.key, style: TextStyle(fontSize: 12, color: AppColors.textDark)),
+                    ),
+                    Expanded(
+                      flex: 5,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: (e.value / 100).clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: Colors.purple.withOpacity(0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text('${e.value.toStringAsFixed(1)}%', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+            ),
+          ],
           SizedBox(height: 8),
           if (riskPrediction.predictedAt != null)
             Text(

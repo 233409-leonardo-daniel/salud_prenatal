@@ -274,7 +274,7 @@ class DashboardProvider with ChangeNotifier {
         final riskPrediction = record.riskPrediction;
         if (riskPrediction == null || !riskPrediction.isOk) continue;
 
-        final clusterName = riskPrediction.prediction?['cluster_name']?.toString();
+        final clusterName = riskPrediction.diagnosis;
         if (clusterName == null || clusterName.isEmpty) continue;
 
         final lower = clusterName.toLowerCase();
@@ -288,7 +288,7 @@ class DashboardProvider with ChangeNotifier {
           'patientId': record.patientId,
           'name': fullName.isNotEmpty ? fullName : 'Paciente #${record.patientId}',
           'diagnosis': clusterName,
-          'riskCluster': riskPrediction.prediction?['cluster'],
+          'riskCluster': riskPrediction.riskCluster,
         });
       }
 

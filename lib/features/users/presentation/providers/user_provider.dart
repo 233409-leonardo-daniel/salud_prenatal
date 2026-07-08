@@ -59,4 +59,8 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<UserEntity> fetchUserById(int id) async {
+    return await _getUserByIdUseCase.call(id);
+  }
 }

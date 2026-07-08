@@ -29,6 +29,7 @@ class LoginProvider with ChangeNotifier {
   int? _medicalRecordId;
   UserProfile? _userProfile;
   String? _userPassword;
+  String? _subscriptionStatus;
 
   LoginStatus get status => _status;
   String? get errorMessage => _errorMessage;
@@ -39,6 +40,14 @@ class LoginProvider with ChangeNotifier {
   int? get doctorId => _doctorId;
   int? get medicalRecordId => _medicalRecordId;
   UserProfile? get userProfile => _userProfile;
+  String? get subscriptionStatus => _subscriptionStatus;
+
+  bool get isDoctor => _role == 'doctor' || _role == 'doctor(a)';
+
+  /// True cuando un doctor recién autenticado no tiene una suscripción
+  /// activa y debe pasar por la pantalla de pago antes de usar el sistema.
+  bool get needsSubscriptionGate =>
+      isDoctor && _subscriptionStatus != null && _subscriptionStatus != 'active';
 
   void setPatientId(int id) {
     _patientId = id;
@@ -66,6 +75,7 @@ class LoginProvider with ChangeNotifier {
     _medicalRecordId = null;
     _userProfile = null;
     _userPassword = password;
+    _subscriptionStatus = null;
     notifyListeners();
 
     try {
@@ -75,8 +85,8 @@ class LoginProvider with ChangeNotifier {
       ApiClient().setAuthToken(response.accessToken);
       _role = response.role;
       _userId = response.userId;
+      _subscriptionStatus = response.subscriptionStatus;
 
-      final isDoctor = _role == 'doctor' || _role == 'doctor(a)';
       if (isDoctor) {
         _doctorId = response.doctorId;
       } else {
@@ -118,6 +128,7 @@ class LoginProvider with ChangeNotifier {
     _medicalRecordId = null;
     _userProfile = null;
     _userPassword = null;
+    _subscriptionStatus = null;
     ApiClient().clearAuthToken();
     notifyListeners();
   }

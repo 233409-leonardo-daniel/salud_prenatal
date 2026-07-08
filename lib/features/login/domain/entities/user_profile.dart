@@ -10,6 +10,9 @@ class UserProfile {
   final String createdAt;
   final String updatedAt;
   final String? password;
+  final String? specialty;
+  final String? professionalLicense;
+  final String? office;
 
   UserProfile({
     this.userId,
@@ -23,6 +26,9 @@ class UserProfile {
     this.createdAt = '',
     this.updatedAt = '',
     this.password,
+    this.specialty,
+    this.professionalLicense,
+    this.office,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -38,6 +44,9 @@ class UserProfile {
       createdAt: json['created_at'] ?? json['createdAt'] ?? '',
       updatedAt: json['updated_at'] ?? json['updatedAt'] ?? '',
       password: json['password'],
+      specialty: json['specialty'],
+      professionalLicense: json['professional_license'] ?? json['professionalLicense'],
+      office: json['office'],
     );
   }
 
@@ -54,6 +63,9 @@ class UserProfile {
       'created_at': createdAt.isNotEmpty ? createdAt : DateTime.now().toUtc().toIso8601String(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
       'password': password ?? '',
+      'specialty': specialty,
+      'professional_license': professionalLicense,
+      'office': office,
     };
   }
 }

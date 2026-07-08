@@ -5,6 +5,7 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import '../../../privacy_policy/domain/entities/accepted_policy.dart';
 import '../../../register/presentation/providers/register_provider.dart';
+import '../../../subscriptions/presentation/pages/subscription_plan_page.dart';
 import 'edit_profile_page.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -141,6 +142,28 @@ class ProfilePage extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6A5ACD),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SubscriptionPlanPage()),
+                      );
+                    },
+                    icon: Icon(Icons.workspace_premium_outlined, size: 18, color: Colors.white),
+                    label: Text(
+                      'Mi Suscripción',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
                       padding: EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),

@@ -1,0 +1,62 @@
+import 'package:flutter/material.dart';
+import '../../domain/entities/subscription_status.dart';
+import '../../domain/usecases/get_subscription_status_use_case.dart';
+import '../../domain/usecases/create_checkout_session_use_case.dart';
+import '../pages/subscription_state.dart';
+
+class SubscriptionsProvider with ChangeNotifier {
+  final GetSubscriptionStatusUseCase _getSubscriptionStatusUseCase;
+  final CreateCheckoutSessionUseCase _createCheckoutSessionUseCase;
+
+  SubscriptionsProvider({
+    required GetSubscriptionStatusUseCase getSubscriptionStatusUseCase,
+    required CreateCheckoutSessionUseCase createCheckoutSessionUseCase,
+  })  : _getSubscriptionStatusUseCase = getSubscriptionStatusUseCase,
+        _createCheckoutSessionUseCase = createCheckoutSessionUseCase;
+
+  SubscriptionFetchStatus _fetchStatus = SubscriptionFetchStatus.initial;
+  CheckoutStatus _checkoutStatus = CheckoutStatus.initial;
+  String? _fetchError;
+  String? _checkoutError;
+  SubscriptionStatus? _subscription;
+
+  SubscriptionFetchStatus get fetchStatus => _fetchStatus;
+  CheckoutStatus get checkoutStatus => _checkoutStatus;
+  String? get fetchError => _fetchError;
+  String? get checkoutError => _checkoutError;
+  SubscriptionStatus? get subscription => _subscription;
+
+  Future<void> loadStatus() async {
+    _fetchStatus = SubscriptionFetchStatus.loading;
+    _fetchError = null;
+    notifyListeners();
+
+    try {
+      _subscription = await _getSubscriptionStatusUseCase.call();
+      _fetchStatus = SubscriptionFetchStatus.success;
+    } catch (e) {
+      _fetchError = e.toString().replaceAll('Exception: ', '');
+      _fetchStatus = SubscriptionFetchStatus.error;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<String?> startCheckout(String planType) async {
+    _checkoutStatus = CheckoutStatus.loading;
+    _checkoutError = null;
+    notifyListeners();
+
+    try {
+      final checkoutUrl = await _createCheckoutSessionUseCase.call(planType);
+      _checkoutStatus = CheckoutStatus.success;
+      notifyListeners();
+      return checkoutUrl;
+    } catch (e) {
+      _checkoutError = e.toString().replaceAll('Exception: ', '');
+      _checkoutStatus = CheckoutStatus.error;
+      notifyListeners();
+      return null;
+    }
+  }
+}

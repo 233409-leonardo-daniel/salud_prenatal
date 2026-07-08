@@ -4,7 +4,6 @@ import '../providers/register_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/pages/privacy_policy_page.dart';
-import 'doctor_plan_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -59,9 +58,14 @@ class _RegisterPageState extends State<RegisterPage> {
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(context).copyWith(
+<<<<<<< HEAD
             colorScheme: AppColors.isDarkMode
+=======
+            colorScheme: isDark
+>>>>>>> 06bca25f3f72165c138a1e08a1131743a50193c1
                 ? ColorScheme.dark(
                     primary: AppColors.primary,
                     onPrimary: Colors.white,
@@ -74,7 +78,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     surface: AppColors.cardBackground,
                     onSurface: AppColors.textDark,
                   ),
+<<<<<<< HEAD
             dialogBackgroundColor: AppColors.cardBackground,
+=======
+>>>>>>> 06bca25f3f72165c138a1e08a1131743a50193c1
           ),
           child: child!,
         );
@@ -173,18 +180,36 @@ class _RegisterPageState extends State<RegisterPage> {
           }
 
           if (role == 'doctor') {
-            // El doctor recién registrado ve la selección de plan antes de
-            // entrar al dashboard (el pago no está conectado a un procesador
-            // real; ver DoctorPlanPage).
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DoctorPlanPage(
-                  email: _emailController.text.trim(),
-                  password: _passwordController.text,
-                ),
-              ),
+            // El doctor recién registrado inicia sesión de verdad para que
+            // el backend informe su subscription_status real y así decidir
+            // si debe pasar por la pantalla de pago antes del dashboard.
+            final loginProvider = context.read<LoginProvider>();
+            final loggedIn = await loginProvider.login(
+              _emailController.text.trim(),
+              _passwordController.text,
             );
+
+            if (!mounted) return;
+
+            if (loggedIn) {
+              if (loginProvider.needsSubscriptionGate) {
+                Navigator.pushReplacementNamed(context, '/subscription');
+              } else {
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/dashboard',
+                  arguments: 'doctor',
+                );
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(loginProvider.errorMessage ?? 'No se pudo iniciar tu sesión. Intenta iniciar sesión manualmente.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              Navigator.pushReplacementNamed(context, '/login');
+            }
             return;
           }
 

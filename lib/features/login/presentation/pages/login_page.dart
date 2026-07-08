@@ -46,11 +46,15 @@ class _LoginPageState extends State<LoginPage> {
                       ? 'receptionist'
                       : 'patient';
 
-          Navigator.pushReplacementNamed(
-            context,
-            '/dashboard',
-            arguments: role,
-          );
+          if (loginProvider.needsSubscriptionGate) {
+            Navigator.pushReplacementNamed(context, '/subscription');
+          } else {
+            Navigator.pushReplacementNamed(
+              context,
+              '/dashboard',
+              arguments: role,
+            );
+          }
         } else {
           final errMsg =
               context.read<LoginProvider>().errorMessage ?? 'Error desconocido';

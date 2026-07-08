@@ -11,6 +11,9 @@ class UserMapper {
       phoneNumber: dto.phoneNumber,
       profilePicture: dto.profilePicture,
       doctorId: dto.doctorId,
+      specialty: dto.specialty,
+      professionalLicense: dto.professionalLicense,
+      office: dto.office,
     );
   }
 
@@ -23,6 +26,9 @@ class UserMapper {
       phoneNumber: entity.phoneNumber,
       profilePicture: entity.profilePicture,
       doctorId: entity.doctorId,
+      specialty: entity.specialty,
+      professionalLicense: entity.professionalLicense,
+      office: entity.office,
     );
   }
 }

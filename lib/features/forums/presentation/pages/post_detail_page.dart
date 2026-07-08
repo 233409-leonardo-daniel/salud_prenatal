@@ -5,6 +5,7 @@ import '../../../login/presentation/providers/login_provider.dart';
 import '../../domain/entities/forum_post.dart';
 import '../providers/forums_provider.dart';
 import 'forums_state.dart';
+import 'social_profile_view_page.dart';
 
 class PostDetailPage extends StatefulWidget {
   final ForumPost post;
@@ -79,27 +80,36 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 22,
-                              backgroundColor: AppColors.primaryLight,
-                              backgroundImage: widget.post.authorAvatarUrl != null ? NetworkImage(widget.post.authorAvatarUrl!) : null,
-                              child: widget.post.authorAvatarUrl == null 
-                                  ? Text(initials, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        displayName,
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
-                                      ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SocialProfileViewPage(userId: widget.post.authorId),
+                              ),
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 22,
+                                backgroundColor: AppColors.primaryLight,
+                                backgroundImage: widget.post.authorAvatarUrl != null ? NetworkImage(widget.post.authorAvatarUrl!) : null,
+                                child: widget.post.authorAvatarUrl == null 
+                                    ? Text(initials, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          displayName,
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                                        ),
                                       if (isDoctor) ...[
                                         const SizedBox(width: 6),
                                         Container(
@@ -125,7 +135,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                             ),
                           ],
                         ),
-                        const Divider(height: 32),
+                      ),
+                      const Divider(height: 32),
                         Text(
                           widget.post.title,
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textDark),
@@ -257,22 +268,32 @@ class _PostDetailPageState extends State<PostDetailPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundColor: AppColors.primaryLight,
-                        backgroundImage: comment.authorAvatarUrl != null ? NetworkImage(comment.authorAvatarUrl!) : null,
-                        child: comment.authorAvatarUrl == null
-                            ? Text(initials, style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold))
-                            : null,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        authorName,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
-                      ),
-                    ],
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SocialProfileViewPage(userId: comment.authorId),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.primaryLight,
+                          backgroundImage: comment.authorAvatarUrl != null ? NetworkImage(comment.authorAvatarUrl!) : null,
+                          child: comment.authorAvatarUrl == null
+                              ? Text(initials, style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold))
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          authorName,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.flag_outlined, size: 16, color: Colors.grey),

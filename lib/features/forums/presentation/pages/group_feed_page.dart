@@ -6,6 +6,7 @@ import '../providers/forums_provider.dart';
 import 'forums_state.dart';
 import 'create_post_page.dart';
 import 'post_detail_page.dart';
+import 'social_profile_view_page.dart';
 
 class GroupFeedPage extends StatefulWidget {
   final CommunityGroup group;
@@ -139,51 +140,61 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.primaryLight,
-                        backgroundImage: post.authorAvatarUrl != null ? NetworkImage(post.authorAvatarUrl!) : null,
-                        child: post.authorAvatarUrl == null 
-                            ? Text(initials, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
-                            : null,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  displayName,
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                                ),
-                                if (isDoctor) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFF0F6),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      'Doctor',
-                                      style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ]
-                              ],
-                            ),
-                            Text(
-                              'Hace un momento',
-                              style: TextStyle(fontSize: 10, color: AppColors.textMuted),
-                            ),
-                          ],
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SocialProfileViewPage(userId: post.authorId),
                         ),
-                      ),
-                    ],
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: AppColors.primaryLight,
+                          backgroundImage: post.authorAvatarUrl != null ? NetworkImage(post.authorAvatarUrl!) : null,
+                          child: post.authorAvatarUrl == null 
+                              ? Text(initials, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                              : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                                  ),
+                                  if (isDoctor) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFF0F6),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        'Doctor',
+                                        style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ]
+                                ],
+                              ),
+                              Text(
+                                'Hace un momento',
+                                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(

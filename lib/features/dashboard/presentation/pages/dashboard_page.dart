@@ -115,13 +115,14 @@ class _DashboardPageState extends State<DashboardPage> {
         // Doctor main dashboard header
         return AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.primary,
           elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
           title: Row(
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.primaryLight,
+                backgroundColor: Colors.white,
                 child: Text(
                   doctorInitial,
                   style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
@@ -131,13 +132,13 @@ class _DashboardPageState extends State<DashboardPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Buenos días,',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.normal),
+                    style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.normal),
                   ),
                   Text(
                     doctorName,
-                    style: TextStyle(fontSize: 16, color: AppColors.primary, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -148,10 +149,10 @@ class _DashboardPageState extends State<DashboardPage> {
               icon: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
+                  color: Colors.white.withOpacity(0.18),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
+                child: const Icon(Icons.notifications_none_outlined, size: 20, color: Colors.white),
               ),
               onPressed: () {},
             ),
@@ -162,28 +163,29 @@ class _DashboardPageState extends State<DashboardPage> {
         // "Mis Pacientes" header
         return AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.primary,
           elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
           title: Row(
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primaryLight,
+                backgroundColor: Colors.white,
                 child: Text(
                   doctorInitial,
                   style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
               SizedBox(width: 10),
-              Text(
+              const Text(
                 'Salud Prenatal',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
           ),
           actions: [
             IconButton(
-              icon: Icon(Icons.add_circle_outline, color: AppColors.primary),
+              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -192,7 +194,7 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             IconButton(
-              icon: Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
+              icon: const Icon(Icons.notifications_none_outlined, color: Colors.white),
               onPressed: () {},
             ),
             SizedBox(width: 8),
@@ -1229,10 +1231,10 @@ class _DashboardPageState extends State<DashboardPage> {
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
+        unselectedItemColor: Colors.white60,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: const Color(0xFF1E1E1E),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

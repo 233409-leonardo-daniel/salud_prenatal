@@ -73,11 +73,20 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: AppColors.textDark,
-            ),
+            colorScheme: AppColors.isDarkMode
+                ? ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textDark,
+                  )
+                : ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textDark,
+                  ),
+            dialogBackgroundColor: AppColors.cardBackground,
           ),
           child: child!,
         );
@@ -96,11 +105,12 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
     final loginProvider = context.read<LoginProvider>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Nuevo Expediente'),
-        backgroundColor: Colors.white,
+        title: Text('Nuevo Expediente', style: TextStyle(color: AppColors.textDark)),
+        backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
+        iconTheme: IconThemeData(color: AppColors.textDark),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -286,7 +296,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
             SizedBox(height: 12),
             Card(
               elevation: 0,
-              color: const Color(0xFFF9F9FB),
+              color: AppColors.cardBackground,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -303,7 +313,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                         });
                       },
                     ),
-                    const Divider(color: Color(0xFFF0F0F2)),
+                    Divider(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFF0F0F2)),
                     _buildNumberInputField(
                       label: 'Partos previos',
                       value: _previousDeliveries,
@@ -313,7 +323,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                         });
                       },
                     ),
-                    const Divider(color: Color(0xFFF0F0F2)),
+                    Divider(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFF0F0F2)),
                     _buildNumberInputField(
                       label: 'Abortos previos',
                       value: _previousMiscarriages,
@@ -323,7 +333,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                         });
                       },
                     ),
-                    const Divider(color: Color(0xFFF0F0F2)),
+                    Divider(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFF0F0F2)),
                     _buildNumberInputField(
                       label: 'Cesáreas previas',
                       value: _previousCesareans,
@@ -551,15 +561,15 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               ),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.background,
                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.1) : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.1) : Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -587,7 +597,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
       padding: EdgeInsets.symmetric(vertical: 6.0),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF9F9FB),
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: value ? AppColors.primary.withOpacity(0.3) : Colors.transparent,

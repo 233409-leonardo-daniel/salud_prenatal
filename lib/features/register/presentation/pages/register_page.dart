@@ -61,11 +61,20 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: AppColors.textDark,
-            ),
+            colorScheme: AppColors.isDarkMode
+                ? ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textDark,
+                  )
+                : ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textDark,
+                  ),
+            dialogBackgroundColor: AppColors.cardBackground,
           ),
           child: child!,
         );

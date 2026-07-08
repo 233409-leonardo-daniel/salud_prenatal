@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -5,6 +6,12 @@ import '../config/api_config.dart';
 class ApiClient {
   final http.Client _client;
   static String? _authToken;
+  static final StreamController<void> _paymentRequiredController = StreamController<void>.broadcast();
+
+  /// Se emite cada vez que el backend responde 402 (suscripción de doctor
+  /// inactiva) a cualquier request, sin importar qué instancia de ApiClient
+  /// lo haya hecho.
+  static Stream<void> get onPaymentRequired => _paymentRequiredController.stream;
 
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
@@ -16,6 +23,12 @@ class ApiClient {
 
   void clearAuthToken() {
     _authToken = null;
+  }
+
+  void _notifyIfPaymentRequired(http.Response response) {
+    if (response.statusCode == 402) {
+      _paymentRequiredController.add(null);
+    }
   }
 
   Map<String, String> get _headers {
@@ -41,6 +54,7 @@ class ApiClient {
   Future<http.Response> get(String endpoint) async {
     final url = _buildUrl(endpoint);
     final response = await _client.get(url, headers: _headers);
+    _notifyIfPaymentRequired(response);
     return response;
   }
 
@@ -55,6 +69,7 @@ class ApiClient {
       headers: _headers,
       body: jsonEncode(body),
     );
+    _notifyIfPaymentRequired(response);
     return response;
   }
 
@@ -65,12 +80,14 @@ class ApiClient {
       headers: _headers,
       body: jsonEncode(body),
     );
+    _notifyIfPaymentRequired(response);
     return response;
   }
 
   Future<http.Response> delete(String endpoint) async {
     final url = _buildUrl(endpoint);
     final response = await _client.delete(url, headers: _headers);
+    _notifyIfPaymentRequired(response);
     return response;
   }
 

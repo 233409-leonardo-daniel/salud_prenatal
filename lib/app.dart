@@ -35,8 +35,12 @@ import 'features/chat/presentation/providers/conversations_provider.dart';
 import 'features/forums/di/forums_module.dart';
 import 'features/forums/presentation/providers/forums_provider.dart';
 import 'features/forums/presentation/pages/forums_hub_page.dart';
+import 'features/subscriptions/di/subscriptions_module.dart';
+import 'features/subscriptions/presentation/providers/subscriptions_provider.dart';
+import 'features/subscriptions/presentation/pages/subscription_plan_page.dart';
 
 import 'core/widgets/session_timeout_listener.dart';
+import 'core/widgets/subscription_gate_listener.dart';
 
 class MyApp extends StatelessWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -59,6 +63,7 @@ class MyApp extends StatelessWidget {
     final chatModule = ChatModule(apiClient);
     final dashboardModule = DashboardModule(apiClient);
     final forumsModule = ForumsModule(apiClient);
+    final subscriptionsModule = SubscriptionsModule(apiClient);
 
     return MultiProvider(
       providers: [
@@ -159,6 +164,12 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
+          create: (_) => SubscriptionsProvider(
+            getSubscriptionStatusUseCase: subscriptionsModule.getSubscriptionStatusUseCase,
+            createCheckoutSessionUseCase: subscriptionsModule.createCheckoutSessionUseCase,
+          ),
+        ),
+        ChangeNotifierProvider(
           create: (_) => ForumsProvider(
             getSocialProfileUseCase: forumsModule.getSocialProfileUseCase,
             createSocialProfileUseCase: forumsModule.createSocialProfileUseCase,
@@ -186,7 +197,9 @@ class MyApp extends StatelessWidget {
         builder: (context, child) {
           final brightness = MediaQuery.of(context).platformBrightness;
           AppColors.isDarkMode = brightness == Brightness.dark;
-          return SessionTimeoutListener(child: child!);
+          return SubscriptionGateListener(
+            child: SessionTimeoutListener(child: child!),
+          );
         },
         routes: {
           '/login': (context) => const LoginPage(),
@@ -195,6 +208,7 @@ class MyApp extends StatelessWidget {
           '/home': (context) => const DashboardPage(),
           '/patient-diaries': (context) => const PatientDiaryPage(),
           '/forums': (context) => const ForumsHubPage(),
+          '/subscription': (context) => const SubscriptionPlanPage(),
         },
       ),
     );

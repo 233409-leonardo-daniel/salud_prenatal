@@ -6,6 +6,9 @@ class UserEntity {
   final String? phoneNumber;
   final String? profilePicture;
   final int? doctorId;
+  final String? specialty;
+  final String? professionalLicense;
+  final String? office;
 
   UserEntity({
     required this.id,
@@ -15,5 +18,8 @@ class UserEntity {
     this.phoneNumber,
     this.profilePicture,
     this.doctorId,
+    this.specialty,
+    this.professionalLicense,
+    this.office,
   });
 }

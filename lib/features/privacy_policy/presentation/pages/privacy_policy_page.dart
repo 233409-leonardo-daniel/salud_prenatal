@@ -59,9 +59,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     final isSaving = context.watch<PrivacyPolicyProvider>().isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF6F8),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: AppColors.textDark),
@@ -168,13 +168,12 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
             ),
           ),
 
-          // Consent checkboxes + button
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: AppColors.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.06),
                   blurRadius: 16,
                   offset: const Offset(0, -4),
                 ),
@@ -325,22 +324,22 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E5),
+        color: AppColors.riskMediumBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFCC80)),
+        border: Border.all(color: AppColors.riskMediumText.withOpacity(0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.warning_amber_rounded, color: Color(0xFFE65100), size: 18),
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.riskMediumText, size: 18),
               SizedBox(width: 8),
               Text(
                 'Datos Personales Sensibles',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE65100),
+                  color: AppColors.riskMediumText,
                   fontSize: 13,
                 ),
               ),
@@ -361,7 +360,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F7),
+        color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -384,9 +383,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         decoration: BoxDecoration(
           color: value
               ? (isImportant
-                  ? const Color(0xFFFFF0F6)
-                  : AppColors.primary.withOpacity(0.05))
-              : const Color(0xFFF5F5F7),
+                  ? (AppColors.isDarkMode ? const Color(0xFF4A1521) : const Color(0xFFFFF0F6))
+                  : AppColors.primary.withOpacity(AppColors.isDarkMode ? 0.15 : 0.05))
+              : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7)),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: value ? AppColors.primary : Colors.transparent,

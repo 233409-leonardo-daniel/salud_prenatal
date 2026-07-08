@@ -71,13 +71,22 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: AppColors.textDark,
-            ),
+            colorScheme: isDark
+                ? ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textDark,
+                  )
+                : ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textDark,
+                  ),
           ),
           child: child!,
         );

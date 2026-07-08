@@ -6,6 +6,9 @@ class UserDto {
   final String? phoneNumber;
   final String? profilePicture;
   final int? doctorId;
+  final String? specialty;
+  final String? professionalLicense;
+  final String? office;
 
   UserDto({
     required this.id,
@@ -15,6 +18,9 @@ class UserDto {
     this.phoneNumber,
     this.profilePicture,
     this.doctorId,
+    this.specialty,
+    this.professionalLicense,
+    this.office,
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) {
@@ -29,6 +35,9 @@ class UserDto {
       phoneNumber: json['phone'] ?? json['phone_number'],
       profilePicture: json['image_url'] ?? json['profile_picture'],
       doctorId: json['doctor_id'],
+      specialty: json['specialty'],
+      professionalLicense: json['professional_license'] ?? json['professionalLicense'],
+      office: json['office'],
     );
   }
 
@@ -41,6 +50,9 @@ class UserDto {
       'phone_number': phoneNumber,
       'profile_picture': profilePicture,
       'doctor_id': doctorId,
+      'specialty': specialty,
+      'professional_license': professionalLicense,
+      'office': office,
     };
   }
 }

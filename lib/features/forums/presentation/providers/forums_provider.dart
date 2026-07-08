@@ -134,6 +134,10 @@ class ForumsProvider with ChangeNotifier {
     }
   }
 
+  Future<SocialProfile> getProfileById(int userId) async {
+    return await _getSocialProfileUseCase.call(userId);
+  }
+
   // Create or update profile
   Future<bool> saveSocialProfile(SocialProfile profile) async {
     _saveStatus = SaveStatus.loading;

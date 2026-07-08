@@ -40,9 +40,22 @@ class _DashboardPageState extends State<DashboardPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInitialized) {
+      final loginProvider = context.read<LoginProvider>();
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
         _userRole = args;
+      } else {
+        final providerRole = loginProvider.role;
+        if (providerRole != null) {
+          final raw = providerRole.toLowerCase();
+          if (raw == 'doctor' || raw == 'doctor(a)') {
+            _userRole = 'doctor';
+          } else if (raw == 'recepcionista' || raw == 'receptionist') {
+            _userRole = 'receptionist';
+          } else {
+            _userRole = 'patient';
+          }
+        }
       }
       _isInitialized = true;
       _loadDashboardData();

@@ -618,7 +618,6 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     // Factores determinantes, pacientes similares y caso límitrofe se
     // muestran en sus propios desplegables (ver build()), no aquí.
     final clusterName = riskPrediction.diagnosis ?? 'Riesgo indeterminado';
-    final clusterValue = riskPrediction.riskCluster;
     final interpretation = riskPrediction.interpretation;
     final afinidad = riskPrediction.afinidad;
     final level = _resolveRiskLevel(clusterName);
@@ -672,18 +671,6 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                     ],
                   ),
                 ),
-                if (clusterValue != null)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: level.color,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Clúster $clusterValue',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
               ],
             ),
           ),

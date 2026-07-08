@@ -71,7 +71,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F6),
+              color: AppColors.primaryLight,
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.qr_code_2_rounded, size: 48, color: AppColors.primary),
@@ -154,7 +154,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
       width: double.infinity,
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -163,11 +163,16 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: Colors.pink.shade50, width: 1),
+        border: Border.all(
+          color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50,
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
-          // The QR code
+          // The QR code: fondo SIEMPRE blanco (a propósito) — el QR se dibuja
+          // en negro y necesita contraste claro para poder escanearse bien,
+          // sin importar el tema de la app.
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -184,7 +189,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F6),
+              color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -257,7 +262,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F6),
+              color: AppColors.primaryLight,
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.link_rounded, size: 48, color: AppColors.primary),
@@ -280,7 +285,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
           Container(
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -289,7 +294,10 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
                   offset: const Offset(0, 4),
                 ),
               ],
-              border: Border.all(color: Colors.pink.shade50, width: 1),
+              border: Border.all(
+                color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50,
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
@@ -311,14 +319,14 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
                       color: AppColors.textMuted.withOpacity(0.4),
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF9F9FB),
+                    fillColor: AppColors.background,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.pink.shade50),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.pink.shade50),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -473,7 +481,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
       width: double.infinity,
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.red.shade100),
       ),

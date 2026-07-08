@@ -4,7 +4,10 @@ class SocialProfile {
   final String? bio;
   final String? avatarUrl;
   final String? officeAddress;
-  final String? clusterProfile;
+
+  // cluster_profile ya no se expone: es un dato derivado de información
+  // médica. El filtrado por cluster ocurre server-side (posts/recommended,
+  // groups/recommended); el front no lo necesita ni debe mostrarlo.
 
   SocialProfile({
     required this.userId,
@@ -12,6 +15,5 @@ class SocialProfile {
     this.bio,
     this.avatarUrl,
     this.officeAddress,
-    this.clusterProfile,
   });
 }

@@ -31,9 +31,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final forumsProvider = context.watch<ForumsProvider>();
     final loginProvider = context.read<LoginProvider>();
     final currentUserId = loginProvider.userId;
+    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Nueva Publicación', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -54,7 +55,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   fillColor: AppColors.cardBackground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Colors.pink.shade50),
+                    borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                   ),
                 ),
                 validator: (value) {
@@ -75,7 +76,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   fillColor: AppColors.cardBackground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Colors.pink.shade50),
+                    borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                   ),
                 ),
                 validator: (value) {
@@ -85,6 +86,24 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   return null;
                 },
               ),
+              // Las publicaciones de un doctor se marcan automáticamente
+              // como "De un doctor" (sin que tenga que elegirlo); el backend
+              // igual valida por token que solo un doctor pueda mandar is_ad=true.
+              if (isDoctor) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(Icons.campaign_outlined, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Tu publicación se mostrará marcada como "De un doctor".',
+                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: forumsProvider.isSaving
@@ -102,13 +121,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
                             widget.groupId,
                             _titleController.text.trim(),
                             _contentController.text.trim(),
+                            isAd: isDoctor,
                           );
                           if (success && mounted) {
                             Navigator.pop(context, true);
                           } else if (mounted) {
+                            if (forumsProvider.sessionExpired) {
+                              Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Error: ${forumsProvider.saveError ?? "No se pudo publicar"}'),
+                                content: Text(forumsProvider.saveError ?? 'No se pudo publicar'),
                                 backgroundColor: Colors.red,
                               ),
                             );

@@ -227,14 +227,68 @@ class AppointmentDetailPage extends StatelessWidget {
   }
   
   Widget _actionButton(String label, Color color, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        padding: EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+    return _LiftButton(label: label, color: color, onPressed: onPressed);
+  }
+}
+
+/// Botón blanco con sombra rosa suave alrededor y efecto de "levantamiento"
+/// (se eleva y la sombra crece) al pasar el cursor por encima. El color
+/// pasado (`color`) solo se usa para el texto, para conservar el
+/// significado semántico (azul=confirmar, naranja=cancelar, rojo=eliminar).
+class _LiftButton extends StatefulWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _LiftButton({required this.label, required this.color, required this.onPressed});
+
+  @override
+  State<_LiftButton> createState() => _LiftButtonState();
+}
+
+class _LiftButtonState extends State<_LiftButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        transform: Matrix4.translationValues(0, _hovering ? -4 : 0, 0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(_hovering ? 0.35 : 0.18),
+              blurRadius: _hovering ? 20 : 10,
+              spreadRadius: _hovering ? 1 : 0,
+              offset: Offset(0, _hovering ? 8 : 3),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(30),
+            onTap: widget.onPressed,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: widget.color),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-      child: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
     );
   }
 }

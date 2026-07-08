@@ -67,7 +67,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
     final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Mi Perfil de Comunidad', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -108,9 +108,9 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Elige tu Avatar de la Comunidad:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -155,7 +155,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                       fillColor: AppColors.cardBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.pink.shade50),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                       ),
                     ),
                     validator: (value) {
@@ -176,7 +176,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                       fillColor: AppColors.cardBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.pink.shade50),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                       ),
                     ),
                   ),
@@ -198,13 +198,14 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                                 bio: _bioController.text.trim(),
                                 avatarUrl: _selectedAvatar,
                                 officeAddress: isDoctor ? 'Consultorio Principal' : null,
-                                clusterProfile: null,
                               );
                               final messenger = ScaffoldMessenger.of(context);
                               final navigator = Navigator.of(context);
                               final success = await forumsProvider.saveSocialProfile(profile);
                               if (success) {
                                 navigator.pop(true);
+                              } else if (forumsProvider.sessionExpired) {
+                                navigator.pushNamedAndRemoveUntil('/login', (route) => false);
                               } else {
                                 messenger.showSnackBar(
                                   SnackBar(

@@ -91,13 +91,16 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _submitForm() async {
-    if (!_privacyAccepted) {
+    final registerProvider = context.read<RegisterProvider>();
+    // La política de privacidad cubre el consentimiento de datos médicos
+    // sensibles: solo aplica a pacientes, no a doctores/recepcionistas.
+    final requiresPrivacyPolicy = registerProvider.selectedRole == 'patient';
+    if (requiresPrivacyPolicy && !_privacyAccepted) {
       _showPrivacyPolicy();
       return;
     }
     if (_formKey.currentState?.validate() ?? false) {
       bool success = false;
-      final registerProvider = context.read<RegisterProvider>();
       final role = registerProvider.selectedRole;
 
       if (role == 'patient') {
@@ -483,7 +486,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           ElevatedButton(
                             onPressed: registerProvider.isLoading
                                 ? null
-                                : (_privacyAccepted ? _submitForm : _showPrivacyPolicy),
+                                : ((_privacyAccepted || registerProvider.selectedRole != 'patient')
+                                    ? _submitForm
+                                    : _showPrivacyPolicy),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(

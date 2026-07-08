@@ -23,9 +23,9 @@ class ForumReportModel extends ForumReport {
     );
   }
 
+  // reporter_id ya no se manda: el backend lo deriva del token JWT.
   Map<String, dynamic> toJson() {
     return {
-      'reporter_id': reporterId,
       'post_id': postId,
       'comment_id': commentId,
       'reason': reason,

@@ -8,12 +8,15 @@ import '../../domain/usecases/get_social_profile_use_case.dart';
 import '../../domain/usecases/create_social_profile_use_case.dart';
 import '../../domain/usecases/create_group_use_case.dart';
 import '../../domain/usecases/get_groups_use_case.dart';
+import '../../domain/usecases/get_recommended_groups_use_case.dart';
 import '../../domain/usecases/create_post_use_case.dart';
 import '../../domain/usecases/get_global_feed_use_case.dart';
+import '../../domain/usecases/get_recommended_feed_use_case.dart';
 import '../../domain/usecases/get_group_feed_use_case.dart';
 import '../../domain/usecases/create_comment_use_case.dart';
 import '../../domain/usecases/get_comments_use_case.dart';
 import '../../domain/usecases/create_report_use_case.dart';
+import '../../data/datasources/forums_remote_data_source.dart';
 import '../pages/forums_state.dart';
 
 class ForumsProvider with ChangeNotifier {
@@ -21,8 +24,10 @@ class ForumsProvider with ChangeNotifier {
   final CreateSocialProfileUseCase _createSocialProfileUseCase;
   final CreateGroupUseCase _createGroupUseCase;
   final GetGroupsUseCase _getGroupsUseCase;
+  final GetRecommendedGroupsUseCase _getRecommendedGroupsUseCase;
   final CreatePostUseCase _createPostUseCase;
   final GetGlobalFeedUseCase _getGlobalFeedUseCase;
+  final GetRecommendedFeedUseCase _getRecommendedFeedUseCase;
   final GetGroupFeedUseCase _getGroupFeedUseCase;
   final CreateCommentUseCase _createCommentUseCase;
   final GetCommentsUseCase _getCommentsUseCase;
@@ -33,8 +38,10 @@ class ForumsProvider with ChangeNotifier {
     required CreateSocialProfileUseCase createSocialProfileUseCase,
     required CreateGroupUseCase createGroupUseCase,
     required GetGroupsUseCase getGroupsUseCase,
+    required GetRecommendedGroupsUseCase getRecommendedGroupsUseCase,
     required CreatePostUseCase createPostUseCase,
     required GetGlobalFeedUseCase getGlobalFeedUseCase,
+    required GetRecommendedFeedUseCase getRecommendedFeedUseCase,
     required GetGroupFeedUseCase getGroupFeedUseCase,
     required CreateCommentUseCase createCommentUseCase,
     required GetCommentsUseCase getCommentsUseCase,
@@ -43,49 +50,71 @@ class ForumsProvider with ChangeNotifier {
         _createSocialProfileUseCase = createSocialProfileUseCase,
         _createGroupUseCase = createGroupUseCase,
         _getGroupsUseCase = getGroupsUseCase,
+        _getRecommendedGroupsUseCase = getRecommendedGroupsUseCase,
         _createPostUseCase = createPostUseCase,
         _getGlobalFeedUseCase = getGlobalFeedUseCase,
+        _getRecommendedFeedUseCase = getRecommendedFeedUseCase,
         _getGroupFeedUseCase = getGroupFeedUseCase,
         _createCommentUseCase = createCommentUseCase,
         _getCommentsUseCase = getCommentsUseCase,
         _createReportUseCase = createReportUseCase;
 
   ForumsStatus _forumsStatus = ForumsStatus.initial;
+  ForumsStatus _feedStatus = ForumsStatus.initial;
   ProfileStatus _profileStatus = ProfileStatus.initial;
   CommentsStatus _commentsStatus = CommentsStatus.initial;
   SaveStatus _saveStatus = SaveStatus.initial;
 
   String? _forumsError;
+  String? _feedError;
   String? _profileError;
   String? _commentsError;
   String? _saveError;
 
+  // true cuando el último error viene de un 401 (sesión expirada/sin token):
+  // la UI puede usar esto para redirigir a login en vez de solo mostrar el
+  // mensaje.
+  bool _sessionExpired = false;
+
   SocialProfile? _socialProfile;
   List<CommunityGroup> _groups = [];
   List<ForumPost> _posts = [];
+  List<ForumPost> _recommendedFeed = [];
   List<ForumComment> _comments = [];
 
   // Getters
   ForumsStatus get forumsStatus => _forumsStatus;
+  ForumsStatus get feedStatus => _feedStatus;
   ProfileStatus get profileStatus => _profileStatus;
   CommentsStatus get commentsStatus => _commentsStatus;
   SaveStatus get saveStatus => _saveStatus;
 
   String? get forumsError => _forumsError;
+  String? get feedError => _feedError;
   String? get profileError => _profileError;
   String? get commentsError => _commentsError;
   String? get saveError => _saveError;
+  bool get sessionExpired => _sessionExpired;
 
   SocialProfile? get socialProfile => _socialProfile;
   List<CommunityGroup> get groups => _groups;
   List<ForumPost> get posts => _posts;
+  List<ForumPost> get recommendedFeed => _recommendedFeed;
   List<ForumComment> get comments => _comments;
 
   // Compatibility getters
   bool get isForumsLoading => _forumsStatus == ForumsStatus.loading;
+  bool get isFeedLoading => _feedStatus == ForumsStatus.loading;
   bool get isProfileLoading => _profileStatus == ProfileStatus.loading;
   bool get isCommentsLoading => _commentsStatus == CommentsStatus.loading;
   bool get isSaving => _saveStatus == SaveStatus.loading;
+
+  /// Marca `sessionExpired` si el error viene de un 401, para que la UI
+  /// pueda redirigir a login. Siempre retorna el mensaje a mostrar.
+  String _resolveError(Object e) {
+    _sessionExpired = e is ForumsUnauthorizedException;
+    return e.toString().replaceAll('Exception: ', '');
+  }
 
   // Fetch social profile
   Future<void> loadSocialProfile(int userId) async {
@@ -116,7 +145,7 @@ class ForumsProvider with ChangeNotifier {
       _saveStatus = SaveStatus.success;
       return true;
     } catch (e) {
-      _saveError = e.toString();
+      _saveError = _resolveError(e);
       _saveStatus = SaveStatus.error;
       return false;
     } finally {
@@ -124,7 +153,7 @@ class ForumsProvider with ChangeNotifier {
     }
   }
 
-  // Load Groups
+  // Load Groups (todos, sin token)
   Future<void> loadGroups() async {
     _forumsStatus = ForumsStatus.loading;
     _forumsError = null;
@@ -135,6 +164,24 @@ class ForumsProvider with ChangeNotifier {
       _forumsStatus = ForumsStatus.success;
     } catch (e) {
       _forumsError = e.toString();
+      _forumsStatus = ForumsStatus.error;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Grupos recomendados para la usuaria (por su cluster de riesgo, con
+  /// fallback automático del backend a todos los grupos si no tiene cluster).
+  Future<void> loadRecommendedGroups() async {
+    _forumsStatus = ForumsStatus.loading;
+    _forumsError = null;
+    notifyListeners();
+
+    try {
+      _groups = await _getRecommendedGroupsUseCase.call();
+      _forumsStatus = ForumsStatus.success;
+    } catch (e) {
+      _forumsError = _resolveError(e);
       _forumsStatus = ForumsStatus.error;
     } finally {
       notifyListeners();
@@ -160,7 +207,7 @@ class ForumsProvider with ChangeNotifier {
       _saveStatus = SaveStatus.success;
       return true;
     } catch (e) {
-      _saveError = e.toString();
+      _saveError = _resolveError(e);
       _saveStatus = SaveStatus.error;
       return false;
     } finally {
@@ -185,6 +232,25 @@ class ForumsProvider with ChangeNotifier {
     }
   }
 
+  /// Feed principal "Para ti": posts del cluster de la usuaria con
+  /// publicidad de doctores intercalada (is_ad). Fallback automático del
+  /// backend al feed global si no tiene cluster.
+  Future<void> loadRecommendedFeed() async {
+    _feedStatus = ForumsStatus.loading;
+    _feedError = null;
+    notifyListeners();
+
+    try {
+      _recommendedFeed = await _getRecommendedFeedUseCase.call();
+      _feedStatus = ForumsStatus.success;
+    } catch (e) {
+      _feedError = _resolveError(e);
+      _feedStatus = ForumsStatus.error;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   // Load Group Feed
   Future<void> loadGroupFeed(int groupId) async {
     _forumsStatus = ForumsStatus.loading;
@@ -203,7 +269,7 @@ class ForumsProvider with ChangeNotifier {
   }
 
   // Create post
-  Future<bool> createPost(int authorId, int? groupId, String title, String content) async {
+  Future<bool> createPost(int authorId, int? groupId, String title, String content, {bool isAd = false}) async {
     _saveStatus = SaveStatus.loading;
     _saveError = null;
     notifyListeners();
@@ -216,13 +282,17 @@ class ForumsProvider with ChangeNotifier {
         title: title,
         content: content,
         createdAt: DateTime.now(),
+        isAd: isAd,
       );
       final created = await _createPostUseCase.call(newPost);
       _posts.insert(0, created);
+      if (!created.isAd) {
+        _recommendedFeed.insert(0, created);
+      }
       _saveStatus = SaveStatus.success;
       return true;
     } catch (e) {
-      _saveError = e.toString();
+      _saveError = _resolveError(e);
       _saveStatus = SaveStatus.error;
       return false;
     } finally {
@@ -266,7 +336,7 @@ class ForumsProvider with ChangeNotifier {
       _saveStatus = SaveStatus.success;
       return true;
     } catch (e) {
-      _saveError = e.toString();
+      _saveError = _resolveError(e);
       _saveStatus = SaveStatus.error;
       return false;
     } finally {
@@ -291,7 +361,7 @@ class ForumsProvider with ChangeNotifier {
       _saveStatus = SaveStatus.success;
       return true;
     } catch (e) {
-      _saveError = e.toString();
+      _saveError = _resolveError(e);
       _saveStatus = SaveStatus.error;
       return false;
     } finally {

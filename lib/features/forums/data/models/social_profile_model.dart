@@ -7,7 +7,6 @@ class SocialProfileModel extends SocialProfile {
     super.bio,
     super.avatarUrl,
     super.officeAddress,
-    super.clusterProfile,
   });
 
   factory SocialProfileModel.fromJson(Map<String, dynamic> json) {
@@ -17,18 +16,16 @@ class SocialProfileModel extends SocialProfile {
       bio: json['bio'],
       avatarUrl: json['avatar_url'],
       officeAddress: json['office_address'],
-      clusterProfile: json['cluster_profile'],
     );
   }
 
+  // user_id ya no se manda: el backend lo deriva del token JWT.
   Map<String, dynamic> toJson() {
     return {
-      'user_id': userId,
       'alias': alias,
       'bio': bio,
       'avatar_url': avatarUrl,
       'office_address': officeAddress,
-      'cluster_profile': clusterProfile,
     };
   }
 
@@ -39,7 +36,6 @@ class SocialProfileModel extends SocialProfile {
       bio: entity.bio,
       avatarUrl: entity.avatarUrl,
       officeAddress: entity.officeAddress,
-      clusterProfile: entity.clusterProfile,
     );
   }
 }

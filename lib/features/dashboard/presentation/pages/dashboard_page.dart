@@ -115,6 +115,8 @@ class _DashboardPageState extends State<DashboardPage> {
         // Doctor main dashboard header
         return AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: AppColors.background,
+          elevation: 0,
           title: Row(
             children: [
               CircleAvatar(
@@ -146,7 +148,7 @@ class _DashboardPageState extends State<DashboardPage> {
               icon: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0EFF4),
+                  color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
@@ -160,6 +162,8 @@ class _DashboardPageState extends State<DashboardPage> {
         // "Mis Pacientes" header
         return AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: AppColors.background,
+          elevation: 0,
           title: Row(
             children: [
               CircleAvatar(
@@ -1228,7 +1232,7 @@ class _DashboardPageState extends State<DashboardPage> {
         unselectedItemColor: AppColors.textMuted,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

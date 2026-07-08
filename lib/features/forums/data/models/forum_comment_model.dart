@@ -25,10 +25,10 @@ class ForumCommentModel extends ForumComment {
     );
   }
 
+  // author_id ya no se manda: el backend lo deriva del token JWT.
   Map<String, dynamic> toJson() {
     return {
       'post_id': postId,
-      'author_id': authorId,
       'content': content,
     };
   }

@@ -8,6 +8,7 @@ class ForumPost {
   final String? authorAlias;
   final String? authorAvatarUrl;
   final String? authorRole;
+  final bool isAd;
 
   ForumPost({
     required this.postId,
@@ -19,5 +20,6 @@ class ForumPost {
     this.authorAlias,
     this.authorAvatarUrl,
     this.authorRole,
+    this.isAd = false,
   });
 }

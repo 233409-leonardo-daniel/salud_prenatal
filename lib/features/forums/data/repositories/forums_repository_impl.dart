@@ -37,6 +37,11 @@ class ForumsRepositoryImpl implements ForumsRepository {
   }
 
   @override
+  Future<List<CommunityGroup>> getRecommendedGroups() async {
+    return await remoteDataSource.getRecommendedGroups();
+  }
+
+  @override
   Future<ForumPost> createPost(ForumPost post) {
     return remoteDataSource.createPost(ForumPostModel.fromEntity(post));
   }
@@ -44,6 +49,11 @@ class ForumsRepositoryImpl implements ForumsRepository {
   @override
   Future<List<ForumPost>> getGlobalFeed(int limit, int offset) async {
     return await remoteDataSource.getGlobalFeed(limit, offset);
+  }
+
+  @override
+  Future<List<ForumPost>> getRecommendedFeed(int limit, int offset) async {
+    return await remoteDataSource.getRecommendedFeed(limit, offset);
   }
 
   @override

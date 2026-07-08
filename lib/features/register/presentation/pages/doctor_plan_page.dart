@@ -36,7 +36,15 @@ class _DoctorPlanPageState extends State<DoctorPlanPage> {
     setState(() => _isProcessing = false);
 
     if (success) {
-      Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
+      // DashboardPage decide qué tablero mostrar según el argumento de ruta
+      // (ver DashboardPage._userRole); sin esto cae al valor por defecto
+      // 'patient' y manda al doctor recién registrado al dashboard equivocado.
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/dashboard',
+        (route) => false,
+        arguments: 'doctor',
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

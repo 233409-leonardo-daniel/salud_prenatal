@@ -9,8 +9,10 @@ abstract class ForumsRepository {
   Future<SocialProfile> createOrUpdateSocialProfile(SocialProfile profile);
   Future<CommunityGroup> createGroup(CommunityGroup group);
   Future<List<CommunityGroup>> getGroups();
+  Future<List<CommunityGroup>> getRecommendedGroups();
   Future<ForumPost> createPost(ForumPost post);
   Future<List<ForumPost>> getGlobalFeed(int limit, int offset);
+  Future<List<ForumPost>> getRecommendedFeed(int limit, int offset);
   Future<List<ForumPost>> getGroupFeed(int groupId, int limit, int offset);
   Future<ForumComment> createComment(ForumComment comment);
   Future<List<ForumComment>> getComments(int postId);

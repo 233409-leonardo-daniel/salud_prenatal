@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/utils/relative_time.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../domain/entities/forum_post.dart';
 import '../providers/forums_provider.dart';
@@ -38,20 +39,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final loginProvider = context.read<LoginProvider>();
     final currentUserId = loginProvider.userId;
 
-    final authorName = widget.post.authorAlias ?? 'Usuario';
+    final isAd = widget.post.isAd;
+    final authorName = widget.post.authorAlias ?? (isAd ? 'Consultorio' : 'Usuario');
     final isDoctor = widget.post.authorRole?.toLowerCase().contains('doctor') ?? false;
     final displayName = isDoctor ? 'Dr. $authorName' : authorName;
     final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
+    final accentColor = isAd ? const Color(0xFFB07C1F) : AppColors.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Publicación', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: const Icon(Icons.flag_outlined, color: Colors.grey),
+            icon: Icon(Icons.flag_outlined, color: AppColors.textMuted),
             onPressed: () => _showReportDialog(context, widget.post.postId, null),
           ),
         ],
@@ -66,8 +69,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   Container(
                     padding: const EdgeInsets.all(20.0),
                     decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
+                      color: isAd
+                          ? (AppColors.isDarkMode ? const Color(0xFF2A2410) : const Color(0xFFFFF8E8))
+                          : AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(24),
+                      border: isAd ? Border.all(color: const Color(0xFFF0C36D).withOpacity(0.6), width: 1.2) : null,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withAlpha(4),
@@ -83,10 +89,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: AppColors.primaryLight,
+                              backgroundColor: isAd ? const Color(0xFFF0C36D).withOpacity(0.3) : AppColors.primaryLight,
                               backgroundImage: widget.post.authorAvatarUrl != null ? NetworkImage(widget.post.authorAvatarUrl!) : null,
-                              child: widget.post.authorAvatarUrl == null 
-                                  ? Text(initials, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                              child: widget.post.authorAvatarUrl == null
+                                  ? Text(initials, style: TextStyle(color: accentColor, fontWeight: FontWeight.bold))
                                   : null,
                             ),
                             const SizedBox(width: 12),
@@ -100,12 +106,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                         displayName,
                                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
                                       ),
-                                      if (isDoctor) ...[
+                                      if (isDoctor && !isAd) ...[
                                         const SizedBox(width: 6),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFFF0F6),
+                                            color: AppColors.primaryLight,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
@@ -116,10 +122,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                       ]
                                     ],
                                   ),
-                                  Text(
-                                    'Hace un momento',
-                                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                                  ),
+                                  if (isAd)
+                                    Row(
+                                      children: [
+                                        Icon(Icons.campaign_outlined, size: 12, color: accentColor),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'De un doctor',
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: accentColor),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      formatRelativeTime(widget.post.createdAt),
+                                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                    ),
                                 ],
                               ),
                             ),
@@ -139,9 +157,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Comentarios',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                   ),
                   const SizedBox(height: 12),
                   switch (forumsProvider.commentsStatus) {
@@ -199,6 +217,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         if (success) {
                           focus.unfocus();
                           forumsProvider.loadComments(widget.post.postId);
+                        } else if (mounted && forumsProvider.sessionExpired) {
+                          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                        } else if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(forumsProvider.saveError ?? 'No se pudo enviar el comentario'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
                         }
                       }
                     },
@@ -275,7 +302,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.flag_outlined, size: 16, color: Colors.grey),
+                    icon: Icon(Icons.flag_outlined, size: 16, color: AppColors.textMuted),
                     onPressed: () => _showReportDialog(context, null, comment.commentId),
                   ),
                 ],
@@ -331,6 +358,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 if (reason.isNotEmpty) {
                   Navigator.pop(context);
                   final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
                   final success = await forumsProvider.createReport(
                     currentUserId,
                     postId,
@@ -342,6 +370,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       const SnackBar(
                         content: Text('¡Reporte enviado! Los administradores revisarán el contenido.'),
                         backgroundColor: Colors.orange,
+                      ),
+                    );
+                  } else if (forumsProvider.sessionExpired) {
+                    navigator.pushNamedAndRemoveUntil('/login', (route) => false);
+                  } else {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(forumsProvider.saveError ?? 'No se pudo enviar el reporte'),
+                        backgroundColor: Colors.red,
                       ),
                     );
                   }

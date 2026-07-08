@@ -11,6 +11,7 @@ class ForumPostModel extends ForumPost {
     super.authorAlias,
     super.authorAvatarUrl,
     super.authorRole,
+    super.isAd,
   });
 
   factory ForumPostModel.fromJson(Map<String, dynamic> json) {
@@ -20,21 +21,23 @@ class ForumPostModel extends ForumPost {
       groupId: json['group_id'],
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
           : DateTime.now(),
       authorAlias: json['author_alias'] ?? json['alias'],
       authorAvatarUrl: json['author_avatar_url'] ?? json['avatar_url'],
       authorRole: json['author_role'] ?? json['role'],
+      isAd: json['is_ad'] == true,
     );
   }
 
+  // author_id ya no se manda: el backend lo deriva del token JWT.
   Map<String, dynamic> toJson() {
     return {
-      'author_id': authorId,
       'group_id': groupId,
       'title': title,
       'content': content,
+      'is_ad': isAd,
     };
   }
 
@@ -49,6 +52,7 @@ class ForumPostModel extends ForumPost {
       authorAlias: entity.authorAlias,
       authorAvatarUrl: entity.authorAvatarUrl,
       authorRole: entity.authorRole,
+      isAd: entity.isAd,
     );
   }
 }

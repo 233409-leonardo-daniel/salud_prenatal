@@ -4,6 +4,7 @@ class CommunityGroup {
   final String description;
   final int createdBy;
   final DateTime createdAt;
+  final String? clusterTag;
 
   CommunityGroup({
     required this.groupId,
@@ -11,5 +12,6 @@ class CommunityGroup {
     required this.description,
     required this.createdBy,
     required this.createdAt,
+    this.clusterTag,
   });
 }

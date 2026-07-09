@@ -115,15 +115,14 @@ class _DashboardPageState extends State<DashboardPage> {
     );
 
     if (_userRole == 'doctor') {
-      // El footer del doctor (_buildBottomNavBar) usa un color oscuro fijo
-      // (0xFF1E1E1E) sin importar el tema. Sin esto, en tema claro Android
-      // pinta la barra de navegación del sistema (debajo del footer) de
-      // blanco por defecto, generando un salto de color justo debajo del
-      // footer de la app. Forzamos aquí ese mismo color fijo.
+      // El footer del doctor (_buildBottomNavBar) es reactivo al tema
+      // (AppColors.cardBackground). Igualamos aquí la barra de navegación
+      // del sistema (Android, debajo del footer) a ese mismo color/tema
+      // para que no haya un salto de color justo debajo del footer.
       return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(
-          systemNavigationBarColor: Color(0xFF1E1E1E),
-          systemNavigationBarIconBrightness: Brightness.light,
+        value: SystemUiOverlayStyle(
+          systemNavigationBarColor: AppColors.cardBackground,
+          systemNavigationBarIconBrightness: AppColors.isDarkMode ? Brightness.light : Brightness.dark,
         ),
         child: scaffold,
       );
@@ -1265,10 +1264,10 @@ class _DashboardPageState extends State<DashboardPage> {
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.white60,
+        unselectedItemColor: AppColors.textMuted,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppColors.cardBackground,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

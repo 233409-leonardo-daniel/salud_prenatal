@@ -3,12 +3,22 @@ class LoginResponse {
   final String tokenType;
   final int userId;
   final String role;
+  final int? patientId;
+  final int? doctorId;
+  final int? medicalRecordId;
+  final int? receptionistId;
+  final String? subscriptionStatus;
 
   LoginResponse({
     required this.accessToken,
     required this.tokenType,
     required this.userId,
     required this.role,
+    this.patientId,
+    this.doctorId,
+    this.medicalRecordId,
+    this.receptionistId,
+    this.subscriptionStatus,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
@@ -17,6 +27,11 @@ class LoginResponse {
       tokenType: json['token_type'] ?? json['tokenType'] ?? 'bearer',
       userId: json['user_id'] ?? json['userId'] ?? 0,
       role: json['role'] ?? 'patient',
+      patientId: json['patient_id'] ?? json['patientId'],
+      doctorId: json['doctor_id'] ?? json['doctorId'],
+      medicalRecordId: json['medical_record_id'] ?? json['medicalRecordId'],
+      receptionistId: json['receptionist_id'] ?? json['receptionistId'],
+      subscriptionStatus: json['subscription_status'] ?? json['subscriptionStatus'],
     );
   }
 }

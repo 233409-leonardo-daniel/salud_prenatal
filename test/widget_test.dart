@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mama_segura/app.dart';
+import 'package:salud_prenatal/app.dart';
 
 void main() {
   testWidgets('Salud Prenatal smoke test', (WidgetTester tester) async {

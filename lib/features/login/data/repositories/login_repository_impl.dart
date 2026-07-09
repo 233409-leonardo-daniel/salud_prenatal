@@ -2,6 +2,7 @@ import '../../domain/repositories/login_repository.dart';
 import '../datasources/login_remote_data_source.dart';
 import '../models/login_request.dart';
 import '../../domain/entities/login_response.dart';
+import '../../domain/entities/user_profile.dart';
 
 class LoginRepositoryImpl implements LoginRepository {
   final LoginRemoteDataSource remoteDataSource;
@@ -11,5 +12,15 @@ class LoginRepositoryImpl implements LoginRepository {
   @override
   Future<LoginResponse> login(LoginRequest request) {
     return remoteDataSource.login(request);
+  }
+
+  @override
+  Future<UserProfile> getUserProfile(int userId) {
+    return remoteDataSource.getUserProfile(userId);
+  }
+
+  @override
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile) {
+    return remoteDataSource.updateUserProfile(userId, profile);
   }
 }

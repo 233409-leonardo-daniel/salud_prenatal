@@ -9,6 +9,10 @@ class Conversation {
   final ChatMessage? lastMessage;
   final int unreadCount;
   final DateTime updatedAt;
+  // Viene directo de /chat/inbox (other_user_role): permite pintar la fila
+  // (prefijo "Dra.", badge de recepcionista, etc.) sin resolver el rol vía
+  // dashboardProvider.users.
+  final String otherUserRole;
 
   Conversation({
     required this.conversationId,
@@ -19,5 +23,6 @@ class Conversation {
     this.lastMessage,
     this.unreadCount = 0,
     required this.updatedAt,
+    this.otherUserRole = '',
   });
 }

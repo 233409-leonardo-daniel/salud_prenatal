@@ -32,6 +32,7 @@ import 'features/users/presentation/providers/user_provider.dart';
 import 'features/chat/di/chat_module.dart';
 import 'features/chat/presentation/providers/chat_provider.dart';
 import 'features/chat/presentation/providers/conversations_provider.dart';
+import 'features/chat/presentation/providers/contacts_provider.dart';
 import 'features/forums/di/forums_module.dart';
 import 'features/forums/presentation/providers/forums_provider.dart';
 import 'features/forums/presentation/pages/forums_hub_page.dart';
@@ -161,6 +162,12 @@ class MyApp extends StatelessWidget {
           create: (_) => ConversationsProvider(
             chatModule.getConversationsUseCase,
             chatModule.repository,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ContactsProvider(
+            patientsModule.getDoctorPatientsUseCase,
+            dashboardModule.getAllUsersUseCase,
           ),
         ),
         ChangeNotifierProvider(

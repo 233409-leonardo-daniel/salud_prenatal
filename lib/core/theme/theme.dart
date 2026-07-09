@@ -33,6 +33,18 @@ class AppColors {
   static Color get textDark => isDarkMode ? _textDarkDark : _textDarkLight; // Dark grey text -> soft white text
   static Color get textMuted => isDarkMode ? _textMutedDark : _textMutedLight; // Grey text -> light grey text
 
+  /// Superficie para placeholders/skeletons. Se deriva mezclando un poco de
+  /// [textDark] sobre [cardBackground] en vez de un hex fijo por variante:
+  /// como [textDark] es oscuro en modo claro y casi blanco en modo oscuro,
+  /// el resultado siempre contrasta con la tarjeta/sheet que lo contiene
+  /// (oscurece en claro, aclara en oscuro) sin importar qué valores tengan
+  /// esos colores — no puede quedar fuera de sync con el tema como pasó con
+  /// un hex hardcodeado aparte que terminó siendo igual a `cardBackground`.
+  static Color get skeletonBase => Color.alphaBlend(
+        textDark.withOpacity(0.06),
+        cardBackground,
+      );
+
   // --- Literales fijos por variante ---
   //
   // IMPORTANTE: `AppTheme.lightTheme`/`darkTheme` (abajo) NO deben construirse

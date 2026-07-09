@@ -5,8 +5,10 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/config/api_config.dart';
 import '../models/chat_message_model.dart';
+import '../models/inbox_item_model.dart';
 
 abstract class ChatRemoteDataSource {
+  Future<List<InboxItemModel>> getInbox();
   Future<List<ChatMessageModel>> getChatHistory(int otherUserId, int currentUserId);
   Stream<ChatMessageModel> get messageStream;
   Stream<bool> get connectionStatusStream;
@@ -37,6 +39,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Stream<bool> get connectionStatusStream => _connectionController.stream;
 
   @override
+  Future<List<InboxItemModel>> getInbox() async {
+    final response = await _apiClient.get('/chat/inbox');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((item) => InboxItemModel.fromJson(item)).toList();
+    }
+    throw Exception('Error al obtener bandeja de chat (Status: ${response.statusCode})');
+  }
+
+  @override
   Future<List<ChatMessageModel>> getChatHistory(int otherUserId, int currentUserId) async {
     final response = await _apiClient.get('/chat/history/$otherUserId?current_user_id=$currentUserId');
     if (response.statusCode == 200) {
@@ -49,28 +61,27 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Future<void> connect(int currentUserId) async {
     if (_isConnected && _webSocket != null && _webSocket!.readyState == WebSocket.open) return;
-    
+
     _currentUserId = currentUserId;
     _isDisposed = false;
-    
-    final httpUrl = ApiConfig.baseUrl;
-    final uri = Uri.parse(httpUrl);
-    final host = uri.host;
-    final port = uri.hasPort ? uri.port : 8000;
-    final path = uri.path;
-    final socketUrl = 'ws://$host:$port$path/chat/ws/$currentUserId';
 
-    debugPrint('Intentando conectar WebSocket a: $socketUrl');
-    
+    // El WS no soporta headers custom en el server: el token va como query
+    // param (`?token=<JWT>`), no como Authorization header. Ver docu de /chat.
+    final baseUri = Uri.parse(ApiConfig.baseUrl);
+    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
+    final token = ApiClient().authToken;
+    final socketUri = Uri(
+      scheme: wsScheme,
+      host: baseUri.host,
+      port: baseUri.hasPort ? baseUri.port : null,
+      path: '${baseUri.path}/chat/ws',
+      queryParameters: token != null ? {'token': token} : null,
+    );
+
+    debugPrint('Intentando conectar WebSocket a: $socketUri');
+
     try {
-      Map<String, dynamic>? wsHeaders;
-      final token = ApiClient().authToken;
-      if (token != null) {
-        wsHeaders = {
-          'Authorization': 'Bearer $token',
-        };
-      }
-      _webSocket = await WebSocket.connect(socketUrl, headers: wsHeaders).timeout(const Duration(seconds: 5));
+      _webSocket = await WebSocket.connect(socketUri.toString()).timeout(const Duration(seconds: 5));
       _isConnected = true;
       _connectionController.add(true);
       debugPrint('WebSocket conectado exitosamente.');
@@ -90,8 +101,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           _handleDisconnect();
         },
         onDone: () {
-          debugPrint('WebSocket cerrado por el servidor.');
-          _handleDisconnect();
+          final closeCode = _webSocket?.closeCode;
+          debugPrint('WebSocket cerrado por el servidor (code: $closeCode).');
+          // Code 1008 = token inválido/expirado: el server no lo va a aceptar
+          // de nuevo sin re-autenticación, reintentar ciegamente no sirve.
+          _handleDisconnect(canRetry: closeCode != 1008);
         },
         cancelOnError: true,
       );
@@ -101,12 +115,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     }
   }
 
-  void _handleDisconnect() {
+  void _handleDisconnect({bool canRetry = true}) {
     _isConnected = false;
     _connectionController.add(false);
-    
+
     if (_isDisposed) return;
-    
+
+    if (!canRetry) {
+      debugPrint('Token inválido/expirado: no se reintentará la conexión automáticamente.');
+      return;
+    }
+
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(const Duration(seconds: 5), () {
       if (!_isConnected && _currentUserId != null) {

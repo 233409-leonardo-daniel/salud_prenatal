@@ -349,17 +349,12 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  /// Dispara la carga de contactos vía [ContactsProvider] (status explícito
-  /// desde el primer frame) y abre el bottom sheet de inmediato — no espera
-  /// el fetch para mostrar algo, pinta skeleton mientras `status == loading`.
+  /// Dispara la carga de contactos vía [ContactsProvider] (GET /chat/contacts,
+  /// resuelto enteramente por rol en el backend) y abre el bottom sheet de
+  /// inmediato — no espera el fetch para mostrar algo, pinta skeleton
+  /// mientras `status == loading`.
   void _showContactsDialog() {
-    final loginProvider = context.read<LoginProvider>();
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
-    final contactsProvider = context.read<ContactsProvider>();
-
-    if (loginProvider.doctorId != null) {
-      contactsProvider.loadContacts(loginProvider.doctorId!, isReceptionist: isReceptionist);
-    }
+    context.read<ContactsProvider>().loadContacts();
 
     showModalBottomSheet(
       context: context,

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../login/domain/entities/user_profile.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -35,6 +36,16 @@ class ChatRepositoryImpl implements ChatRepository {
     } catch (e) {
       debugPrint('Error en getConversations: $e');
       throw Exception('Error al obtener la bandeja de chat: $e');
+    }
+  }
+
+  @override
+  Future<List<UserProfile>> getContacts() async {
+    try {
+      return await _remoteDataSource.getContacts();
+    } catch (e) {
+      debugPrint('Error en getContacts: $e');
+      throw Exception('Error al obtener contactos de chat: $e');
     }
   }
 

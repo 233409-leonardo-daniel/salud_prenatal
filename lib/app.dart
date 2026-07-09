@@ -165,10 +165,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => ContactsProvider(
-            patientsModule.getDoctorPatientsUseCase,
-            dashboardModule.getAllUsersUseCase,
-          ),
+          create: (_) => ContactsProvider(chatModule.getChatContactsUseCase),
         ),
         ChangeNotifierProvider(
           create: (_) => SubscriptionsProvider(

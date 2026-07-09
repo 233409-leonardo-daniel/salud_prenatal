@@ -4,11 +4,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/config/api_config.dart';
+import '../../../login/domain/entities/user_profile.dart';
 import '../models/chat_message_model.dart';
 import '../models/inbox_item_model.dart';
 
 abstract class ChatRemoteDataSource {
   Future<List<InboxItemModel>> getInbox();
+  Future<List<UserProfile>> getContacts();
   Future<List<ChatMessageModel>> getChatHistory(int otherUserId, int currentUserId);
   Stream<ChatMessageModel> get messageStream;
   Stream<bool> get connectionStatusStream;
@@ -46,6 +48,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       return data.map((item) => InboxItemModel.fromJson(item)).toList();
     }
     throw Exception('Error al obtener bandeja de chat (Status: ${response.statusCode})');
+  }
+
+  @override
+  Future<List<UserProfile>> getContacts() async {
+    final response = await _apiClient.get('/chat/contacts');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((item) => UserProfile.fromJson(item)).toList();
+    }
+    throw Exception('Error al obtener contactos de chat (Status: ${response.statusCode})');
   }
 
   @override

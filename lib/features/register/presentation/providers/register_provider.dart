@@ -6,12 +6,15 @@ import '../pages/register_state.dart';
 class RegisterProvider with ChangeNotifier {
   final RegisterPatientUseCase _registerPatientUseCase;
   final RegisterDoctorUseCase _registerDoctorUseCase;
+  final RegisterReceptionistUseCase _registerReceptionistUseCase;
 
   RegisterProvider({
     required RegisterPatientUseCase registerPatientUseCase,
     required RegisterDoctorUseCase registerDoctorUseCase,
+    required RegisterReceptionistUseCase registerReceptionistUseCase,
   })  : _registerPatientUseCase = registerPatientUseCase,
-        _registerDoctorUseCase = registerDoctorUseCase;
+        _registerDoctorUseCase = registerDoctorUseCase,
+        _registerReceptionistUseCase = registerReceptionistUseCase;
 
   String _selectedRole = 'patient'; // 'patient' | 'doctor'
   String get selectedRole => _selectedRole;
@@ -24,6 +27,9 @@ class RegisterProvider with ChangeNotifier {
 
   String? _token;
   String? get token => _token;
+
+  int? _lastRegisteredPatientId;
+  int? get lastRegisteredPatientId => _lastRegisteredPatientId;
 
   /// Compatibilidad con código que usa [isLoading] directamente.
   bool get isLoading => _status == RegisterStatus.loading;
@@ -43,13 +49,12 @@ class RegisterProvider with ChangeNotifier {
     required String phone,
     required String password,
     required String birthdate,
-    required String bloodType,
-    required int weeksAtRegistration,
-    required String lastMenstrualPeriod,
+    int? doctorId,
   }) async {
     _status = RegisterStatus.loading;
     _errorMessage = null;
     _token = null;
+    _lastRegisteredPatientId = null;
     notifyListeners();
 
     try {
@@ -60,11 +65,11 @@ class RegisterProvider with ChangeNotifier {
         phone: phone,
         password: password,
         birthdate: birthdate,
-        bloodType: bloodType,
-        weeksAtRegistration: weeksAtRegistration,
-        lastMenstrualPeriod: lastMenstrualPeriod,
+        doctorId: doctorId,
       );
-      _token = await _registerPatientUseCase.execute(request);
+      final result = await _registerPatientUseCase.execute(request);
+      _token = result['access_token']?.toString() ?? result['token']?.toString() ?? 'success';
+      _lastRegisteredPatientId = result['patient_id'] as int?;
       _status = RegisterStatus.success;
       notifyListeners();
       return true;
@@ -114,6 +119,39 @@ class RegisterProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> registerReceptionist({
+    required String name,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required int doctorId,
+  }) async {
+    _status = RegisterStatus.loading;
+    _errorMessage = null;
+    _token = null;
+    notifyListeners();
+
+    try {
+      final request = ReceptionistRegisterRequest(
+        name: name,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+      _token = await _registerReceptionistUseCase.execute(request, doctorId);
+      _status = RegisterStatus.success;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _status = RegisterStatus.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> registerAdmin({
     required String name,
     required String lastName,
@@ -127,14 +165,9 @@ class RegisterProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Admin registration not yet backed by API
-      await Future.delayed(const Duration(seconds: 2));
-      _token = 'mock_admin_token_xyz123';
-      _status = RegisterStatus.success;
-      notifyListeners();
-      return true;
+      throw Exception('El registro de administrador no está disponible en la API.');
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       _status = RegisterStatus.error;
       notifyListeners();
       return false;

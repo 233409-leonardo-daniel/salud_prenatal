@@ -8,12 +8,17 @@ class RegisterRepositoryImpl implements RegisterRepository {
   const RegisterRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<String> registerPatient(PatientRegisterRequest request) {
+  Future<Map<String, dynamic>> registerPatient(PatientRegisterRequest request) {
     return remoteDataSource.registerPatient(request);
   }
 
   @override
   Future<String> registerDoctor(DoctorRegisterRequest request) {
     return remoteDataSource.registerDoctor(request);
+  }
+
+  @override
+  Future<String> registerReceptionist(ReceptionistRegisterRequest request, int doctorId) {
+    return remoteDataSource.registerReceptionist(request, doctorId);
   }
 }

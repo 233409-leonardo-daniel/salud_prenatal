@@ -5,6 +5,10 @@ import '../domain/usecases/get_appointments_usecase.dart';
 import '../domain/usecases/create_appointment_usecase.dart';
 import '../domain/usecases/update_appointment_usecase.dart';
 import '../domain/usecases/delete_appointment_usecase.dart';
+import '../domain/usecases/get_appointments_use_case.dart';
+import '../domain/usecases/get_appointment_by_id_use_case.dart';
+import '../domain/usecases/update_appointment_status_use_case.dart';
+import '../../../../core/network/api_client.dart';
 
 class AppointmentModule {
   late final AppointmentRepository appointmentRepository;
@@ -13,17 +17,25 @@ class AppointmentModule {
   late final UpdateAppointmentUsecase updateAppointmentUsecase;
   late final DeleteAppointmentUsecase deleteAppointmentUsecase;
 
-  AppointmentModule() {
-    _initDependencies();
+  late final GetAppointmentsUseCase getAppointmentsUseCase;
+  late final GetAppointmentByIdUseCase getAppointmentByIdUseCase;
+  late final UpdateAppointmentStatusUseCase updateAppointmentStatusUseCase;
+
+  AppointmentModule(ApiClient apiClient) {
+    _initDependencies(apiClient);
   }
 
-  void _initDependencies() {
+  void _initDependencies(ApiClient apiClient) {
     appointmentRepository = AppointmentRepositoryImpl(
-      remoteDataSource: AppointmentRemoteDataSourceImpl(),
+      AppointmentRemoteDataSourceImpl(apiClient: apiClient),
     );
     getAppointmentsByUserIdUsecase = GetAppointmentsByUserIdUsecase(appointmentRepository);
     createAppointmentUsecase = CreateAppointmentUsecase(appointmentRepository);
     updateAppointmentUsecase = UpdateAppointmentUsecase(appointmentRepository);
     deleteAppointmentUsecase = DeleteAppointmentUsecase(appointmentRepository);
+
+    getAppointmentsUseCase = GetAppointmentsUseCase(appointmentRepository);
+    getAppointmentByIdUseCase = GetAppointmentByIdUseCase(appointmentRepository);
+    updateAppointmentStatusUseCase = UpdateAppointmentStatusUseCase(appointmentRepository);
   }
 }

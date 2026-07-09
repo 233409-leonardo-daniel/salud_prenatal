@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
+import '../../../login/presentation/providers/login_provider.dart';
+import '../providers/dashboard_provider.dart';
+import 'dashboard_state.dart';
+import '../../data/models/medical_record_response.dart';
+import '../../../appointments/presentation/providers/appointment_provider.dart';
+import '../../../login/domain/entities/user_profile.dart';
+import '../../../appointments/presentation/pages/appointment_detail_page.dart';
+import '../../../patients/presentation/pages/patients_list_page.dart';
+import '../../../patients/presentation/pages/invitation_code_page.dart';
 import 'patient_record_page.dart';
-import 'patient_progress_page.dart';
+import '../../../../core/widgets/latest_diary_record_card.dart';
+import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../chat/presentation/pages/chat_list_page.dart';
+import '../../../chat/presentation/pages/chat_room_page.dart';
+import '../../../forums/presentation/pages/forums_hub_page.dart';
+import 'receptionist_dashboard_page.dart';
+import '../../../../core/enums/appointment_status.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,17 +35,60 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // Search and filter query for the doctor's patient list page
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'Todas';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInitialized) {
+      final loginProvider = context.read<LoginProvider>();
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
         _userRole = args;
+      } else {
+        final providerRole = loginProvider.role;
+        if (providerRole != null) {
+          final raw = providerRole.toLowerCase();
+          if (raw == 'doctor' || raw == 'doctor(a)') {
+            _userRole = 'doctor';
+          } else if (raw == 'recepcionista' || raw == 'receptionist') {
+            _userRole = 'receptionist';
+          } else {
+            _userRole = 'patient';
+          }
+        }
       }
       _isInitialized = true;
+      _loadDashboardData();
+    }
+  }
+
+  Future<void> _loadDashboardData() async {
+    final loginProvider = context.read<LoginProvider>();
+    final dashboardProvider = context.read<DashboardProvider>();
+    final appointmentsProvider = context.read<AppointmentsProvider>();
+    final diariesProvider = context.read<PatientDiariesProvider>();
+
+    if (_userRole == 'doctor') {
+      final docId = loginProvider.doctorId;
+      if (docId == null) return; // Sesión sin doctorId: nada que cargar.
+      await dashboardProvider.loadDoctorDashboard(docId);
+      if (!mounted) return;
+      appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
+      // Se dispara sin await: la sección de Alertas Prioritarias se actualiza
+      // sola (vía notifyListeners) en cuanto terminen las peticiones en paralelo.
+      dashboardProvider.loadCriticalPatients(docId);
+    } else {
+      final userId = loginProvider.userId;
+      if (userId == null) return; // Sesión sin userId: nada que cargar.
+      final patId = loginProvider.patientId ?? userId;
+      await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: loginProvider.doctorId);
+      if (!mounted) return;
+      appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
+
+      final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId;
+      if (medicalRecordId != null) {
+        diariesProvider.loadDiaries(medicalRecordId);
+      }
     }
   }
 
@@ -42,8 +102,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_userRole == 'receptionist') {
+      return const ReceptionistDashboardPage();
+    }
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavBar(),
@@ -51,28 +115,43 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final loginProvider = context.watch<LoginProvider>();
+    final String doctorName = loginProvider.name.isNotEmpty 
+        ? 'Dr(a). ${loginProvider.name}' 
+        : 'Médico';
+    final String doctorInitial = loginProvider.name.isNotEmpty
+        ? loginProvider.name[0].toUpperCase()
+        : (loginProvider.email.isNotEmpty ? loginProvider.email[0].toUpperCase() : 'D');
+
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
         // Doctor main dashboard header
         return AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: AppColors.primary,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: Colors.white,
+                child: Text(
+                  doctorInitial,
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Buenos días,',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.normal),
+                    style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.normal),
                   ),
                   Text(
-                    'Dra. Mendoza',
-                    style: TextStyle(fontSize: 16, color: AppColors.primary, fontWeight: FontWeight.bold),
+                    doctorName,
+                    style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -81,45 +160,57 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             IconButton(
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0EFF4),
+                  color: Colors.white.withOpacity(0.18),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.notifications_none_outlined, size: 20, color: AppColors.textDark),
+                child: const Icon(Icons.notifications_none_outlined, size: 20, color: Colors.white),
               ),
               onPressed: () {},
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
           ],
         );
       } else if (_currentTab == 1) {
         // "Mis Pacientes" header
         return AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: AppColors.primary,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
           title: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: Colors.white,
+                child: Text(
+                  doctorInitial,
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
               ),
-              const SizedBox(width: 10),
-              Text(
+              SizedBox(width: 10),
+              const Text(
                 'Salud Prenatal',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-              onPressed: () {},
+              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const InvitationCodePage()),
+                );
+              },
             ),
             IconButton(
-              icon: const Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
+              icon: const Icon(Icons.notifications_none_outlined, color: Colors.white),
               onPressed: () {},
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
           ],
         );
       }
@@ -139,9 +230,15 @@ class _DashboardPageState extends State<DashboardPage> {
         case 0:
           return _buildDoctorDashboard();
         case 1:
-          return _buildDoctorPatientsList();
+          return const PatientsListPage();
         case 2:
           return const AppointmentsPage();
+        case 3:
+          return const ForumsHubPage();
+        case 4:
+          return const ChatListPage();
+        case 5:
+          return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de comunicación y perfil médico.');
       }
@@ -151,6 +248,12 @@ class _DashboardPageState extends State<DashboardPage> {
           return _buildPatientDashboard();
         case 1:
           return const AppointmentsPage();
+        case 2:
+          return const ForumsHubPage();
+        case 3:
+          return const ChatListPage();
+        case 4:
+          return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de salud prenatal.');
       }
@@ -160,21 +263,21 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildPlaceholderView(String description) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.construction_outlined, size: 64, color: AppColors.primary),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.construction_outlined, size: 64, color: AppColors.primary),
+            SizedBox(height: 16),
+            Text(
               'En Construcción',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               description,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: AppColors.textMuted),
             ),
           ],
         ),
@@ -185,64 +288,66 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- DOCTOR VIEWS ---
 
   Widget _buildDoctorDashboard() {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    switch (dashboardProvider.status) {
+      case DashboardStatus.initial:
+      case DashboardStatus.loading:
+        return Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      case DashboardStatus.error:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(dashboardProvider.errorMessage ?? 'Error al cargar el dashboard'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadDashboardData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        );
+      case DashboardStatus.success:
+        break;
+    }
+    final docDb = dashboardProvider.doctorDashboardData;
+    final receptionistsCount = (docDb?['receptionists'] as List?)?.length.toString() ?? '0';
+    final citasHoyStr = docDb?['today_appointments_count']?.toString() ?? '0';
+    final List<dynamic> todayAppointmentsRaw = docDb?['today_appointments'] ?? [];
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 4 Stats Grid Cards
           Row(
             children: [
-              _buildDoctorStatCard('Total Pacientes', '24', Icons.people_outline, Colors.pink),
-              const SizedBox(width: 12),
-              _buildDoctorStatCard('Citas Hoy', '5', Icons.calendar_today_outlined, Colors.teal),
+              _buildDoctorStatCard('Recepcionistas', receptionistsCount, Icons.support_agent_outlined, Colors.pink),
+              SizedBox(width: 12),
+              _buildDoctorStatCard('Citas Hoy', citasHoyStr, Icons.calendar_today_outlined, Colors.teal),
             ],
           ),
-          const SizedBox(height: 12),
-
-
-          // Alertas Prioritarias Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Alertas Prioritarias',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'Ver todas',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Alertas cards with left red line decoration
-          _buildAlertCard('Mariana Villanueva', 'Riesgo de Preeclampsia', 'MV'),
-          const SizedBox(height: 12),
-          _buildAlertCard('Lucía Rojas', 'Taquicardia Fetal', 'LR'),
           const SizedBox(height: 24),
-
-
 
           // Próximas Citas Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Próximas Citas',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE5E5EA),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.calendar_today, size: 12, color: AppColors.textDark),
                     SizedBox(width: 4),
@@ -255,15 +360,50 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
-          // Doctor Appointments List
-          _buildDoctorAppointmentItem('09 AM', 'Elena Gómez', 'Control Prenatal - Sem 24', false),
-          const Divider(height: 1, color: Color(0xFFE5E5EA)),
-          _buildDoctorAppointmentItem('10 AM', 'Mariana Villanueva', 'Urgente: Revisión Labs', true),
-          const Divider(height: 1, color: Color(0xFFE5E5EA)),
-          _buildDoctorAppointmentItem('11 AM', 'Sofia Méndez', 'Ecografía Doppler', false),
-          const SizedBox(height: 40),
+          if (todayAppointmentsRaw.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.0),
+              child: Center(
+                child: Text(
+                  'No hay citas programadas para hoy.',
+                  style: TextStyle(color: AppColors.textMuted),
+                ),
+              ),
+            )
+          else
+            ...todayAppointmentsRaw.map((app) {
+              final String patientName = app['patient_name'] ?? 'Paciente';
+              final String reason = app['reason'] ?? 'Consulta general';
+              final String status = app['status'] ?? 'pending';
+              final String timeRaw = app['appointment_time'] ?? '';
+
+              String timeStr = 'Hora no esp.';
+              if (timeRaw.isNotEmpty) {
+                try {
+                  final dt = DateTime.parse(timeRaw).toLocal();
+                  final isPm = dt.hour >= 12;
+                  final hour = dt.hour == 0
+                      ? 12
+                      : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+                  timeStr = '${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+                } catch (_) {}
+              }
+
+              return Column(
+                children: [
+                  _buildDoctorAppointmentItem(
+                    timeStr,
+                    patientName,
+                    reason,
+                    reason.toLowerCase().contains('urgente') || status == 'cancelled',
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE5E5EA)),
+                ],
+              );
+            }),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -272,13 +412,13 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildDoctorStatCard(String title, String count, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withAlpha(5),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -288,15 +428,15 @@ class _DashboardPageState extends State<DashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 28),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               count,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
           ],
         ),
@@ -304,21 +444,22 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildAlertCard(String name, String alert, String initials) {
+  Widget _buildAlertCard(String name, String alert, String initials, {VoidCallback? onDetailPressed}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
+            color: Colors.black.withAlpha(3),
             blurRadius: 8,
             offset: const Offset(0, 3),
           )
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Red curve container border decoration
           Container(
@@ -332,52 +473,61 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           CircleAvatar(
             backgroundColor: const Color(0xFFFFEBEA),
             radius: 20,
             child: Text(
               initials,
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      alert,
-                      style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
+                    SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        alert,
+                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
+                SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: onDetailPressed,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: Text(
+                      'Detalle',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
               ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text(
-              'Detalle',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -387,8 +537,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildDoctorAppointmentItem(String time, String name, String subtitle, bool isUrgent) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      color: Colors.white,
+      padding: EdgeInsets.symmetric(vertical: 16),
+      color: AppColors.cardBackground,
       child: Row(
         children: [
           SizedBox(
@@ -398,11 +548,11 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Text(
                   time.split(' ')[0],
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
                 ),
                 Text(
                   time.split(' ')[1],
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -412,16 +562,16 @@ class _DashboardPageState extends State<DashboardPage> {
             height: 30,
             color: Colors.pink.shade50,
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(
@@ -434,7 +584,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
+            icon: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
             onPressed: () {},
           ),
         ],
@@ -442,395 +592,186 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // --- DOCTOR PATIENTS LIST VIEW ("Mis Pacientes") ---
-
-  Widget _buildDoctorPatientsList() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Mis Pacientes',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Text(
-                'Gestión activa de cuidados prenatales.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  '24',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Search patient bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              hintText: 'Buscar paciente por nombre o ID...',
-              prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.pink.shade50),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.pink.shade50),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            onChanged: (val) {
-              setState(() {}); // Redraw list on search query
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Scrollable Filter Tags
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('Todas'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Riesgo Alto'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Riesgo Medio'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Riesgo Bajo'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Patients list matching wireframe
-          _buildPatientListCard(
-            name: 'Mariana Villanueva',
-            id: '#SP-20485',
-            risk: 'Alto Riesgo',
-            riskColorBg: AppColors.riskHighBg,
-            riskColorText: AppColors.riskHighText,
-            gestationAge: '32 sem + 4 días',
-            status: 'Estable',
-            statusIcon: Icons.check_circle_outline,
-            statusIconColor: Colors.teal,
-            avatarInitials: 'MV',
-            imageBackground: const Color(0xFFFFF0F6),
-          ),
-          const SizedBox(height: 12),
-          _buildPatientListCard(
-            name: 'Lucía Castillo',
-            id: '#SP-19322',
-            risk: 'Medio Riesgo',
-            riskColorBg: AppColors.riskMediumBg,
-            riskColorText: AppColors.riskMediumText,
-            gestationAge: '28 sem + 2 días',
-            status: 'Pendiente',
-            statusIcon: Icons.access_time_outlined,
-            statusIconColor: Colors.orange,
-            avatarInitials: 'LC',
-            imageBackground: const Color(0xFFFFF4E5),
-          ),
-          const SizedBox(height: 12),
-          _buildPatientListCard(
-            name: 'Elena López',
-            id: '#SP-21004',
-            risk: 'Bajo Riesgo',
-            riskColorBg: AppColors.riskLowBg,
-            riskColorText: AppColors.riskLowText,
-            gestationAge: '14 sem',
-            status: 'Estable',
-            statusIcon: Icons.check_circle_outline,
-            statusIconColor: Colors.teal,
-            avatarInitials: 'EL',
-            imageBackground: const Color(0xFFE0F2F1),
-          ),
-          const SizedBox(height: 24),
-
-          // Pagination indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left, color: AppColors.textMuted),
-                onPressed: () {},
-              ),
-              _buildPageDot(1, true),
-              _buildPageDot(2, false),
-              _buildPageDot(3, false),
-              IconButton(
-                icon: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                onPressed: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label) {
-    final isSelected = _activeFilter == label;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activeFilter = label;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : const Color(0xFFEFEFF4),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPatientListCard({
-    required String name,
-    required String id,
-    required String risk,
-    required Color riskColorBg,
-    required Color riskColorText,
-    required String gestationAge,
-    required String status,
-    required IconData statusIcon,
-    required Color statusIconColor,
-    required String avatarInitials,
-    required Color imageBackground,
-  }) {
-    // Basic search filtering
-    if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text.toLowerCase();
-      if (!name.toLowerCase().contains(query) && !id.toLowerCase().contains(query)) {
-        return const SizedBox.shrink();
-      }
-    }
-
-    // Risk filtering
-    if (_activeFilter != 'Todas') {
-      if (_activeFilter == 'Riesgo Alto' && risk != 'Alto Riesgo') return const SizedBox.shrink();
-      if (_activeFilter == 'Riesgo Medio' && risk != 'Medio Riesgo') return const SizedBox.shrink();
-      if (_activeFilter == 'Riesgo Bajo' && risk != 'Bajo Riesgo') return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: imageBackground,
-                radius: 24,
-                child: Text(
-                  avatarInitials,
-                  style: TextStyle(color: riskColorText, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'ID: $id',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: riskColorBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  risk,
-                  style: TextStyle(color: riskColorText, fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Details row
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Text(gestationAge, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Estado Actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusIconColor),
-                          const SizedBox(width: 4),
-                          Text(status, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: statusIconColor)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PatientRecordPage(
-                          patientName: name,
-                          patientId: id,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text('Ver Detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PatientProgressPage(
-                          patientName: name,
-                        ),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    side: const BorderSide(color: Colors.pinkAccent, width: 1),
-                    backgroundColor: const Color(0xFFFFF0F6),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.trending_up, size: 16, color: AppColors.primary),
-                      const SizedBox(width: 6),
-                      Text('Progreso', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageDot(int pageNum, bool isSelected) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          pageNum.toString(),
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
+  // --- OLD METHODS REMOVED ---
 
   // --- PATIENT VIEWS ---
 
   Widget _buildPatientDashboard() {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    switch (dashboardProvider.status) {
+      case DashboardStatus.initial:
+      case DashboardStatus.loading:
+        return Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      case DashboardStatus.error:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(dashboardProvider.errorMessage ?? 'Error al cargar el dashboard'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadDashboardData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        );
+      case DashboardStatus.success:
+        break;
+    }
+    final loginProvider = context.watch<LoginProvider>();
+    final appointmentsProvider = context.watch<AppointmentsProvider>();
+    final diariesProvider = context.watch<PatientDiariesProvider>();
+
+    final String displayName = loginProvider.fullName.isNotEmpty
+        ? loginProvider.fullName
+        : 'Paciente';
+
+    final rawWeeks = dashboardProvider.currentPatientData?['current_gestational_weeks'];
+    final String weeksText = rawWeeks != null ? 'Semana $rawWeeks de embarazo' : 'Embarazo en curso';
+
+    final medicalRecord = dashboardProvider.medicalRecord;
+    String patientRisk = 'Bajo';
+
+    if (medicalRecord != null) {
+      final riskPrediction = medicalRecord.riskPrediction;
+      String? clusterName;
+      if (riskPrediction != null && riskPrediction.isOk) {
+        clusterName = riskPrediction.diagnosis;
+      }
+      if (clusterName != null && clusterName.isNotEmpty) {
+        final diagnosis = clusterName.toLowerCase();
+        if (diagnosis.contains('alto') || diagnosis.contains('crítico') || diagnosis.contains('critico')) {
+          patientRisk = 'Alto';
+        } else if (diagnosis.contains('medio') || diagnosis.contains('moderado')) {
+          patientRisk = 'Medio';
+        } else {
+          patientRisk = 'Bajo';
+        }
+      } else {
+        if (medicalRecord.previousPreeclampsia || 
+            medicalRecord.chronicHypertension || 
+            medicalRecord.previousHypertension) {
+          patientRisk = 'Alto';
+        } else if (medicalRecord.diabetes || 
+                   medicalRecord.familyHistoryHypertension) {
+          patientRisk = 'Medio';
+        }
+      }
+    }
+
+    final upcomingAppointments = appointmentsProvider.appointments.where((app) => 
+        app.status == AppointmentStatus.pending && 
+        app.dateTime.isAfter(DateTime.now().subtract(const Duration(hours: 2)))
+    ).toList();
+    upcomingAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    final nextApp = upcomingAppointments.isNotEmpty ? upcomingAppointments.first : null;
+
+    final monthsList = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+    final monthStr = nextApp != null ? monthsList[nextApp.dateTime.month - 1] : 'S/C';
+    final dayStr = nextApp != null ? nextApp.dateTime.day.toString() : '--';
+    
+    final isPm = nextApp != null && nextApp.dateTime.hour >= 12;
+    final hour = nextApp != null 
+        ? (nextApp.dateTime.hour == 0 ? 12 : (nextApp.dateTime.hour > 12 ? nextApp.dateTime.hour - 12 : nextApp.dateTime.hour))
+        : 12;
+    final timeStr = nextApp != null 
+        ? '${hour.toString().padLeft(2, '0')}:${nextApp.dateTime.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}' 
+        : '--';
+    
+    final reasonStr = nextApp != null ? nextApp.reason : 'No hay citas programadas';
+    
+    String docNameStr = 'Sin médico';
+    String docSpecialtyStr = 'Especialidad no especificada';
+
+    if (dashboardProvider.dashboardData?['current_doctor'] != null) {
+      docNameStr = dashboardProvider.dashboardData!['current_doctor'];
+      docSpecialtyStr = dashboardProvider.dashboardData?['current_doctor_specialty'] ?? docSpecialtyStr;
+    } else if (nextApp != null) {
+      docNameStr = nextApp.doctorName;
+    }
+
+    final systolicPressures = <double>[];
+    final consultationDays = <String>[];
+    final daysOfWeek = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+    for (var i = 0; i < dashboardProvider.consultations.length; i++) {
+      final consultation = dashboardProvider.consultations[i];
+      final pressureRegex = RegExp(r'(\d{2,3})/\d{2,3}');
+      final match = pressureRegex.firstMatch(consultation.objective);
+      if (match != null) {
+        final systolic = double.tryParse(match.group(1)!) ?? 120.0;
+        systolicPressures.add(systolic);
+        
+        final dayIndex = consultation.createdAt.weekday - 1;
+        consultationDays.add(daysOfWeek[dayIndex]);
+      }
+    }
+
+    // Find current week's start (Monday) and end (Sunday)
+    final now = DateTime.now();
+    final currentDay = now.weekday; // 1 = Monday, 7 = Sunday
+    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: currentDay - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+    
+    // Array of booleans to track if a measurement was made each day (index 0 = Monday, 6 = Sunday)
+    final weekMeasurements = List.filled(7, false);
+    
+    for (var diary in diariesProvider.diaries) {
+      if (diary.createdAt.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) && 
+          diary.createdAt.isBefore(endOfWeek.add(const Duration(seconds: 1)))) {
+        final dayIndex = diary.createdAt.weekday - 1;
+        weekMeasurements[dayIndex] = true;
+      }
+    }
+    
+    final trackingCirclesList = <Widget>[];
+    for (var i = 0; i < 7; i++) {
+      final isActive = weekMeasurements[i];
+      final isFuture = i > (currentDay - 1);
+      
+      trackingCirclesList.add(
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive ? AppColors.primary : (isFuture ? Colors.grey.shade200 : const Color(0xFFFFF0F6)),
+                ),
+                child: isActive 
+                    ? const Icon(Icons.check, color: Colors.white, size: 18) 
+                    : (isFuture ? null : const Icon(Icons.close, color: Color(0xFFFF85C0), size: 18)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                daysOfWeek[i],
+                style: TextStyle(
+                  color: (i == currentDay - 1) ? AppColors.primary : AppColors.textMuted,
+                  fontWeight: (i == currentDay - 1) ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
+      padding: EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header inside body
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -839,192 +780,199 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        'Hola, Ana García',
+                      Text(
+                        'Hola, $displayName',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         '👋',
-                        style: const TextStyle(fontSize: 22),
+                        style: TextStyle(fontSize: 22),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Semana 28 de embarazo',
+                  SizedBox(height: 2),
+                   Text(
+                    weeksText,
                     style: TextStyle(color: AppColors.textMuted, fontSize: 14),
                   ),
                 ],
               ),
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 22,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100'),
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'P',
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
+
+          // Banner de vinculación si no tiene doctor
+          if (dashboardProvider.dashboardData?['current_doctor'] == null)
+            Container(
+              margin: EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF0F6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.pink.shade100, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.medical_services_outlined, color: AppColors.primary),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Aún no tienes un médico',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 15),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Vincúlate usando el código de invitación.',
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const InvitationCodePage()),
+                      );
+                      if (result == true && mounted) {
+                        final loginProvider = context.read<LoginProvider>();
+                        final patientId = loginProvider.patientId;
+                        final userId = loginProvider.userId;
+                        if (patientId != null && userId != null) {
+                          context.read<DashboardProvider>().loadPatientDashboard(patientId, userId);
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: Text('Vincular', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
 
           // MI ESTADO DE HOY Section
-          const Text(
+          Text(
             'MI ESTADO DE HOY',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
-          // Riesgo estimado card with circle success indicator
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.015),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Riesgo estimado',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Bajo',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.teal.shade700),
-                    ),
-                  ],
-                ),
-                // Circular success indicator
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: CircularProgressIndicator(
-                        value: 0.85,
-                        strokeWidth: 4,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.teal.shade400),
-                        backgroundColor: Colors.teal.shade50,
-                      ),
-                    ),
-                    Icon(Icons.check, color: Colors.teal.shade700, size: 24),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Stats row (Pressure & Weight)
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
+          Builder(
+            builder: (context) {
+              final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
+              
+              if (medicalRecordId == null || medicalRecordId <= 0) {
+                return Container(
+                  padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.01),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ],
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.red.shade100),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
-                          const Icon(Icons.show_chart, color: Colors.green, size: 16),
-                        ],
+                      Icon(Icons.folder_off_outlined, color: Colors.red.shade400, size: 32),
+                      SizedBox(height: 12),
+                      Text(
+                        'Tu médico no te ha creado un expediente aún',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 12),
-                      const Text('Presión', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 4),
-                      const Text('120/80', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                      const Text('MMHG', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                      if (loginProvider.doctorId == null) ...[
+                        SizedBox(height: 4),
+                        Text(
+                          'Aún no estás vinculado a un médico.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.01),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 20),
-                          const Icon(Icons.horizontal_rule, color: AppColors.textMuted, size: 16),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('Peso actual', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 4),
-                      const Text('68.4', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                      const Text('KILOGRAMOS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                );
+              }
 
-          // Registrar medicion button
-          ElevatedButton.icon(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            label: const Text(
-              'Registrar medición',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
-            ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (diariesProvider.isLoading)
+                    Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  else if (diariesProvider.diaries.isNotEmpty)
+                    LatestDiaryRecordCard(
+                      systolic: diariesProvider.diaries.first.systolic,
+                      diastolic: diariesProvider.diaries.first.diastolic,
+                      weightKg: diariesProvider.diaries.first.weightKg,
+                    )
+                  else
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
+                      ),
+                      child: Text(
+                        'Aún no tienes registros en tu bitácora.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/patient-diaries');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    icon: Icon(Icons.add_circle_outline, color: Colors.white),
+                    label: Text(
+                      'Registrar medición',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
 
           // MI PRÓXIMA CITA Section
-          const Text(
+          Text(
             'MI PRÓXIMA CITA',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
-          // Magenta Card for Next Appointment
+          // Magenta Card
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.primary, AppColors.primary.withRed(220)],
@@ -1034,7 +982,7 @@ class _DashboardPageState extends State<DashboardPage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withAlpha(51),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 )
@@ -1045,38 +993,37 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Row(
                   children: [
-                    // Date Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withAlpha(51),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
                         children: [
                           Text(
-                            'JUN',
-                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.bold),
+                            monthStr,
+                            style: TextStyle(color: Colors.white.withAlpha(204), fontSize: 11, fontWeight: FontWeight.bold),
                           ),
-                          const Text(
-                            '18',
+                          Text(
+                            dayStr,
                             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '10:00 AM',
+                          Text(
+                            timeStr,
                             style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Control prenatal',
+                          SizedBox(height: 2),
+                          Text(
+                            reasonStr,
                             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -1084,59 +1031,112 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                // Doctor info
+                SizedBox(height: 20),
                 Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 18,
-                      backgroundImage: NetworkImage('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100'),
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        docNameStr.isNotEmpty
+                            ? docNameStr.replaceAll(RegExp(r'^(Dr\.|Dra\.)\s*', caseSensitive: false), '')[0].toUpperCase()
+                            : 'D',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Dra. Lucía Mendoza',
+                          Text(
+                            docNameStr,
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
-                            'Ginecología y Obstetricia',
-                            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11),
+                            docSpecialtyStr,
+                            style: TextStyle(color: Colors.white.withAlpha(179), fontSize: 11),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                // Actions
+                SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          if (nextApp != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AppointmentDetailPage(appointment: nextApp),
+                              ),
+                            );
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: Colors.white.withAlpha(51),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Text('Ver detalles', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        child: Text('Ver detalles', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // El backend no da el user_id del doctor asignado
+                          // directamente; se empareja su nombre contra la lista de
+                          // usuarios ya cargada. Si no hay coincidencia, no se
+                          // navega con un ID inventado.
+                          UserProfile? matchedDoc;
+                          final normalized = docNameStr.trim().toLowerCase();
+                          final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor'));
+                          for (final doc in doctors) {
+                            final fullName = '${doc.name} ${doc.lastName}'.trim().toLowerCase();
+                            if (fullName.isNotEmpty && fullName == normalized) {
+                              matchedDoc = doc;
+                              break;
+                            }
+                          }
+                          if (matchedDoc == null) {
+                            for (final doc in doctors) {
+                              if (doc.name.isNotEmpty && normalized.contains(doc.name.toLowerCase())) {
+                                matchedDoc = doc;
+                                break;
+                              }
+                            }
+                          }
+                          final docUserId = matchedDoc?.userId;
+                          if (docUserId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('No se pudo identificar a tu médico.')),
+                            );
+                            return;
+                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatRoomPage(
+                                otherUserId: docUserId,
+                                otherUserName: docNameStr,
+                                otherUserRole: 'doctor',
+                              ),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.chat_bubble_outline, size: 14),
@@ -1151,37 +1151,37 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
 
           // SEGUIMIENTO SEMANAL Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'SEGUIMIENTO SEMANAL',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
               ),
               TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
-                child: const Text(
+                child: Text(
                   'Presión Sistólica',
                   style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Weekly chart card mockup
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.015),
+                  color: Colors.black.withAlpha(4),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -1189,144 +1189,18 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Column(
               children: [
-                // Simulating a chart background space
-                Container(
-                  height: 100,
-                  decoration: const BoxDecoration(
-                    // Simple chart graphics spacer
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _buildBar(15, false),
-                      _buildBar(35, false),
-                      _buildBar(25, false),
-                      _buildBar(45, false),
-                      _buildBar(75, true), // Active day (Friday in red/pink)
-                      _buildBar(30, false),
-                      _buildBar(20, false),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildDayLabel('L', false),
-                    _buildDayLabel('M', false),
-                    _buildDayLabel('M', false),
-                    _buildDayLabel('J', false),
-                    _buildDayLabel('V', true),
-                    _buildDayLabel('S', false),
-                    _buildDayLabel('D', false),
-                  ],
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: trackingCirclesList,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
-                  'Tu presión se mantiene estable dentro de los rangos normales.',
+                  patientRisk == 'Alto'
+                      ? 'Atención: Tu presión muestra variaciones. Reporta cualquier malestar de inmediato.'
+                      : 'Tu presión se mantiene estable dentro de los rangos normales.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // COMUNIDAD Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'COMUNIDAD',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'Ver más',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Doctor Tip card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.pink.shade50),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 4,
-                  height: 50,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(4), bottomLeft: Radius.circular(4)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Dra. Sofia - Consejos',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '"Es normal sentir más cansancio en la semana 28. Recuerda hidratarte bien y..."',
-                        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade700, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Community Question card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 10,
-                          backgroundColor: Colors.amber,
-                          child: Text('M', style: TextStyle(color: Colors.white, fontSize: 8)),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'María R.',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
-                        ),
-                      ],
-                    ),
-                    const Text('Hace 2h', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  '¿Alguna recomendación para dormir mejor en este trimestre? 🤰✨',
-                  style: TextStyle(fontSize: 13, color: AppColors.textDark),
                 ),
               ],
             ),
@@ -1373,10 +1247,10 @@ class _DashboardPageState extends State<DashboardPage> {
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
+        unselectedItemColor: Colors.white60,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF1E1E1E),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
@@ -1394,6 +1268,11 @@ class _DashboardPageState extends State<DashboardPage> {
             label: 'Citas',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.forum_outlined),
+            activeIcon: Icon(Icons.forum),
+            label: 'Foros',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.message_outlined),
             activeIcon: Icon(Icons.message),
             label: 'Mensajes',
@@ -1408,41 +1287,40 @@ class _DashboardPageState extends State<DashboardPage> {
     } else {
       // Bottom nav bar for Patient role (which has a central circular "+" button)
       return BottomAppBar(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         elevation: 10,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildPatientTabItem(0, Icons.home_outlined, Icons.home, 'Inicio'),
             _buildPatientTabItem(1, Icons.calendar_today_outlined, Icons.calendar_today, 'Citas'),
+            _buildPatientTabItem(2, Icons.forum_outlined, Icons.forum, 'Foros'),
             // Central floating circular add button
             GestureDetector(
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Añadir nueva medición o registro')),
-                );
+                Navigator.pushNamed(context, '/patient-diaries');
               },
               child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: EdgeInsets.only(bottom: 12),
                 width: 50,
                 height: 50,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
                 ),
                 child: Container(
-                  margin: const EdgeInsets.all(4),
+                  margin: EdgeInsets.all(4),
                   decoration: const BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                  child: Icon(Icons.add, color: Colors.white, size: 28),
                 ),
               ),
             ),
-            _buildPatientTabItem(2, Icons.message_outlined, Icons.message, 'Mensajes'),
-            _buildPatientTabItem(3, Icons.person_outline, Icons.person, 'Perfil'),
+            _buildPatientTabItem(3, Icons.message_outlined, Icons.message, 'Mensajes'),
+            _buildPatientTabItem(4, Icons.person_outline, Icons.person, 'Perfil'),
           ],
         ),
       );
@@ -1465,13 +1343,100 @@ class _DashboardPageState extends State<DashboardPage> {
             color: isSelected ? AppColors.primary : AppColors.textMuted,
             size: 24,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               color: isSelected ? AppColors.primary : AppColors.textMuted,
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRiskPredictionBanner(RiskPrediction prediction) {
+    final clusterName = prediction.diagnosis ?? 'Riesgo indeterminado';
+    final lower = clusterName.toLowerCase();
+    final isHigh = lower.contains('alto') || lower.contains('crítico') || lower.contains('critico');
+    final isMedium = lower.contains('medio') || lower.contains('moderado');
+
+    final Color bgColor = isHigh
+        ? AppColors.riskHighBg
+        : (isMedium ? AppColors.riskMediumBg : AppColors.riskLowBg);
+    final Color textColor = isHigh
+        ? AppColors.riskHighText
+        : (isMedium ? AppColors.riskMediumText : AppColors.riskLowText);
+    final Color iconColor = isHigh
+        ? Colors.red
+        : (isMedium ? Colors.orange : Colors.teal);
+    final IconData icon = isHigh
+        ? Icons.warning_amber_rounded
+        : (isMedium ? Icons.info_outline : Icons.check_circle_outline);
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: iconColor.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Predicción de Riesgo IA',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    if (prediction.riskCluster != null)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: textColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'C${prediction.riskCluster}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  clusterName,
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

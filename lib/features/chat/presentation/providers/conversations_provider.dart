@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../../domain/entities/chat_contact.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/usecases/get_conversations_use_case.dart';
@@ -21,27 +20,21 @@ class ConversationsProvider with ChangeNotifier {
   String? _error;
   List<Conversation> _conversations = [];
   int? _currentUserId;
-  List<ChatContact> _lastContacts = [];
   StreamSubscription<dynamic>? _incomingMessageSubscription;
 
   ConversationsViewState get viewState => _viewState;
   String? get error => _error;
   List<Conversation> get conversations => _conversations;
 
-  /// Carga las conversaciones reales del usuario a partir de [contacts]: la
-  /// lista de personas con las que puede chatear (pacientes del doctor, o el
-  /// doctor asignado del paciente). El backend no tiene un endpoint de
-  /// "inbox", así que esta lista debe venir ya resuelta desde la UI con
-  /// datos reales, nunca con IDs inventados.
-  Future<void> loadConversations(int currentUserId, List<ChatContact> contacts) async {
+  /// Carga la bandeja de conversaciones real del usuario desde GET /chat/inbox.
+  Future<void> loadConversations(int currentUserId) async {
     _currentUserId = currentUserId;
-    _lastContacts = contacts;
     _viewState = ConversationsViewState.loading;
     _error = null;
     notifyListeners();
 
     try {
-      final result = await _getConversationsUseCase.call(currentUserId, contacts);
+      final result = await _getConversationsUseCase.call(currentUserId);
       result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       _conversations = result;
       _viewState = ConversationsViewState.success;
@@ -55,13 +48,34 @@ class ConversationsProvider with ChangeNotifier {
 
   /// Se suscribe a mensajes entrantes en tiempo real para volver a cargar la
   /// bandeja de conversaciones automáticamente. Requiere haber llamado antes
-  /// a [loadConversations] al menos una vez (para conocer el usuario actual
-  /// y los contactos).
+  /// a [loadConversations] al menos una vez (para conocer el usuario actual).
+  /// Marca localmente como leída la conversación con [otherUserId] (badge de
+  /// no-leídos a 0) para feedback instantáneo al entrar al chat, sin esperar
+  /// el refresh completo del inbox que dispara la página al volver.
+  void markConversationAsRead(int otherUserId) {
+    final idx = _conversations.indexWhere((c) => c.participant2Id == otherUserId);
+    if (idx == -1 || _conversations[idx].unreadCount == 0) return;
+
+    final old = _conversations[idx];
+    _conversations[idx] = Conversation(
+      conversationId: old.conversationId,
+      participant1Id: old.participant1Id,
+      participant2Id: old.participant2Id,
+      participant1Name: old.participant1Name,
+      participant2Name: old.participant2Name,
+      lastMessage: old.lastMessage,
+      unreadCount: 0,
+      updatedAt: old.updatedAt,
+      otherUserRole: old.otherUserRole,
+    );
+    notifyListeners();
+  }
+
   void startWatchingInbox() {
     if (_repository == null || _incomingMessageSubscription != null) return;
     _incomingMessageSubscription = _repository.messageStream.listen((_) {
       if (_currentUserId != null) {
-        loadConversations(_currentUserId!, _lastContacts);
+        loadConversations(_currentUserId!);
       }
     });
   }

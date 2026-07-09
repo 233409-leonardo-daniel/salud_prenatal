@@ -5,10 +5,10 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
-import '../../../patients/presentation/providers/patients_list_provider.dart';
-import '../../domain/entities/chat_contact.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../providers/conversations_provider.dart';
+import '../widgets/contacts_bottom_sheet.dart';
+import '../widgets/pulsing_skeleton.dart';
 import 'chat_room_page.dart';
 
 class ChatListPage extends StatefulWidget {
@@ -23,14 +23,11 @@ class _ChatListPageState extends State<ChatListPage> {
   String _searchQuery = '';
 
   late final ConversationsProvider _conversationsProvider;
-  List<Conversation> _inboxConversations = [];
-  bool _loadingLastMessages = false;
 
   @override
   void initState() {
     super.initState();
     _conversationsProvider = context.read<ConversationsProvider>();
-    _conversationsProvider.addListener(_onConversationsChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _refreshInbox();
@@ -38,18 +35,13 @@ class _ChatListPageState extends State<ChatListPage> {
     });
   }
 
-  void _onConversationsChanged() {
-    if (!mounted) return;
-    setState(() {
-      _inboxConversations = List<Conversation>.from(_conversationsProvider.conversations);
-      _loadingLastMessages = _conversationsProvider.viewState == ConversationsViewState.loading;
-    });
-  }
-
-  /// El backend no expone un endpoint de "inbox": primero se refresca la
-  /// información real de la sesión (pacientes del doctor, o el dashboard del
-  /// paciente con el nombre de su doctor asignado) y con eso se resuelve la
-  /// lista de contactos reales antes de pedir sus conversaciones.
+  /// Carga la bandeja real desde GET /chat/inbox. Para doctor/recepcionista
+  /// eso es todo lo que hace falta: el rol/nombre de cada contacto ya viene
+  /// en la respuesta del inbox (ver [Conversation.otherUserRole]), y
+  /// patients/users solo se cargan bajo demanda al abrir el diálogo de
+  /// "nuevo contacto" (ver [_showContactsDialog]). Para el paciente sí
+  /// necesitamos, además, el nombre de su doctor asignado (current_doctor),
+  /// que el inbox no expone si todavía no hay mensajes con él.
   Future<void> _refreshInbox() async {
     final loginProvider = context.read<LoginProvider>();
     final currentUserId = loginProvider.userId;
@@ -58,75 +50,18 @@ class _ChatListPageState extends State<ChatListPage> {
     final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
-    final dashboardProvider = context.read<DashboardProvider>();
-    final patientsProvider = context.read<PatientsListProvider>();
-    final patId = loginProvider.patientId ?? currentUserId;
 
-    // 1. Cargar pacientes si es doctor o recepcionista
-    if (isDoctorOrReceptionist && loginProvider.doctorId != null) {
-      await patientsProvider.loadPatients(loginProvider.doctorId.toString());
+    if (!isDoctorOrReceptionist) {
+      final dashboardProvider = context.read<DashboardProvider>();
+      final patId = loginProvider.patientId ?? currentUserId;
+      await dashboardProvider.loadPatientBasicInfo(patId);
+      if (!mounted) return;
     }
 
-    // 2. Cargar el dashboard: para el doctor/recepcionista puebla la lista de
-    // usuarios (necesaria para resolver nombres); para el paciente además
-    // trae el nombre de su doctor asignado (current_doctor).
-    await dashboardProvider.loadPatientDashboard(patId, currentUserId, doctorId: loginProvider.doctorId);
-    if (!mounted) return;
-
-    // 3. Resolver los contactos reales con los que puede haber conversaciones
-    // y pedir su historial (el backend no tiene endpoint de inbox).
-    final contacts = _resolveContacts(
-      isDoctorOrReceptionist: isDoctorOrReceptionist,
-      isReceptionist: isReceptionist,
-      currentUserId: currentUserId,
-      dashboardProvider: dashboardProvider,
-      patientsProvider: patientsProvider,
-    );
-    await _conversationsProvider.loadConversations(currentUserId, contacts);
+    await _conversationsProvider.loadConversations(currentUserId);
   }
 
   Future<void> _loadLastMessages() => _refreshInbox();
-
-  /// Construye la lista de contactos reales con los que el usuario actual
-  /// puede tener una conversación, sin inventar ningún ID.
-  List<ChatContact> _resolveContacts({
-    required bool isDoctorOrReceptionist,
-    required bool isReceptionist,
-    required int currentUserId,
-    required DashboardProvider dashboardProvider,
-    required PatientsListProvider patientsProvider,
-  }) {
-    if (isDoctorOrReceptionist) {
-      final contacts = patientsProvider.patients.map((patient) {
-        final user = dashboardProvider.users.firstWhere(
-          (u) => u.userId == patient.userId,
-          orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-        );
-        return ChatContact(
-          userId: patient.userId,
-          name: '${user.name} ${user.lastName}'.trim(),
-          role: user.role,
-        );
-      }).toList();
-
-      // La recepcionista también puede tener conversaciones con los médicos.
-      if (isReceptionist) {
-        contacts.addAll(
-          dashboardProvider.users
-              .where((u) => u.role.toLowerCase().contains('doctor') && u.userId != null && u.userId != currentUserId)
-              .map((u) => ChatContact(userId: u.userId!, name: '${u.name} ${u.lastName}'.trim(), role: u.role)),
-        );
-      }
-      return contacts;
-    }
-
-    // Vista de paciente: su único contacto posible es su doctor asignado.
-    final assignedDoc = _matchAssignedDoctor(dashboardProvider);
-    if (assignedDoc?.userId == null) return [];
-    return [
-      ChatContact(userId: assignedDoc!.userId!, name: '${assignedDoc.name} ${assignedDoc.lastName}'.trim(), role: assignedDoc.role),
-    ];
-  }
 
   /// Empareja el nombre del doctor asignado (`current_doctor`, la única
   /// referencia que da el dashboard del paciente) contra la lista de
@@ -153,7 +88,6 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   void dispose() {
-    _conversationsProvider.removeListener(_onConversationsChanged);
     _conversationsProvider.stopWatchingInbox();
     _searchController.dispose();
     super.dispose();
@@ -233,24 +167,44 @@ class _ChatListPageState extends State<ChatListPage> {
           ],
         ),
       ),
-      floatingActionButton: isDoctorOrReceptionist ? FloatingActionButton(
-        onPressed: _showContactsDialog,
+      // GET /chat/contacts resuelve por rol en el backend (pacientes+
+      // recepcionistas para un doctor, pacientes+doctores para una
+      // recepcionista, doctor asignado+recepcionistas para un paciente) —
+      // el botón se muestra siempre, sin importar el rol.
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showContactsBottomSheet(context, onReturn: _loadLastMessages),
         backgroundColor: AppColors.primary,
         child: Icon(Icons.contacts, color: Colors.white),
-      ) : null,
+      ),
     );
   }
 
   // --- DOCTOR & RECEPTIONIST VIEW: Active Conversations ---
   Widget _buildDoctorChatList() {
     final loginProvider = context.watch<LoginProvider>();
-    final dashboardProvider = context.watch<DashboardProvider>();
+    final conversationsProvider = context.watch<ConversationsProvider>();
+    final conversations = conversationsProvider.conversations;
 
-    if (_loadingLastMessages && _inboxConversations.isEmpty) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+    switch (conversationsProvider.viewState) {
+      case ConversationsViewState.initial:
+        return const _ChatListSkeleton();
+      case ConversationsViewState.loading:
+        if (conversations.isEmpty) return const _ChatListSkeleton();
+        break;
+      case ConversationsViewState.error:
+        if (conversations.isEmpty) {
+          return _buildEmptyState(
+            icon: Icons.error_outline,
+            title: 'No se pudo cargar',
+            description: conversationsProvider.error ?? 'Ocurrió un error al cargar tus chats.',
+          );
+        }
+        break;
+      case ConversationsViewState.success:
+        break;
     }
 
-    if (_inboxConversations.isEmpty) {
+    if (conversations.isEmpty) {
       return _buildEmptyState(
         icon: Icons.chat_bubble_outline,
         title: 'Sin conversaciones',
@@ -258,7 +212,7 @@ class _ChatListPageState extends State<ChatListPage> {
       );
     }
 
-    final filtered = _inboxConversations.where((conv) {
+    final filtered = conversations.where((conv) {
       return conv.participant2Name.toLowerCase().contains(_searchQuery);
     }).toList();
 
@@ -284,14 +238,8 @@ class _ChatListPageState extends State<ChatListPage> {
       itemBuilder: (context, index) {
         final conv = filtered[index];
         final otherUserId = conv.participant2Id;
-        
-        // Obtener rol del usuario
-        final contactUser = dashboardProvider.users.firstWhere(
-          (u) => u.userId == otherUserId,
-          orElse: () => UserProfile(name: '', lastName: '', email: '', role: 'paciente'),
-        );
-        
-        final isDoc = contactUser.role.toLowerCase().contains('doctor') || conv.participant2Name.contains('Dra.');
+
+        final isDoc = conv.otherUserRole.toLowerCase().contains('doctor') || conv.participant2Name.contains('Dra.');
         final fullName = isDoc 
             ? 'Dra. ${conv.participant2Name.replaceAll('Dra. ', '').replaceAll('Dr. ', '')}'.trim()
             : conv.participant2Name;
@@ -329,29 +277,14 @@ class _ChatListPageState extends State<ChatListPage> {
           ),
           child: ListTile(
             onTap: () async {
-              setState(() {
-                final idx = _inboxConversations.indexWhere((c) => c.participant2Id == otherUserId);
-                if (idx != -1) {
-                  final old = _inboxConversations[idx];
-                  _inboxConversations[idx] = Conversation(
-                    conversationId: old.conversationId,
-                    participant1Id: old.participant1Id,
-                    participant2Id: old.participant2Id,
-                    participant1Name: old.participant1Name,
-                    participant2Name: old.participant2Name,
-                    lastMessage: old.lastMessage,
-                    unreadCount: 0,
-                    updatedAt: old.updatedAt,
-                  );
-                }
-              });
+              _conversationsProvider.markConversationAsRead(otherUserId);
               await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
                     otherUserId: otherUserId,
                     otherUserName: fullName,
-                    otherUserRole: contactUser.role.isNotEmpty ? contactUser.role : 'paciente',
+                    otherUserRole: conv.otherUserRole.isNotEmpty ? conv.otherUserRole : 'paciente',
                   ),
                 ),
               );
@@ -421,136 +354,12 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  void _showContactsDialog() {
-    final patientsProvider = context.read<PatientsListProvider>();
-    final dashboardProvider = context.read<DashboardProvider>();
-    final loginProvider = context.read<LoginProvider>();
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
-    
-    // Construir la lista de contactos disponibles
-    final List<UserProfile> availableContacts = [];
-    
-    // Todos los pacientes
-    for (final patient in patientsProvider.patients) {
-      final patientUser = dashboardProvider.users.firstWhere(
-        (u) => u.userId == patient.userId,
-        orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-      );
-      availableContacts.add(patientUser);
-    }
-    
-    // Si es recepcionista, también agregar a todos los médicos
-    if (isReceptionist) {
-      final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor')).toList();
-      availableContacts.addAll(doctors);
-    }
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.75,
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                children: [
-                  SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Contactos',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                  ),
-                  SizedBox(height: 8),
-                  const Divider(),
-                  Expanded(
-                    child: availableContacts.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No hay contactos registrados.',
-                              style: TextStyle(color: AppColors.textMuted),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(16),
-                            itemCount: availableContacts.length,
-                            itemBuilder: (context, index) {
-                              final contactUser = availableContacts[index];
-                              final isDoc = contactUser.role.toLowerCase().contains('doctor');
-                              final fullName = isDoc 
-                                  ? 'Dra. ${contactUser.name} ${contactUser.lastName}'.trim()
-                                  : '${contactUser.name} ${contactUser.lastName}'.trim();
-                              final initials = '${contactUser.name.isNotEmpty ? contactUser.name[0] : 'U'}${contactUser.lastName.isNotEmpty ? contactUser.lastName[0] : ''}';
-
-                              return Container(
-                                margin: EdgeInsets.only(bottom: 12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF9F9FB),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  leading: CircleAvatar(
-                                    radius: 22,
-                                    backgroundColor: AppColors.primaryLight,
-                                    child: Text(
-                                      initials,
-                                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    fullName,
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
-                                  ),
-                                  trailing: Icon(Icons.chat_bubble_outline, color: AppColors.primary, size: 18),
-                                  onTap: () async {
-                                    Navigator.pop(context); // Close bottom sheet
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ChatRoomPage(
-                                          otherUserId: contactUser.userId!,
-                                          otherUserName: fullName,
-                                          otherUserRole: contactUser.role,
-                                        ),
-                                      ),
-                                    );
-                                    _loadLastMessages();
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   // --- PATIENT VIEW: List of Doctors & Receptionists ---
   Widget _buildPatientChatList() {
     final dashboardProvider = context.watch<DashboardProvider>();
     final loginProvider = context.read<LoginProvider>();
+    final conversationsProvider = context.watch<ConversationsProvider>();
     final currentUserId = loginProvider.userId;
 
     final docName = dashboardProvider.dashboardData?['current_doctor'] as String?;
@@ -640,12 +449,27 @@ class _ChatListPageState extends State<ChatListPage> {
       );
     }
 
-    if (_loadingLastMessages && _inboxConversations.isEmpty) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+    switch (conversationsProvider.viewState) {
+      case ConversationsViewState.initial:
+        return const _ChatListSkeleton();
+      case ConversationsViewState.loading:
+        if (conversationsProvider.conversations.isEmpty) return const _ChatListSkeleton();
+        break;
+      case ConversationsViewState.error:
+        if (conversationsProvider.conversations.isEmpty) {
+          return _buildEmptyState(
+            icon: Icons.error_outline,
+            title: 'No se pudo cargar',
+            description: conversationsProvider.error ?? 'Ocurrió un error al cargar tus chats.',
+          );
+        }
+        break;
+      case ConversationsViewState.success:
+        break;
     }
 
     // 1. Obtener la lista de conversaciones del inbox
-    final List<Conversation> conversations = _inboxConversations;
+    final List<Conversation> conversations = conversationsProvider.conversations;
 
     // 2. Asegurarse de que el médico asignado siempre aparezca, incluso si no hay mensajes en el inbox.
     // El backend no da el user_id del doctor asignado directamente, así que se
@@ -668,6 +492,7 @@ class _ChatListPageState extends State<ChatListPage> {
           participant2Name: assignedDocName.replaceAll('Dra. ', '').replaceAll('Dr. ', ''),
           unreadCount: 0,
           updatedAt: DateTime.now().subtract(const Duration(days: 365)), // Al final
+          otherUserRole: 'doctor',
         ));
       }
     }
@@ -683,14 +508,9 @@ class _ChatListPageState extends State<ChatListPage> {
       itemBuilder: (context, index) {
         final conv = filteredContacts[index];
         final otherUserId = conv.participant2Id;
-        
-        final contactUser = dashboardProvider.users.firstWhere(
-          (u) => u.userId == otherUserId,
-          orElse: () => UserProfile(name: '', lastName: '', email: '', role: 'paciente'),
-        );
-        
-        final isDoctorRole = contactUser.role.toLowerCase().contains('doctor') || conv.participant2Name.contains('Dra.');
-        final isReceptionistRole = contactUser.role.toLowerCase() == 'receptionist' || contactUser.role.toLowerCase() == 'recepcionista';
+
+        final isDoctorRole = conv.otherUserRole.toLowerCase().contains('doctor') || conv.participant2Name.contains('Dra.');
+        final isReceptionistRole = conv.otherUserRole.toLowerCase() == 'receptionist' || conv.otherUserRole.toLowerCase() == 'recepcionista';
         
         final String displayName = isDoctorRole 
             ? 'Dra. ${conv.participant2Name.replaceAll('Dra. ', '').replaceAll('Dr. ', '')}'.trim()
@@ -792,29 +612,14 @@ class _ChatListPageState extends State<ChatListPage> {
             ),
             trailing: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
             onTap: () async {
-              setState(() {
-                final idx = _inboxConversations.indexWhere((c) => c.participant2Id == otherUserId);
-                if (idx != -1) {
-                  final old = _inboxConversations[idx];
-                  _inboxConversations[idx] = Conversation(
-                    conversationId: old.conversationId,
-                    participant1Id: old.participant1Id,
-                    participant2Id: old.participant2Id,
-                    participant1Name: old.participant1Name,
-                    participant2Name: old.participant2Name,
-                    lastMessage: old.lastMessage,
-                    unreadCount: 0,
-                    updatedAt: old.updatedAt,
-                  );
-                }
-              });
+              _conversationsProvider.markConversationAsRead(otherUserId);
               await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatRoomPage(
                     otherUserId: otherUserId,
                     otherUserName: displayName,
-                    otherUserRole: contactUser.role.isNotEmpty ? contactUser.role : 'doctor',
+                    otherUserRole: conv.otherUserRole.isNotEmpty ? conv.otherUserRole : 'doctor',
                   ),
                 ),
               );
@@ -844,6 +649,52 @@ class _ChatListPageState extends State<ChatListPage> {
               description,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Skeleton de la bandeja de chats: imita la forma real de una fila (avatar
+/// circular + dos líneas de texto), para que el primer frame ya se parezca
+/// al contenido final en vez de un bloque genérico.
+class _ChatListSkeleton extends StatelessWidget {
+  const _ChatListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return PulsingSkeleton(
+      itemCount: 6,
+      itemBuilder: (context, index) => Container(
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(radius: 26, backgroundColor: AppColors.skeletonBase),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 14,
+                    width: 120,
+                    decoration: BoxDecoration(color: AppColors.skeletonBase, borderRadius: BorderRadius.circular(6)),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    height: 12,
+                    width: 180,
+                    decoration: BoxDecoration(color: AppColors.skeletonBase, borderRadius: BorderRadius.circular(6)),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

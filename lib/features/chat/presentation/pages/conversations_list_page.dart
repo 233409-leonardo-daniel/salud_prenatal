@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../dashboard/presentation/providers/dashboard_provider.dart';
-import '../../../patients/presentation/providers/patients_list_provider.dart';
 import '../providers/conversations_provider.dart';
+import '../widgets/contacts_bottom_sheet.dart';
 import '../../../login/presentation/providers/login_provider.dart';
-import '../../../login/domain/entities/user_profile.dart';
-import '../../domain/entities/chat_contact.dart';
 import 'chat_detail_page.dart';
 
-/// Bandeja de mensajes de la recepcionista. El backend no expone un
-/// endpoint de "inbox", así que primero se resuelven los contactos reales
-/// (pacientes y médicos del consultorio) y luego se pide el historial de
-/// cada uno para armar la lista de conversaciones.
 class ConversationsListPage extends StatefulWidget {
   const ConversationsListPage({super.key});
 
@@ -30,37 +23,9 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
   Future<void> _loadInbox() async {
     final loginProvider = context.read<LoginProvider>();
     final currentUserId = loginProvider.userId;
-    final doctorId = loginProvider.doctorId;
     if (currentUserId == null) return;
 
-    final dashboardProvider = context.read<DashboardProvider>();
-    final patientsProvider = context.read<PatientsListProvider>();
-
-    if (doctorId != null) {
-      await patientsProvider.loadPatients(doctorId.toString());
-      if (!mounted) return;
-      // loadDoctorDashboard puebla dashboardProvider.users, necesario para
-      // resolver los nombres reales de los contactos.
-      await dashboardProvider.loadDoctorDashboard(doctorId);
-      if (!mounted) return;
-    }
-
-    final contacts = <ChatContact>[];
-    for (final patient in patientsProvider.patients) {
-      final user = dashboardProvider.users.firstWhere(
-        (u) => u.userId == patient.userId,
-        orElse: () => UserProfile(userId: patient.userId, name: 'Paciente', lastName: '${patient.patientId}', email: '', role: 'paciente'),
-      );
-      contacts.add(ChatContact(userId: patient.userId, name: '${user.name} ${user.lastName}'.trim(), role: user.role));
-    }
-    for (final u in dashboardProvider.users) {
-      if (u.role.toLowerCase().contains('doctor') && u.userId != null && u.userId != currentUserId) {
-        contacts.add(ChatContact(userId: u.userId!, name: '${u.name} ${u.lastName}'.trim(), role: u.role));
-      }
-    }
-
-    if (!mounted) return;
-    await context.read<ConversationsProvider>().loadConversations(currentUserId, contacts);
+    await context.read<ConversationsProvider>().loadConversations(currentUserId);
   }
 
   @override
@@ -82,6 +47,13 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
         ],
       ),
       body: _buildBody(provider, currentUserId),
+      // GET /chat/contacts resuelve por rol en el backend (pacientes+
+      // doctores para una recepcionista).
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showContactsBottomSheet(context, onReturn: _loadInbox),
+        backgroundColor: AppColors.primary,
+        child: Icon(Icons.contacts, color: Colors.white),
+      ),
     );
   }
 

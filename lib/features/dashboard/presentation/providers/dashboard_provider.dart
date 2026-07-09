@@ -171,6 +171,28 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
+  /// Versión liviana de [loadPatientDashboard] para pantallas que solo
+  /// necesitan el nombre del doctor asignado (`current_doctor`) y la lista
+  /// de usuarios para resolver su user_id — sin expediente médico ni
+  /// consultas (evita golpear /medical-records y /consultations cuando no
+  /// se van a mostrar, p. ej. la bandeja de chat).
+  Future<void> loadPatientBasicInfo(int patientId) async {
+    _status = DashboardStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _users = await _getAllUsersUseCase.call();
+      _dashboardData = await _getPatientDashboardUseCase.call(patientId);
+      _status = DashboardStatus.success;
+    } catch (e) {
+      _status = DashboardStatus.error;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      notifyListeners();
+    }
+  }
+
   Future<void> loadPatientDetails(int patientId, {int? doctorId}) async {
     _detailsStatus = DashboardDetailsStatus.loading;
     _activeMedicalRecord = null;

@@ -113,6 +113,7 @@ class MyApp extends StatelessWidget {
             getConsultationsByMedicalRecordUseCase: dashboardModule.getConsultationsByMedicalRecordUseCase,
             getConsultationsFromPatientEndpointUseCase: dashboardModule.getConsultationsFromPatientEndpointUseCase,
             getPatientDashboardUseCase: dashboardModule.getPatientDashboardUseCase,
+            getDoctorDashboardUseCase: dashboardModule.getDoctorDashboardUseCase,
             createMedicalRecordUseCase: dashboardModule.createMedicalRecordUseCase,
             evaluateRiskUseCase: dashboardModule.evaluateRiskUseCase,
           ),

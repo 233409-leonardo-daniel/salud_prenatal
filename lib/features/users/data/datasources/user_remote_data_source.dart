@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/user_dto.dart';
 
@@ -52,7 +53,36 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   Future<UserDto> getUserById(int id) async {
     final response = await _apiClient.get('/users/$id');
     if (response.statusCode == 200) {
-      return UserDto.fromJson(jsonDecode(response.body));
+      final data = jsonDecode(response.body);
+      var user = UserDto.fromJson(data);
+
+      final isDoc = user.role.toLowerCase() == 'doctor' || user.role.toLowerCase() == 'doctor(a)';
+      final docId = data['doctor_id'] ?? data['doctorId'];
+      if (isDoc && docId != null) {
+        try {
+          final docResponse = await _apiClient.get('/doctors/$docId');
+          if (docResponse.statusCode == 200) {
+            final docData = jsonDecode(docResponse.body);
+            user = UserDto(
+              id: user.id,
+              email: docData['email'] ?? user.email,
+              fullName: '${docData['name'] ?? ''} ${docData['last_name'] ?? ''}'.trim().isNotEmpty
+                  ? '${docData['name']} ${docData['last_name']}'.trim()
+                  : user.fullName,
+              role: user.role,
+              phoneNumber: docData['phone'] ?? user.phoneNumber,
+              profilePicture: docData['image_url'] ?? user.profilePicture,
+              doctorId: docId,
+              specialty: docData['specialty'],
+              professionalLicense: docData['professional_license'],
+              office: docData['office'],
+            );
+          }
+        } catch (e) {
+          debugPrint('Error al obtener detalles del doctor $docId en getUserById: $e');
+        }
+      }
+      return user;
     }
     throw Exception('Error al obtener usuario');
   }

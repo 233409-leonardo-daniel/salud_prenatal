@@ -38,7 +38,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     if (dashboardProvider.patients.isNotEmpty) return;
     final doctorId = context.read<LoginProvider>().doctorId;
     if (doctorId == null) return;
-    await dashboardProvider.loadDoctorDashboard(doctorId);
+    await dashboardProvider.loadDoctorPatients(doctorId);
   }
 
   // Resuelve los nombres reales a partir de los IDs de la cita (patientId /
@@ -157,7 +157,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     // visitó antes el dashboard), los cargamos antes de asumir que no hay
     // pacientes registrados.
     if (dashboardProvider.patients.isEmpty && loginProvider.doctorId != null) {
-      await dashboardProvider.loadDoctorDashboard(loginProvider.doctorId!);
+      await dashboardProvider.loadDoctorPatients(loginProvider.doctorId!);
       if (!context.mounted) return;
     }
 

@@ -314,19 +314,10 @@ class _DashboardPageState extends State<DashboardPage> {
       case DashboardStatus.success:
         break;
     }
-    final appointmentsProvider = context.watch<AppointmentsProvider>();
-    final today = DateTime.now();
-
-    final totalPatientsStr = dashboardProvider.patients.length.toString();
-
-    final todayAppointments = appointmentsProvider.appointments.where((app) =>
-        app.dateTime.year == today.year &&
-        app.dateTime.month == today.month &&
-        app.dateTime.day == today.day
-    ).toList();
-    todayAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-    final citasHoyStr = todayAppointments.length.toString();
+    final docDb = dashboardProvider.doctorDashboardData;
+    final receptionistsCount = (docDb?['receptionists'] as List?)?.length.toString() ?? '0';
+    final citasHoyStr = docDb?['today_appointments_count']?.toString() ?? '0';
+    final List<dynamic> todayAppointmentsRaw = docDb?['today_appointments'] ?? [];
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.0),
@@ -335,7 +326,7 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Row(
             children: [
-              _buildDoctorStatCard('Total Pacientes', totalPatientsStr, Icons.people_outline, Colors.pink),
+              _buildDoctorStatCard('Recepcionistas', receptionistsCount, Icons.support_agent_outlined, Colors.pink),
               SizedBox(width: 12),
               _buildDoctorStatCard('Citas Hoy', citasHoyStr, Icons.calendar_today_outlined, Colors.teal),
             ],
@@ -371,7 +362,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           SizedBox(height: 12),
 
-          if (todayAppointments.isEmpty)
+          if (todayAppointmentsRaw.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 24.0),
               child: Center(
@@ -382,19 +373,31 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             )
           else
-            ...todayAppointments.map((app) {
-              final isPm = app.dateTime.hour >= 12;
-              final hour = app.dateTime.hour == 0 
-                  ? 12 
-                  : (app.dateTime.hour > 12 ? app.dateTime.hour - 12 : app.dateTime.hour);
-              final timeStr = '${hour.toString().padLeft(2, '0')}:${app.dateTime.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+            ...todayAppointmentsRaw.map((app) {
+              final String patientName = app['patient_name'] ?? 'Paciente';
+              final String reason = app['reason'] ?? 'Consulta general';
+              final String status = app['status'] ?? 'pending';
+              final String timeRaw = app['appointment_time'] ?? '';
+
+              String timeStr = 'Hora no esp.';
+              if (timeRaw.isNotEmpty) {
+                try {
+                  final dt = DateTime.parse(timeRaw).toLocal();
+                  final isPm = dt.hour >= 12;
+                  final hour = dt.hour == 0
+                      ? 12
+                      : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+                  timeStr = '${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+                } catch (_) {}
+              }
+
               return Column(
                 children: [
                   _buildDoctorAppointmentItem(
                     timeStr,
-                    app.patientName,
-                    app.reason,
-                    app.reason.toLowerCase().contains('urgente') || app.status == AppointmentStatus.cancelled,
+                    patientName,
+                    reason,
+                    reason.toLowerCase().contains('urgente') || status == 'cancelled',
                   ),
                   const Divider(height: 1, color: Color(0xFFE5E5EA)),
                 ],

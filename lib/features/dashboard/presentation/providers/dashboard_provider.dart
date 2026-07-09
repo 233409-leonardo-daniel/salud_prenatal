@@ -8,6 +8,7 @@ import '../../domain/usecases/get_medical_record_by_patient_usecase.dart';
 import '../../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
 import '../../domain/usecases/get_patient_dashboard_usecase.dart';
+import '../../domain/usecases/get_doctor_dashboard_usecase.dart';
 import '../../domain/usecases/create_medical_record_usecase.dart';
 import '../../domain/usecases/evaluate_risk_usecase.dart';
 import '../pages/dashboard_state.dart';
@@ -19,6 +20,7 @@ class DashboardProvider with ChangeNotifier {
   final GetConsultationsByMedicalRecordUseCase _getConsultationsByMedicalRecordUseCase;
   final GetConsultationsFromPatientEndpointUseCase _getConsultationsFromPatientEndpointUseCase;
   final GetPatientDashboardUseCase _getPatientDashboardUseCase;
+  final GetDoctorDashboardUseCase _getDoctorDashboardUseCase;
   final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
   final EvaluateRiskUseCase _evaluateRiskUseCase;
 
@@ -29,6 +31,7 @@ class DashboardProvider with ChangeNotifier {
     required GetConsultationsByMedicalRecordUseCase getConsultationsByMedicalRecordUseCase,
     required GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase,
     required GetPatientDashboardUseCase getPatientDashboardUseCase,
+    required GetDoctorDashboardUseCase getDoctorDashboardUseCase,
     required CreateMedicalRecordUseCase createMedicalRecordUseCase,
     required EvaluateRiskUseCase evaluateRiskUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
@@ -37,6 +40,7 @@ class DashboardProvider with ChangeNotifier {
         _getConsultationsByMedicalRecordUseCase = getConsultationsByMedicalRecordUseCase,
         _getConsultationsFromPatientEndpointUseCase = getConsultationsFromPatientEndpointUseCase,
         _getPatientDashboardUseCase = getPatientDashboardUseCase,
+        _getDoctorDashboardUseCase = getDoctorDashboardUseCase,
         _createMedicalRecordUseCase = createMedicalRecordUseCase,
         _evaluateRiskUseCase = evaluateRiskUseCase;
 
@@ -48,6 +52,7 @@ class DashboardProvider with ChangeNotifier {
   List<UserProfile> _users = [];
   List<Map<String, dynamic>> _patients = [];
   MedicalRecordResponse? _medicalRecord;
+  Map<String, dynamic>? _doctorDashboardData;
   List<ConsultationResponse> _consultations = [];
   Map<String, dynamic>? _currentPatientData;
   Map<String, dynamic>? _dashboardData;
@@ -80,27 +85,32 @@ class DashboardProvider with ChangeNotifier {
 
   MedicalRecordResponse? get activeMedicalRecord => _activeMedicalRecord;
   List<ConsultationResponse> get activeConsultations => _activeConsultations;
+  Map<String, dynamic>? get doctorDashboardData => _doctorDashboardData;
 
   Future<void> loadDoctorDashboard(int doctorId) async {
     _status = DashboardStatus.loading;
     _errorMessage = null;
-    _users = [];
-    _patients = [];
-    _medicalRecord = null;
-    _consultations = [];
-    _dashboardData = null;
-    _currentPatientData = null;
+    _doctorDashboardData = null;
     notifyListeners();
 
     try {
-      _users = await _getAllUsersUseCase.call();
-      _patients = await _getPatientsByDoctorUseCase.call(doctorId);
+      _doctorDashboardData = await _getDoctorDashboardUseCase.call(doctorId);
       _status = DashboardStatus.success;
     } catch (e) {
       _status = DashboardStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       notifyListeners();
+    }
+  }
+
+  Future<void> loadDoctorPatients(int doctorId) async {
+    try {
+      _patients = await _getPatientsByDoctorUseCase.call(doctorId);
+      _users = await _getAllUsersUseCase.call();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error al cargar pacientes/usuarios del doctor: $e');
     }
   }
 

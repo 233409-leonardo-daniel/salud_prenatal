@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/login_response.dart';
 import '../../domain/entities/user_profile.dart';
@@ -51,7 +52,37 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
     final response = await _apiClient.get('/users/$userId');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return UserProfile.fromJson(data);
+      var profile = UserProfile.fromJson(data);
+      
+      final isDoc = profile.role.toLowerCase() == 'doctor' || profile.role.toLowerCase() == 'doctor(a)';
+      final docId = data['doctor_id'] ?? data['doctorId'];
+      if (isDoc && docId != null) {
+        try {
+          final docResponse = await _apiClient.get('/doctors/$docId');
+          if (docResponse.statusCode == 200) {
+            final docData = jsonDecode(docResponse.body);
+            profile = UserProfile(
+              userId: profile.userId,
+              name: docData['name'] ?? profile.name,
+              lastName: docData['last_name'] ?? profile.lastName,
+              email: docData['email'] ?? profile.email,
+              role: profile.role,
+              phone: docData['phone'] ?? profile.phone,
+              imageUrl: docData['image_url'] ?? profile.imageUrl,
+              isActive: profile.isActive,
+              createdAt: profile.createdAt,
+              updatedAt: profile.updatedAt,
+              password: profile.password,
+              specialty: docData['specialty'],
+              professionalLicense: docData['professional_license'],
+              office: docData['office'],
+            );
+          }
+        } catch (e) {
+          debugPrint('Error al obtener detalles del doctor $docId: $e');
+        }
+      }
+      return profile;
     }
     throw Exception('Error al obtener perfil (Status: ${response.statusCode})');
   }
@@ -64,7 +95,35 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return UserProfile.fromJson(data);
+      var updated = UserProfile.fromJson(data);
+      
+      final isDoc = updated.role.toLowerCase() == 'doctor' || updated.role.toLowerCase() == 'doctor(a)';
+      final docId = data['doctor_id'] ?? data['doctorId'];
+      if (isDoc && docId != null) {
+        try {
+          final docResponse = await _apiClient.get('/doctors/$docId');
+          if (docResponse.statusCode == 200) {
+            final docData = jsonDecode(docResponse.body);
+            updated = UserProfile(
+              userId: updated.userId,
+              name: docData['name'] ?? updated.name,
+              lastName: docData['last_name'] ?? updated.lastName,
+              email: docData['email'] ?? updated.email,
+              role: updated.role,
+              phone: docData['phone'] ?? updated.phone,
+              imageUrl: docData['image_url'] ?? updated.imageUrl,
+              isActive: updated.isActive,
+              createdAt: updated.createdAt,
+              updatedAt: updated.updatedAt,
+              password: updated.password,
+              specialty: docData['specialty'],
+              professionalLicense: docData['professional_license'],
+              office: docData['office'],
+            );
+          }
+        } catch (_) {}
+      }
+      return updated;
     }
 
     String errorMsg = 'Error al actualizar perfil (Status: ${response.statusCode})';

@@ -15,6 +15,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
+  late TextEditingController _specialtyController;
+  late TextEditingController _licenseController;
+  late TextEditingController _officeController;
   late String _email;
   bool _initialized = false;
 
@@ -27,6 +30,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _nameController = TextEditingController(text: profile?.name ?? '');
       _lastNameController = TextEditingController(text: profile?.lastName ?? '');
       _phoneController = TextEditingController(text: profile?.phone ?? '');
+      _specialtyController = TextEditingController(text: profile?.specialty ?? '');
+      _licenseController = TextEditingController(text: profile?.professionalLicense ?? '');
+      _officeController = TextEditingController(text: profile?.office ?? '');
       _email = profile?.email ?? '';
       _initialized = true;
     }
@@ -37,6 +43,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
+    _specialtyController.dispose();
+    _licenseController.dispose();
+    _officeController.dispose();
     super.dispose();
   }
 
@@ -44,10 +53,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!_formKey.currentState!.validate()) return;
 
     final loginProvider = context.read<LoginProvider>();
+    final isDoc = loginProvider.isDoctor;
+
     final success = await loginProvider.updateProfile(
       name: _nameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       phone: _phoneController.text.trim(),
+      specialty: isDoc ? _specialtyController.text.trim() : null,
+      professionalLicense: isDoc ? _licenseController.text.trim() : null,
+      office: isDoc ? _officeController.text.trim() : null,
     );
 
     if (mounted) {
@@ -192,6 +206,62 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                 ),
+                if (loginProvider.isDoctor) ...[
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _specialtyController,
+                    decoration: InputDecoration(
+                      labelText: 'Especialidad médica',
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: Icon(Icons.medical_services_outlined, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _licenseController,
+                    decoration: InputDecoration(
+                      labelText: 'Cédula profesional',
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: Icon(Icons.badge_outlined, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _officeController,
+                    decoration: InputDecoration(
+                      labelText: 'Consultorio / Dirección de oficina',
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: Icon(Icons.local_hospital_outlined, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      ),
+                    ),
+                  ),
+                ],
                 SizedBox(height: 32),
 
                 // Save Button

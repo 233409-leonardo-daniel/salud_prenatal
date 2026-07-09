@@ -144,6 +144,9 @@ class LoginProvider with ChangeNotifier {
     required String phone,
     String? email,
     String? imageUrl,
+    String? specialty,
+    String? professionalLicense,
+    String? office,
   }) async {
     if (_userId == null) {
       _errorMessage = 'Usuario no autenticado';
@@ -167,6 +170,9 @@ class LoginProvider with ChangeNotifier {
         createdAt: _userProfile?.createdAt ?? '',
         updatedAt: _userProfile?.updatedAt ?? '',
         password: _userPassword,
+        specialty: specialty ?? _userProfile?.specialty,
+        professionalLicense: professionalLicense ?? _userProfile?.professionalLicense,
+        office: office ?? _userProfile?.office,
       );
       
       _userProfile = await _updateProfileUseCase.execute(_userId!, updatedProfile);

@@ -107,6 +107,32 @@ class ProfilePage extends StatelessWidget {
                       ? 'Médico / Especialista'
                       : 'Paciente',
                 ),
+                if (loginProvider.userProfile?.role.toLowerCase() == 'doctor') ...[
+                  Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
+                  _buildInfoRow(
+                    icon: Icons.medical_services_outlined,
+                    label: 'Especialidad',
+                    value: loginProvider.userProfile?.specialty?.isNotEmpty == true
+                        ? loginProvider.userProfile!.specialty!
+                        : 'No especificado',
+                  ),
+                  Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
+                  _buildInfoRow(
+                    icon: Icons.badge_outlined,
+                    label: 'Cédula profesional',
+                    value: loginProvider.userProfile?.professionalLicense?.isNotEmpty == true
+                        ? loginProvider.userProfile!.professionalLicense!
+                        : 'No especificado',
+                  ),
+                  Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
+                  _buildInfoRow(
+                    icon: Icons.local_hospital_outlined,
+                    label: 'Consultorio',
+                    value: loginProvider.userProfile?.office?.isNotEmpty == true
+                        ? loginProvider.userProfile!.office!
+                        : 'No especificado',
+                  ),
+                ],
                 SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {

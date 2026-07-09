@@ -42,7 +42,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (dashboardProvider.patients.isNotEmpty) return;
     final doctorId = context.read<LoginProvider>().doctorId;
     if (doctorId == null) return;
-    await dashboardProvider.loadDoctorDashboard(doctorId);
+    await dashboardProvider.loadDoctorPatients(doctorId);
   }
 
   void _loadAppointmentsData() {
@@ -234,7 +234,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     // (p. ej. la carga inicial no ha terminado), lo intentamos aquí antes
     // de asumir que no hay pacientes registrados.
     if (dashboardProvider.patients.isEmpty && loginProvider.doctorId != null) {
-      await dashboardProvider.loadDoctorDashboard(loginProvider.doctorId!);
+      await dashboardProvider.loadDoctorPatients(loginProvider.doctorId!);
       if (!context.mounted) return;
     }
 

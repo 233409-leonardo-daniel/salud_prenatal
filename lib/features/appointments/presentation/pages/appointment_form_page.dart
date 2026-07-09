@@ -36,7 +36,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     if (doctorId == null) return;
 
     setState(() => _isLoadingPatients = true);
-    await dashboardProvider.loadDoctorDashboard(doctorId);
+    await dashboardProvider.loadDoctorPatients(doctorId);
     if (!mounted) return;
     setState(() => _isLoadingPatients = false);
   }

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/conversations_provider.dart';
+import '../widgets/contacts_bottom_sheet.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import 'chat_detail_page.dart';
 
-/// Bandeja de mensajes de la recepcionista, cargada directamente desde
-/// GET /chat/inbox (ya trae nombre/rol/último mensaje/no-leídos por
-/// contacto, no hace falta resolverlo vía patients/dashboard).
 class ConversationsListPage extends StatefulWidget {
   const ConversationsListPage({super.key});
 
@@ -49,6 +47,13 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
         ],
       ),
       body: _buildBody(provider, currentUserId),
+      // GET /chat/contacts resuelve por rol en el backend (pacientes+
+      // doctores para una recepcionista).
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showContactsBottomSheet(context, onReturn: _loadInbox),
+        backgroundColor: AppColors.primary,
+        child: Icon(Icons.contacts, color: Colors.white),
+      ),
     );
   }
 

@@ -27,6 +27,7 @@ class LoginProvider with ChangeNotifier {
   int? _patientId;
   int? _doctorId;
   int? _medicalRecordId;
+  int? _receptionistId;
   UserProfile? _userProfile;
   String? _userPassword;
   String? _subscriptionStatus;
@@ -39,6 +40,7 @@ class LoginProvider with ChangeNotifier {
   int? get patientId => _patientId;
   int? get doctorId => _doctorId;
   int? get medicalRecordId => _medicalRecordId;
+  int? get receptionistId => _receptionistId;
   UserProfile? get userProfile => _userProfile;
   String? get subscriptionStatus => _subscriptionStatus;
 
@@ -73,6 +75,7 @@ class LoginProvider with ChangeNotifier {
     _patientId = savedPatientId; // Conservar si viene del registro
     _doctorId = null;
     _medicalRecordId = null;
+    _receptionistId = null;
     _userProfile = null;
     _userPassword = password;
     _subscriptionStatus = null;
@@ -91,9 +94,11 @@ class LoginProvider with ChangeNotifier {
         _doctorId = response.doctorId;
       } else {
         // Assign patientId from response directly without falling back to userId
-        _patientId = response.patientId ?? _patientId; 
+        _patientId = response.patientId ?? _patientId;
         _doctorId = response.doctorId;
         _medicalRecordId = response.medicalRecordId;
+        // Solo viene poblado cuando el rol es recepcionista; null para pacientes.
+        _receptionistId = response.receptionistId;
       }
 
       try {
@@ -126,6 +131,7 @@ class LoginProvider with ChangeNotifier {
     _patientId = null;
     _doctorId = null;
     _medicalRecordId = null;
+    _receptionistId = null;
     _userProfile = null;
     _userPassword = null;
     _subscriptionStatus = null;

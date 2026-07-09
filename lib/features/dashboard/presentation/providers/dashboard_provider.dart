@@ -9,6 +9,7 @@ import '../../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
 import '../../domain/usecases/get_patient_dashboard_usecase.dart';
 import '../../domain/usecases/get_doctor_dashboard_usecase.dart';
+import '../../domain/usecases/get_receptionist_dashboard_usecase.dart';
 import '../../domain/usecases/create_medical_record_usecase.dart';
 import '../../domain/usecases/evaluate_risk_usecase.dart';
 import '../pages/dashboard_state.dart';
@@ -21,6 +22,7 @@ class DashboardProvider with ChangeNotifier {
   final GetConsultationsFromPatientEndpointUseCase _getConsultationsFromPatientEndpointUseCase;
   final GetPatientDashboardUseCase _getPatientDashboardUseCase;
   final GetDoctorDashboardUseCase _getDoctorDashboardUseCase;
+  final GetReceptionistDashboardUseCase _getReceptionistDashboardUseCase;
   final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
   final EvaluateRiskUseCase _evaluateRiskUseCase;
 
@@ -32,6 +34,7 @@ class DashboardProvider with ChangeNotifier {
     required GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase,
     required GetPatientDashboardUseCase getPatientDashboardUseCase,
     required GetDoctorDashboardUseCase getDoctorDashboardUseCase,
+    required GetReceptionistDashboardUseCase getReceptionistDashboardUseCase,
     required CreateMedicalRecordUseCase createMedicalRecordUseCase,
     required EvaluateRiskUseCase evaluateRiskUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
@@ -41,6 +44,7 @@ class DashboardProvider with ChangeNotifier {
         _getConsultationsFromPatientEndpointUseCase = getConsultationsFromPatientEndpointUseCase,
         _getPatientDashboardUseCase = getPatientDashboardUseCase,
         _getDoctorDashboardUseCase = getDoctorDashboardUseCase,
+        _getReceptionistDashboardUseCase = getReceptionistDashboardUseCase,
         _createMedicalRecordUseCase = createMedicalRecordUseCase,
         _evaluateRiskUseCase = evaluateRiskUseCase;
 
@@ -53,6 +57,7 @@ class DashboardProvider with ChangeNotifier {
   List<Map<String, dynamic>> _patients = [];
   MedicalRecordResponse? _medicalRecord;
   Map<String, dynamic>? _doctorDashboardData;
+  Map<String, dynamic>? _receptionistDashboardData;
   List<ConsultationResponse> _consultations = [];
   Map<String, dynamic>? _currentPatientData;
   Map<String, dynamic>? _dashboardData;
@@ -87,6 +92,18 @@ class DashboardProvider with ChangeNotifier {
   List<ConsultationResponse> get activeConsultations => _activeConsultations;
   Map<String, dynamic>? get doctorDashboardData => _doctorDashboardData;
 
+  /// GET /doctors/receptionists/{receptionist_id}/dashboard — nombre de la
+  /// recepcionista + citas del doctor asignado, ya filtradas/ordenadas por
+  /// el backend.
+  Map<String, dynamic>? get receptionistDashboardData => _receptionistDashboardData;
+  String get receptionistFullName => _receptionistDashboardData?['full_name'] as String? ?? '';
+  List<Map<String, dynamic>> get receptionistUpcomingAppointments =>
+      (_receptionistDashboardData?['upcoming_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  List<Map<String, dynamic>> get receptionistPendingAppointments =>
+      (_receptionistDashboardData?['pending_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  List<Map<String, dynamic>> get receptionistConfirmedAppointments =>
+      (_receptionistDashboardData?['confirmed_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
   Future<void> loadDoctorDashboard(int doctorId) async {
     _status = DashboardStatus.loading;
     _errorMessage = null;
@@ -97,6 +114,26 @@ class DashboardProvider with ChangeNotifier {
       _doctorDashboardData = await _getDoctorDashboardUseCase.call(doctorId);
       _status = DashboardStatus.success;
     } catch (e) {
+      _status = DashboardStatus.error;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// GET /doctors/receptionists/{receptionist_id}/dashboard — usado por el
+  /// dashboard de la recepcionista en vez de AppointmentsProvider.
+  Future<void> loadReceptionistDashboard(int receptionistId) async {
+    _status = DashboardStatus.loading;
+    _errorMessage = null;
+    _receptionistDashboardData = null;
+    notifyListeners();
+
+    try {
+      _receptionistDashboardData = await _getReceptionistDashboardUseCase.call(receptionistId);
+      _status = DashboardStatus.success;
+    } catch (e) {
+      print('Error al cargar dashboard de la recepcionista: $e');
       _status = DashboardStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {

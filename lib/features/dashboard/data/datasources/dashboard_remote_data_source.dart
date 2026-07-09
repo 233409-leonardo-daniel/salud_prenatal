@@ -12,6 +12,7 @@ abstract class DashboardRemoteDataSource {
   Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId});
   Future<Map<String, dynamic>> getPatientDashboard(int patientId);
   Future<Map<String, dynamic>> getDoctorDashboard(int doctorId);
+  Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
   Future<RiskPrediction> evaluateRisk(int medicalRecordId);
 }
@@ -29,6 +30,18 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
     throw Exception('Error al obtener el dashboard del doctor (Status: ${response.statusCode})');
+  }
+
+  @override
+  Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId) async {
+    // GET /doctors/receptionists/{receptionist_id}/dashboard: nombre de la
+    // recepcionista + citas del doctor asignado (upcoming/pending/confirmed),
+    // ya filtradas y ordenadas por el backend.
+    final response = await _apiClient.get('/doctors/receptionists/$receptionistId/dashboard');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Error al obtener dashboard de la recepcionista (Status: ${response.statusCode})');
   }
 
   @override

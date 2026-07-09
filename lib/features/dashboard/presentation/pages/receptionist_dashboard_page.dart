@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../login/presentation/providers/login_provider.dart';
-import '../../../appointments/presentation/providers/appointment_provider.dart';
+import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/pages/appointments_list_page.dart';
 import '../../../appointments/presentation/pages/appointment_form_page.dart';
 import '../../../chat/presentation/pages/conversations_list_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../users/presentation/pages/user_search_page.dart';
-import '../../../forums/presentation/pages/forums_hub_page.dart';
 
 class ReceptionistDashboardPage extends StatefulWidget {
   const ReceptionistDashboardPage({super.key});
@@ -25,8 +24,10 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final loginProvider = context.read<LoginProvider>();
-      final doctorId = loginProvider.doctorId;
-      context.read<AppointmentsProvider>().loadAllAppointments(doctorId: doctorId);
+      final receptionistId = loginProvider.receptionistId;
+      if (receptionistId != null) {
+        context.read<DashboardProvider>().loadReceptionistDashboard(receptionistId);
+      }
     });
   }
 
@@ -101,12 +102,10 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
       case 1:
         return const AppointmentsListPage();
       case 2:
-        return const ForumsHubPage();
-      case 3:
         return const ConversationsListPage();
-      case 4:
+      case 3:
         return const UserSearchPage();
-      case 5:
+      case 4:
         return const ProfilePage();
       default:
         return _buildHomeTab();
@@ -114,9 +113,9 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
   }
 
   Widget _buildHomeTab() {
-    final appointmentsProvider = context.watch<AppointmentsProvider>();
-    final totalCitas = appointmentsProvider.appointments.length;
-    final pending = appointmentsProvider.appointments.where((a) => a.status.toString().contains('pending')).length;
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final totalCitas = dashboardProvider.receptionistUpcomingAppointments.length;
+    final pending = dashboardProvider.receptionistPendingAppointments.length;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
@@ -151,7 +150,7 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
               SizedBox(width: 12),
               Expanded(
                 child: _buildActionCard('Directorio', Icons.people, AppColors.primary, () {
-                  setState(() => _currentTab = 4); // Navegar al directorio (ahora index 4)
+                  setState(() => _currentTab = 3); // Navegar al directorio (ahora index 3, tras quitar Foros)
                 }),
               )
             ],
@@ -220,7 +219,6 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Inicio'),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), activeIcon: Icon(Icons.calendar_today), label: 'Citas'),
-        BottomNavigationBarItem(icon: Icon(Icons.forum_outlined), activeIcon: Icon(Icons.forum), label: 'Foros'),
         BottomNavigationBarItem(icon: Icon(Icons.message_outlined), activeIcon: Icon(Icons.message), label: 'Mensajes'),
         BottomNavigationBarItem(icon: Icon(Icons.people_outline), activeIcon: Icon(Icons.people), label: 'Directorio'),
         BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Perfil'),

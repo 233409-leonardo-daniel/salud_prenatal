@@ -45,14 +45,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Publicación', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Publicación', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: AppColors.textDark),
         actions: [
           IconButton(
-            icon: const Icon(Icons.flag_outlined, color: Colors.grey),
+            icon: Icon(Icons.flag_outlined, color: AppColors.textMuted),
             onPressed: () => _showReportDialog(context, widget.post.postId, null),
           ),
         ],
@@ -115,7 +116,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFFF0F6),
+                                            color: AppColors.primaryLight,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
@@ -150,9 +151,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Comentarios',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                   ),
                   const SizedBox(height: 12),
                   switch (forumsProvider.commentsStatus) {
@@ -296,7 +297,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.flag_outlined, size: 16, color: Colors.grey),
+                    icon: Icon(Icons.flag_outlined, size: 16, color: AppColors.textMuted),
                     onPressed: () => _showReportDialog(context, null, comment.commentId),
                   ),
                 ],

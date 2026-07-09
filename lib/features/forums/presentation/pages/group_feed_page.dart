@@ -31,17 +31,18 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
     final forumsProvider = context.watch<ForumsProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.group.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text(widget.group.description, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(widget.group.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
+            Text(widget.group.description, style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
           ],
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: AppColors.textDark),
       ),
       body: SafeArea(
         child: switch (forumsProvider.forumsStatus) {
@@ -175,7 +176,7 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF0F6),
+                                        color: AppColors.primaryLight,
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(

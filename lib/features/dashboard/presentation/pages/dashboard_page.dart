@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
@@ -105,13 +106,30 @@ class _DashboardPageState extends State<DashboardPage> {
     if (_userRole == 'receptionist') {
       return const ReceptionistDashboardPage();
     }
-    
-    return Scaffold(
+
+    final scaffold = Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavBar(),
     );
+
+    if (_userRole == 'doctor') {
+      // El footer del doctor (_buildBottomNavBar) usa un color oscuro fijo
+      // (0xFF1E1E1E) sin importar el tema. Sin esto, en tema claro Android
+      // pinta la barra de navegación del sistema (debajo del footer) de
+      // blanco por defecto, generando un salto de color justo debajo del
+      // footer de la app. Forzamos aquí ese mismo color fijo.
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          systemNavigationBarColor: Color(0xFF1E1E1E),
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+        child: scaffold,
+      );
+    }
+
+    return scaffold;
   }
 
   PreferredSizeWidget _buildAppBar() {

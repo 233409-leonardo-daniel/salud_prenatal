@@ -155,6 +155,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final provider = context.watch<AppointmentsProvider>();
     final loginProvider = context.watch<LoginProvider>();
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -167,7 +168,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _buildBody(provider, theme),
-      floatingActionButton: isReceptionist
+      floatingActionButton: (isReceptionist || isDoctor)
           ? FloatingActionButton(
               onPressed: () => _showCreateAppointmentDialog(context),
               backgroundColor: AppColors.primary,

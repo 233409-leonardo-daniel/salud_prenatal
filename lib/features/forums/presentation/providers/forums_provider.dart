@@ -78,9 +78,16 @@ class ForumsProvider with ChangeNotifier {
 
   SocialProfile? _socialProfile;
   List<CommunityGroup> _groups = [];
+  List<CommunityGroup> _recommendedGroups = [];
   List<ForumPost> _posts = [];
   List<ForumPost> _recommendedFeed = [];
+  List<ForumPost> _globalFeed = [];
   List<ForumComment> _comments = [];
+
+  ForumsStatus _recommendedGroupsStatus = ForumsStatus.initial;
+  String? _recommendedGroupsError;
+  ForumsStatus _globalFeedStatus = ForumsStatus.initial;
+  String? _globalFeedError;
 
   // Getters
   ForumsStatus get forumsStatus => _forumsStatus;
@@ -88,6 +95,11 @@ class ForumsProvider with ChangeNotifier {
   ProfileStatus get profileStatus => _profileStatus;
   CommentsStatus get commentsStatus => _commentsStatus;
   SaveStatus get saveStatus => _saveStatus;
+
+  ForumsStatus get recommendedGroupsStatus => _recommendedGroupsStatus;
+  String? get recommendedGroupsError => _recommendedGroupsError;
+  ForumsStatus get globalFeedStatus => _globalFeedStatus;
+  String? get globalFeedError => _globalFeedError;
 
   String? get forumsError => _forumsError;
   String? get feedError => _feedError;
@@ -98,8 +110,10 @@ class ForumsProvider with ChangeNotifier {
 
   SocialProfile? get socialProfile => _socialProfile;
   List<CommunityGroup> get groups => _groups;
+  List<CommunityGroup> get recommendedGroups => _recommendedGroups;
   List<ForumPost> get posts => _posts;
   List<ForumPost> get recommendedFeed => _recommendedFeed;
+  List<ForumPost> get globalFeed => _globalFeed;
   List<ForumComment> get comments => _comments;
 
   // Compatibility getters
@@ -174,25 +188,22 @@ class ForumsProvider with ChangeNotifier {
     }
   }
 
-  /// Grupos recomendados para la usuaria (por su cluster de riesgo, con
-  /// fallback automático del backend a todos los grupos si no tiene cluster).
   Future<void> loadRecommendedGroups() async {
-    _forumsStatus = ForumsStatus.loading;
-    _forumsError = null;
+    _recommendedGroupsStatus = ForumsStatus.loading;
+    _recommendedGroupsError = null;
     notifyListeners();
 
     try {
-      _groups = await _getRecommendedGroupsUseCase.call();
-      _forumsStatus = ForumsStatus.success;
+      _recommendedGroups = await _getRecommendedGroupsUseCase.call();
+      _recommendedGroupsStatus = ForumsStatus.success;
     } catch (e) {
-      _forumsError = _resolveError(e);
-      _forumsStatus = ForumsStatus.error;
+      _recommendedGroupsError = _resolveError(e);
+      _recommendedGroupsStatus = ForumsStatus.error;
     } finally {
       notifyListeners();
     }
   }
 
-  // Create group
   Future<bool> createGroup(String name, String description, int createdBy) async {
     _saveStatus = SaveStatus.loading;
     _saveError = null;
@@ -208,6 +219,7 @@ class ForumsProvider with ChangeNotifier {
       );
       final created = await _createGroupUseCase.call(newGroup);
       _groups.insert(0, created);
+      _recommendedGroups.insert(0, created);
       _saveStatus = SaveStatus.success;
       return true;
     } catch (e) {
@@ -219,18 +231,17 @@ class ForumsProvider with ChangeNotifier {
     }
   }
 
-  // Load Global Feed
   Future<void> loadGlobalFeed() async {
-    _forumsStatus = ForumsStatus.loading;
-    _forumsError = null;
+    _globalFeedStatus = ForumsStatus.loading;
+    _globalFeedError = null;
     notifyListeners();
 
     try {
-      _posts = await _getGlobalFeedUseCase.call();
-      _forumsStatus = ForumsStatus.success;
+      _globalFeed = await _getGlobalFeedUseCase.call();
+      _globalFeedStatus = ForumsStatus.success;
     } catch (e) {
-      _forumsError = e.toString();
-      _forumsStatus = ForumsStatus.error;
+      _globalFeedError = e.toString();
+      _globalFeedStatus = ForumsStatus.error;
     } finally {
       notifyListeners();
     }
@@ -290,6 +301,7 @@ class ForumsProvider with ChangeNotifier {
       );
       final created = await _createPostUseCase.call(newPost);
       _posts.insert(0, created);
+      _globalFeed.insert(0, created);
       if (!created.isAd) {
         _recommendedFeed.insert(0, created);
       }

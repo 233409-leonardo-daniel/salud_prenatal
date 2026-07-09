@@ -14,26 +14,34 @@ class ForumsGroupsPage extends StatefulWidget {
   State<ForumsGroupsPage> createState() => _ForumsGroupsPageState();
 }
 
-class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
+class _ForumsGroupsPageState extends State<ForumsGroupsPage> with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {}); // Trigger refresh to filter search query correctly
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ForumsProvider>().loadRecommendedGroups();
+      context.read<ForumsProvider>().loadGroups();
     });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
   void _refreshGroups() {
     context.read<ForumsProvider>().loadRecommendedGroups();
+    context.read<ForumsProvider>().loadGroups();
   }
 
   void _goToLogin() {
@@ -42,7 +50,6 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final forumsProvider = context.watch<ForumsProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -60,6 +67,17 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
             onPressed: _refreshGroups,
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.primary,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          tabs: const [
+            Tab(text: 'Recomendados'),
+            Tab(text: 'Explorar'),
+          ],
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -87,17 +105,43 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
               ),
             ),
             Expanded(
-              child: switch (forumsProvider.forumsStatus) {
-                ForumsStatus.loading => const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Tab 1: Recomendados
+                  Consumer<ForumsProvider>(
+                    builder: (context, provider, child) {
+                      return switch (provider.recommendedGroupsStatus) {
+                        ForumsStatus.loading => const Center(
+                            child: CircularProgressIndicator(color: AppColors.primary),
+                          ),
+                        ForumsStatus.error => _buildErrorView(
+                            message: provider.recommendedGroupsError ?? 'Error al cargar grupos recomendados',
+                            sessionExpired: provider.sessionExpired,
+                            onRetry: _refreshGroups,
+                          ),
+                        _ => _buildGroupsList(isDark, isRecommended: true),
+                      };
+                    },
                   ),
-                ForumsStatus.error => _buildErrorView(
-                    message: forumsProvider.forumsError ?? 'Error al cargar grupos',
-                    sessionExpired: forumsProvider.sessionExpired,
-                    onRetry: _refreshGroups,
+                  // Tab 2: Explorar (Todos)
+                  Consumer<ForumsProvider>(
+                    builder: (context, provider, child) {
+                      return switch (provider.forumsStatus) {
+                        ForumsStatus.loading => const Center(
+                            child: CircularProgressIndicator(color: AppColors.primary),
+                          ),
+                        ForumsStatus.error => _buildErrorView(
+                            message: provider.forumsError ?? 'Error al cargar todos los grupos',
+                            sessionExpired: provider.sessionExpired,
+                            onRetry: _refreshGroups,
+                          ),
+                        _ => _buildGroupsList(isDark, isRecommended: false),
+                      };
+                    },
                   ),
-                _ => _buildGroupsList(isDark),
-              },
+                ],
+              ),
             ),
           ],
         ),
@@ -114,9 +158,9 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
     );
   }
 
-  Widget _buildGroupsList(bool isDark) {
+  Widget _buildGroupsList(bool isDark, {required bool isRecommended}) {
     final forumsProvider = context.watch<ForumsProvider>();
-    final groups = forumsProvider.groups;
+    final groups = isRecommended ? forumsProvider.recommendedGroups : forumsProvider.groups;
 
     final filtered = groups.where((g) {
       return g.name.toLowerCase().contains(_searchQuery) ||
@@ -133,8 +177,10 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
       } else {
         return _buildEmptyState(
           icon: Icons.group_work_outlined,
-          title: 'No hay foros aún',
-          description: 'Crea el primer foro para iniciar la conversación en comunidad.',
+          title: isRecommended ? 'No hay foros recomendados' : 'No hay foros aún',
+          description: isRecommended
+              ? 'No tienes foros recomendados en este momento.'
+              : 'Crea el primer foro para iniciar la conversación en comunidad.',
         );
       }
     }
@@ -145,7 +191,7 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Text(
-            'Recomendados para ti',
+            isRecommended ? 'Recomendados para ti' : 'Todos los foros',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,

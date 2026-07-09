@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,12 +18,21 @@ class SubscriptionPlanPage extends StatefulWidget {
 class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with WidgetsBindingObserver {
   static const _pollInterval = Duration(seconds: 2);
   static const _pollTimeout = Duration(seconds: 15);
+  static const _sharedPlanFeatures = [
+    'Pacientes y expedientes clínicos ilimitados',
+    'Predicción de riesgo de preeclampsia con IA',
+    'Agenda y recordatorios de citas',
+    'Chat directo con tus pacientes',
+    'Bitácora de embarazo en tiempo real',
+  ];
 
   String _selectedPlan = 'basic';
   bool _awaitingConfirmation = false;
   bool _confirmationTimedOut = false;
   Timer? _pollTimer;
   DateTime? _pollStartedAt;
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
@@ -31,12 +41,14 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SubscriptionsProvider>().loadStatus();
     });
+    _linkSubscription = _appLinks.uriLinkStream.listen(_handleIncomingLink);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
+    _linkSubscription?.cancel();
     super.dispose();
   }
 
@@ -47,18 +59,44 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
     }
   }
 
+  /// Stripe redirige aquí (esquema `saludprenatal://`, ver FRONTEND_URL del
+  /// backend) al terminar el checkout. Esto trae la app al frente de forma
+  /// automática (Android cierra la pestaña del navegador in-app) y dispara
+  /// una verificación inmediata en vez de esperar a que el usuario regrese
+  /// manualmente.
+  void _handleIncomingLink(Uri uri) {
+    if (uri.scheme != 'saludprenatal' || uri.host != 'payment-callback') return;
+    if (!mounted) return;
+
+    if (uri.path.toLowerCase().contains('cancel')) {
+      _pollTimer?.cancel();
+      setState(() {
+        _awaitingConfirmation = false;
+        _confirmationTimedOut = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pago cancelado. Puedes intentarlo de nuevo cuando quieras.')),
+      );
+      return;
+    }
+
+    if (_awaitingConfirmation) {
+      _checkStatus();
+    } else {
+      _startPolling();
+    }
+  }
+
   Future<void> _pay() async {
+    setState(() => _confirmationTimedOut = false);
+
     final provider = context.read<SubscriptionsProvider>();
     final checkoutUrl = await provider.startCheckout(_selectedPlan);
     if (!mounted) return;
 
     if (checkoutUrl == null || checkoutUrl.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.checkoutError ?? 'No se pudo iniciar el proceso de pago'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // El error real del backend ya se muestra inline en _buildPlanPicker
+      // (provider.checkoutError); no duplicar con un SnackBar.
       return;
     }
 
@@ -94,7 +132,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
 
     if (provider.subscription?.isActive == true) {
       _pollTimer?.cancel();
-      setState(() => _awaitingConfirmation = false);
+      // El pago se confirmó mientras esperábamos: entra directo al dashboard
+      // en vez de dejar al doctor parado en esta pantalla de confirmación.
+      _goToDoctorDashboard();
       return;
     }
 
@@ -105,6 +145,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
         _confirmationTimedOut = true;
       });
     }
+  }
+
+  void _goToDoctorDashboard() {
+    Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (route) => false, arguments: 'doctor');
   }
 
   @override
@@ -217,7 +261,13 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
         ],
         const SizedBox(height: 32),
         ElevatedButton(
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              _goToDoctorDashboard();
+            }
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
@@ -245,7 +295,8 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
         ),
         const SizedBox(height: 8),
         Text(
-          'Elige tu plan para empezar a atender pacientes. El monto se confirma en la página de pago.',
+          'Elige tu plan para empezar a atender pacientes. El monto se confirma en la página de pago. '
+          'Por ahora ambos planes incluyen el mismo acceso al sistema.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
         ),
@@ -276,22 +327,13 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
         _planCard(
           planType: 'basic',
           label: 'Básico',
-          features: const [
-            'Pacientes y expedientes clínicos ilimitados',
-            'Predicción de riesgo de preeclampsia con IA',
-            'Agenda y recordatorios de citas',
-          ],
+          features: _sharedPlanFeatures,
         ),
         const SizedBox(height: 16),
         _planCard(
           planType: 'premium',
           label: 'Premium',
-          features: const [
-            'Todo lo incluido en el plan Básico',
-            'Chat directo con tus pacientes',
-            'Bitácora de embarazo en tiempo real',
-            'Soporte prioritario',
-          ],
+          features: _sharedPlanFeatures,
         ),
         const SizedBox(height: 28),
         ElevatedButton(

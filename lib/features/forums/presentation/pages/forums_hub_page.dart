@@ -19,13 +19,15 @@ class ForumsHubPage extends StatefulWidget {
   State<ForumsHubPage> createState() => _ForumsHubPageState();
 }
 
-class _ForumsHubPageState extends State<ForumsHubPage> {
+class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final loginProvider = context.read<LoginProvider>();
       final currentUserId = loginProvider.userId;
@@ -34,7 +36,7 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
         await forumsProvider.loadSocialProfile(currentUserId);
         if (forumsProvider.socialProfile != null) {
           forumsProvider.loadRecommendedFeed();
-          forumsProvider.loadRecommendedGroups();
+          forumsProvider.loadGlobalFeed();
         }
       }
     });
@@ -43,11 +45,13 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
   void _refreshFeed() {
     context.read<ForumsProvider>().loadRecommendedFeed();
+    context.read<ForumsProvider>().loadGlobalFeed();
   }
 
   void _refreshGroups() {
@@ -83,18 +87,36 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
               icon: Icon(Icons.refresh, color: AppColors.textMuted),
               onPressed: () {
                 _refreshFeed();
-                _refreshGroups();
               },
             ),
           ],
         ],
+        bottom: hasProfile
+            ? TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textMuted,
+                indicatorColor: AppColors.primary,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                tabs: const [
+                  Tab(text: 'Para ti'),
+                  Tab(text: 'Explorar'),
+                ],
+              )
+            : null,
       ),
       body: SafeArea(
         child: switch (forumsProvider.profileStatus) {
           ProfileStatus.loading => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
           _ => !hasProfile
               ? _buildProfileOnboarding()
-              : _buildFeedTab(),
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildFeedTab(),
+                    _buildGlobalFeedTab(),
+                  ],
+                ),
         },
       ),
       floatingActionButton: hasProfile
@@ -255,11 +277,56 @@ class _ForumsHubPageState extends State<ForumsHubPage> {
     }
   }
 
-  // ---- Tab "Grupos": recomendados por cluster (o todos, con fallback del backend) ----
+  // ---- Tab "Explorar": feed global de posts ----
 
+  Widget _buildGlobalFeedTab() {
+    final forumsProvider = context.watch<ForumsProvider>();
 
+    return switch (forumsProvider.globalFeedStatus) {
+      ForumsStatus.loading => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      ForumsStatus.error => _buildErrorView(
+          message: forumsProvider.globalFeedError ?? 'Error al cargar el feed global',
+          sessionExpired: forumsProvider.sessionExpired,
+          onRetry: _refreshFeed,
+        ),
+      _ => _buildGlobalFeedList(),
+    };
+  }
 
-  Widget _buildErrorView({
+  Widget _buildGlobalFeedList() {
+    final forumsProvider = context.watch<ForumsProvider>();
+    final posts = forumsProvider.globalFeed;
+
+    if (posts.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.dynamic_feed_outlined,
+        title: 'Nada por aquí todavía',
+        description: 'Cuando tú u otras mamás publiquen, lo verás aquí.',
+        action: ElevatedButton.icon(
+          onPressed: _showCreatePost,
+          icon: const Icon(Icons.add),
+          label: const Text('Crear publicación'),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return ForumPostCard(
+          post: post,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
+            );
+          },
+        );
+      },
+    );
+  }  Widget _buildErrorView({
     required String message,
     required bool sessionExpired,
     required VoidCallback onRetry,

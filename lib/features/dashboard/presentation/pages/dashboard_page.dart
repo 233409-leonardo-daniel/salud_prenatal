@@ -314,19 +314,14 @@ class _DashboardPageState extends State<DashboardPage> {
       case DashboardStatus.success:
         break;
     }
-    final appointmentsProvider = context.watch<AppointmentsProvider>();
-    final today = DateTime.now();
-
     final totalPatientsStr = dashboardProvider.patients.length.toString();
 
-    final todayAppointments = appointmentsProvider.appointments.where((app) =>
-        app.dateTime.year == today.year &&
-        app.dateTime.month == today.month &&
-        app.dateTime.day == today.day
-    ).toList();
-    todayAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-    final citasHoyStr = todayAppointments.length.toString();
+    // "Citas Hoy" y "Próximas Citas" vienen de GET /doctors/{doctor_id}/dashboard
+    // (ya calculadas por el backend en horario de Ciudad de México, ordenadas
+    // por hora) en vez de filtrar AppointmentsProvider por la fecha local del
+    // dispositivo.
+    final todayAppointments = dashboardProvider.todayAppointments;
+    final citasHoyStr = dashboardProvider.todayAppointmentsCount.toString();
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.0),
@@ -383,18 +378,22 @@ class _DashboardPageState extends State<DashboardPage> {
             )
           else
             ...todayAppointments.map((app) {
-              final isPm = app.dateTime.hour >= 12;
-              final hour = app.dateTime.hour == 0 
-                  ? 12 
-                  : (app.dateTime.hour > 12 ? app.dateTime.hour - 12 : app.dateTime.hour);
-              final timeStr = '${hour.toString().padLeft(2, '0')}:${app.dateTime.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+              final dateTime = DateTime.tryParse(app['appointment_time']?.toString() ?? '') ?? DateTime.now();
+              final isPm = dateTime.hour >= 12;
+              final hour = dateTime.hour == 0
+                  ? 12
+                  : (dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour);
+              final timeStr = '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+              final patientName = (app['patient_name'] as String?) ?? 'Paciente';
+              final reason = (app['reason'] as String?) ?? '';
+              final status = (app['status'] as String?) ?? '';
               return Column(
                 children: [
                   _buildDoctorAppointmentItem(
                     timeStr,
-                    app.patientName,
-                    app.reason,
-                    app.reason.toLowerCase().contains('urgente') || app.status == AppointmentStatus.cancelled,
+                    patientName,
+                    reason,
+                    reason.toLowerCase().contains('urgente') || status == 'cancelada',
                   ),
                   const Divider(height: 1, color: Color(0xFFE5E5EA)),
                 ],

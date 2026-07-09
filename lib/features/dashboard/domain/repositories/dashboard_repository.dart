@@ -14,6 +14,8 @@ import '../../data/models/consultation_response.dart';
 abstract class DashboardRepository {
   Future<List<UserProfile>> getAllUsers();
   Future<List<Map<String, dynamic>>> getPatientsByDoctor(int doctorId);
+  Future<Map<String, dynamic>> getDoctorDashboard(int doctorId);
+  Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId);
   Future<MedicalRecordResponse?> getMedicalRecordByPatient(int patientId, {required int doctorId});
   Future<List<ConsultationResponse>> getConsultationsByMedicalRecord(int medicalRecordId);
   Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId});

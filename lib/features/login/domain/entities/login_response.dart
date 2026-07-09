@@ -6,6 +6,7 @@ class LoginResponse {
   final int? patientId;
   final int? doctorId;
   final int? medicalRecordId;
+  final int? receptionistId;
   final String? subscriptionStatus;
 
   LoginResponse({
@@ -16,6 +17,7 @@ class LoginResponse {
     this.patientId,
     this.doctorId,
     this.medicalRecordId,
+    this.receptionistId,
     this.subscriptionStatus,
   });
 
@@ -28,6 +30,7 @@ class LoginResponse {
       patientId: json['patient_id'] ?? json['patientId'],
       doctorId: json['doctor_id'] ?? json['doctorId'],
       medicalRecordId: json['medical_record_id'] ?? json['medicalRecordId'],
+      receptionistId: json['receptionist_id'] ?? json['receptionistId'],
       subscriptionStatus: json['subscription_status'] ?? json['subscriptionStatus'],
     );
   }

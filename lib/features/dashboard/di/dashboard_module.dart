@@ -3,6 +3,8 @@ import '../data/repositories/dashboard_repository_impl.dart';
 import '../domain/repositories/dashboard_repository.dart';
 import '../domain/usecases/get_all_users_usecase.dart';
 import '../domain/usecases/get_patients_by_doctor_usecase.dart';
+import '../domain/usecases/get_doctor_dashboard_usecase.dart';
+import '../domain/usecases/get_receptionist_dashboard_usecase.dart';
 import '../domain/usecases/get_medical_record_by_patient_usecase.dart';
 import '../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
@@ -16,6 +18,8 @@ class DashboardModule {
   late final DashboardRepository repository;
   late final GetAllUsersUseCase getAllUsersUseCase;
   late final GetPatientsByDoctorUseCase getPatientsByDoctorUseCase;
+  late final GetDoctorDashboardUseCase getDoctorDashboardUseCase;
+  late final GetReceptionistDashboardUseCase getReceptionistDashboardUseCase;
   late final GetMedicalRecordByPatientUseCase getMedicalRecordByPatientUseCase;
   late final GetConsultationsByMedicalRecordUseCase getConsultationsByMedicalRecordUseCase;
   late final GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase;
@@ -29,6 +33,8 @@ class DashboardModule {
 
     getAllUsersUseCase = GetAllUsersUseCase(repository);
     getPatientsByDoctorUseCase = GetPatientsByDoctorUseCase(repository);
+    getDoctorDashboardUseCase = GetDoctorDashboardUseCase(repository);
+    getReceptionistDashboardUseCase = GetReceptionistDashboardUseCase(repository);
     getMedicalRecordByPatientUseCase = GetMedicalRecordByPatientUseCase(repository);
     getConsultationsByMedicalRecordUseCase = GetConsultationsByMedicalRecordUseCase(repository);
     getConsultationsFromPatientEndpointUseCase = GetConsultationsFromPatientEndpointUseCase(repository);

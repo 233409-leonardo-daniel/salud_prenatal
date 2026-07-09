@@ -20,6 +20,16 @@ class DashboardRepositoryImpl implements DashboardRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> getDoctorDashboard(int doctorId) {
+    return remoteDataSource.getDoctorDashboard(doctorId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId) {
+    return remoteDataSource.getReceptionistDashboard(receptionistId);
+  }
+
+  @override
   Future<MedicalRecordResponse?> getMedicalRecordByPatient(int patientId, {required int doctorId}) {
     return remoteDataSource.getMedicalRecordByPatient(patientId, doctorId: doctorId);
   }

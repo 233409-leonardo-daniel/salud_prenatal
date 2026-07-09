@@ -7,6 +7,8 @@ import '../models/consultation_response.dart';
 abstract class DashboardRemoteDataSource {
   Future<List<UserProfile>> getAllUsers();
   Future<List<Map<String, dynamic>>> getPatientsByDoctor(int doctorId);
+  Future<Map<String, dynamic>> getDoctorDashboard(int doctorId);
+  Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId);
   Future<MedicalRecordResponse?> getMedicalRecordByPatient(int patientId, {required int doctorId});
   Future<List<ConsultationResponse>> getConsultationsByMedicalRecord(int medicalRecordId);
   Future<List<ConsultationResponse>> getConsultationsFromPatientEndpoint(int patientId, {required int doctorId});
@@ -39,6 +41,30 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       return List<Map<String, dynamic>>.from(data);
     }
     throw Exception('Error al obtener pacientes del doctor (Status: ${response.statusCode})');
+  }
+
+  @override
+  Future<Map<String, dynamic>> getDoctorDashboard(int doctorId) async {
+    // GET /doctors/{doctor_id}/dashboard: recepcionistas del doctor (para
+    // chat) + citas de hoy, ya calculadas en backend con horario de Ciudad
+    // de México (no se debe recalcular "hoy" con la fecha local del device).
+    final response = await _apiClient.get('/doctors/$doctorId/dashboard');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Error al obtener dashboard del doctor (Status: ${response.statusCode})');
+  }
+
+  @override
+  Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId) async {
+    // GET /doctors/receptionists/{receptionist_id}/dashboard: nombre de la
+    // recepcionista + citas del doctor asignado (upcoming/pending/confirmed),
+    // ya filtradas y ordenadas por el backend.
+    final response = await _apiClient.get('/doctors/receptionists/$receptionistId/dashboard');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Error al obtener dashboard de la recepcionista (Status: ${response.statusCode})');
   }
 
   @override

@@ -4,6 +4,8 @@ import '../../data/models/consultation_response.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../domain/usecases/get_all_users_usecase.dart';
 import '../../domain/usecases/get_patients_by_doctor_usecase.dart';
+import '../../domain/usecases/get_doctor_dashboard_usecase.dart';
+import '../../domain/usecases/get_receptionist_dashboard_usecase.dart';
 import '../../domain/usecases/get_medical_record_by_patient_usecase.dart';
 import '../../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
@@ -15,6 +17,8 @@ import '../pages/dashboard_state.dart';
 class DashboardProvider with ChangeNotifier {
   final GetAllUsersUseCase _getAllUsersUseCase;
   final GetPatientsByDoctorUseCase _getPatientsByDoctorUseCase;
+  final GetDoctorDashboardUseCase _getDoctorDashboardUseCase;
+  final GetReceptionistDashboardUseCase _getReceptionistDashboardUseCase;
   final GetMedicalRecordByPatientUseCase _getMedicalRecordByPatientUseCase;
   final GetConsultationsByMedicalRecordUseCase _getConsultationsByMedicalRecordUseCase;
   final GetConsultationsFromPatientEndpointUseCase _getConsultationsFromPatientEndpointUseCase;
@@ -25,6 +29,8 @@ class DashboardProvider with ChangeNotifier {
   DashboardProvider({
     required GetAllUsersUseCase getAllUsersUseCase,
     required GetPatientsByDoctorUseCase getPatientsByDoctorUseCase,
+    required GetDoctorDashboardUseCase getDoctorDashboardUseCase,
+    required GetReceptionistDashboardUseCase getReceptionistDashboardUseCase,
     required GetMedicalRecordByPatientUseCase getMedicalRecordByPatientUseCase,
     required GetConsultationsByMedicalRecordUseCase getConsultationsByMedicalRecordUseCase,
     required GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase,
@@ -33,6 +39,8 @@ class DashboardProvider with ChangeNotifier {
     required EvaluateRiskUseCase evaluateRiskUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
         _getPatientsByDoctorUseCase = getPatientsByDoctorUseCase,
+        _getDoctorDashboardUseCase = getDoctorDashboardUseCase,
+        _getReceptionistDashboardUseCase = getReceptionistDashboardUseCase,
         _getMedicalRecordByPatientUseCase = getMedicalRecordByPatientUseCase,
         _getConsultationsByMedicalRecordUseCase = getConsultationsByMedicalRecordUseCase,
         _getConsultationsFromPatientEndpointUseCase = getConsultationsFromPatientEndpointUseCase,
@@ -51,6 +59,8 @@ class DashboardProvider with ChangeNotifier {
   List<ConsultationResponse> _consultations = [];
   Map<String, dynamic>? _currentPatientData;
   Map<String, dynamic>? _dashboardData;
+  Map<String, dynamic>? _doctorDashboardData;
+  Map<String, dynamic>? _receptionistDashboardData;
 
   MedicalRecordResponse? _activeMedicalRecord;
   List<ConsultationResponse> _activeConsultations = [];
@@ -78,6 +88,27 @@ class DashboardProvider with ChangeNotifier {
   Map<String, dynamic>? get currentPatientData => _currentPatientData;
   Map<String, dynamic>? get dashboardData => _dashboardData;
 
+  /// GET /doctors/{doctor_id}/dashboard — recepcionistas del doctor (para
+  /// chat) + citas de hoy, calculadas por el backend en horario CDMX.
+  Map<String, dynamic>? get doctorDashboardData => _doctorDashboardData;
+  List<Map<String, dynamic>> get doctorReceptionists =>
+      (_doctorDashboardData?['receptionists'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  int get todayAppointmentsCount => _doctorDashboardData?['today_appointments_count'] as int? ?? 0;
+  List<Map<String, dynamic>> get todayAppointments =>
+      (_doctorDashboardData?['today_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+  /// GET /doctors/receptionists/{receptionist_id}/dashboard — nombre de la
+  /// recepcionista + citas del doctor asignado, ya filtradas/ordenadas por
+  /// el backend.
+  Map<String, dynamic>? get receptionistDashboardData => _receptionistDashboardData;
+  String get receptionistFullName => _receptionistDashboardData?['full_name'] as String? ?? '';
+  List<Map<String, dynamic>> get receptionistUpcomingAppointments =>
+      (_receptionistDashboardData?['upcoming_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  List<Map<String, dynamic>> get receptionistPendingAppointments =>
+      (_receptionistDashboardData?['pending_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  List<Map<String, dynamic>> get receptionistConfirmedAppointments =>
+      (_receptionistDashboardData?['confirmed_appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
   MedicalRecordResponse? get activeMedicalRecord => _activeMedicalRecord;
   List<ConsultationResponse> get activeConsultations => _activeConsultations;
 
@@ -90,13 +121,44 @@ class DashboardProvider with ChangeNotifier {
     _consultations = [];
     _dashboardData = null;
     _currentPatientData = null;
+    _doctorDashboardData = null;
     notifyListeners();
 
     try {
       _users = await _getAllUsersUseCase.call();
       _patients = await _getPatientsByDoctorUseCase.call(doctorId);
+
+      try {
+        _doctorDashboardData = await _getDoctorDashboardUseCase.call(doctorId);
+      } catch (e) {
+        // No bloqueamos todo el dashboard si solo falla este endpoint nuevo;
+        // "Citas Hoy"/"Próximas Citas" quedan vacías y el resto sigue andando.
+        print('Error al cargar dashboard del doctor: $e');
+        _doctorDashboardData = null;
+      }
+
       _status = DashboardStatus.success;
     } catch (e) {
+      _status = DashboardStatus.error;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// GET /doctors/receptionists/{receptionist_id}/dashboard — usado por el
+  /// dashboard de la recepcionista en vez de AppointmentsProvider.
+  Future<void> loadReceptionistDashboard(int receptionistId) async {
+    _status = DashboardStatus.loading;
+    _errorMessage = null;
+    _receptionistDashboardData = null;
+    notifyListeners();
+
+    try {
+      _receptionistDashboardData = await _getReceptionistDashboardUseCase.call(receptionistId);
+      _status = DashboardStatus.success;
+    } catch (e) {
+      print('Error al cargar dashboard de la recepcionista: $e');
       _status = DashboardStatus.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {

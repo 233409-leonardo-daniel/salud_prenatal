@@ -109,6 +109,8 @@ class MyApp extends StatelessWidget {
           create: (_) => DashboardProvider(
             getAllUsersUseCase: dashboardModule.getAllUsersUseCase,
             getPatientsByDoctorUseCase: dashboardModule.getPatientsByDoctorUseCase,
+            getDoctorDashboardUseCase: dashboardModule.getDoctorDashboardUseCase,
+            getReceptionistDashboardUseCase: dashboardModule.getReceptionistDashboardUseCase,
             getMedicalRecordByPatientUseCase: dashboardModule.getMedicalRecordByPatientUseCase,
             getConsultationsByMedicalRecordUseCase: dashboardModule.getConsultationsByMedicalRecordUseCase,
             getConsultationsFromPatientEndpointUseCase: dashboardModule.getConsultationsFromPatientEndpointUseCase,

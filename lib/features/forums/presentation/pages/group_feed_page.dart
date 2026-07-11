@@ -85,7 +85,7 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.article_outlined, size: 64, color: Colors.pink.shade100),
+              Icon(Icons.article_outlined, size: 64, color: AppColors.primary.withOpacity(0.3)),
               const SizedBox(height: 16),
               Text(
                 'Aún no hay publicaciones',

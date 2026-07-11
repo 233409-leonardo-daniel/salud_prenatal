@@ -394,8 +394,8 @@ class _ChatListPageState extends State<ChatListPage> {
                 children: [
                   Container(
                     padding: EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBackground,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.medical_services_outlined, color: AppColors.primary, size: 40),
@@ -534,7 +534,7 @@ class _ChatListPageState extends State<ChatListPage> {
           decoration: BoxDecoration(
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(24),
-            border: isAssigned ? Border.all(color: Colors.pink.shade100, width: 1.5) : null,
+            border: isAssigned ? Border.all(color: AppColors.isDarkMode ? const Color(0xFF5C2E42) : Colors.pink.shade100, width: 1.5) : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(4),
@@ -591,7 +591,7 @@ class _ChatListPageState extends State<ChatListPage> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F6),
+                      color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -610,7 +610,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ),
-            trailing: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
+            trailing: Icon(Icons.chevron_right, color: AppColors.textMuted),
             onTap: () async {
               _conversationsProvider.markConversationAsRead(otherUserId);
               await Navigator.push(
@@ -638,7 +638,7 @@ class _ChatListPageState extends State<ChatListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: Colors.pink.shade100),
+            Icon(icon, size: 64, color: AppColors.primary.withOpacity(0.3)),
             SizedBox(height: 16),
             Text(
               title,

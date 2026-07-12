@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/providers/privacy_policy_provider.dart';
 import '../../../privacy_policy/domain/entities/accepted_policy.dart';
@@ -13,8 +14,8 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = context.watch<LoginProvider>();
-    final initial = loginProvider.name.isNotEmpty ? loginProvider.name[0].toUpperCase() : 'U';
+    final session = context.watch<SessionManager>();
+    final initial = session.name.isNotEmpty ? session.name[0].toUpperCase() : 'U';
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -79,57 +80,57 @@ class ProfilePage extends StatelessWidget {
                 _buildInfoRow(
                   icon: Icons.person_outline,
                   label: 'Nombre completo',
-                  value: '${loginProvider.userProfile?.name} ${loginProvider.userProfile?.lastName}'.trim().isNotEmpty
-                      ? '${loginProvider.userProfile?.name} ${loginProvider.userProfile?.lastName}'
+                  value: '${session.userProfile?.name} ${session.userProfile?.lastName}'.trim().isNotEmpty
+                      ? '${session.userProfile?.name} ${session.userProfile?.lastName}'
                       : 'No especificado',
                 ),
                 Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                 _buildInfoRow(
                   icon: Icons.email_outlined,
                   label: 'Correo electrónico',
-                  value: loginProvider.userProfile?.email.isNotEmpty == true
-                      ? loginProvider.userProfile!.email
+                  value: session.userProfile?.email.isNotEmpty == true
+                      ? session.userProfile!.email
                       : 'No especificado',
                 ),
                 Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                 _buildInfoRow(
                   icon: Icons.phone_outlined,
                   label: 'Teléfono',
-                  value: loginProvider.userProfile?.phone.isNotEmpty == true
-                      ? loginProvider.userProfile!.phone
+                  value: session.userProfile?.phone.isNotEmpty == true
+                      ? session.userProfile!.phone
                       : 'No especificado',
                 ),
                 Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                 _buildInfoRow(
                   icon: Icons.badge_outlined,
                   label: 'Rol',
-                  value: loginProvider.userProfile?.role.toLowerCase() == 'doctor'
+                  value: session.userProfile?.role.toLowerCase() == 'doctor'
                       ? 'Médico / Especialista'
                       : 'Paciente',
                 ),
-                if (loginProvider.userProfile?.role.toLowerCase() == 'doctor') ...[
+                if (session.userProfile?.role.toLowerCase() == 'doctor') ...[
                   Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                   _buildInfoRow(
                     icon: Icons.medical_services_outlined,
                     label: 'Especialidad',
-                    value: loginProvider.userProfile?.specialty?.isNotEmpty == true
-                        ? loginProvider.userProfile!.specialty!
+                    value: session.userProfile?.specialty?.isNotEmpty == true
+                        ? session.userProfile!.specialty!
                         : 'No especificado',
                   ),
                   Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                   _buildInfoRow(
                     icon: Icons.badge_outlined,
                     label: 'Cédula profesional',
-                    value: loginProvider.userProfile?.professionalLicense?.isNotEmpty == true
-                        ? loginProvider.userProfile!.professionalLicense!
+                    value: session.userProfile?.professionalLicense?.isNotEmpty == true
+                        ? session.userProfile!.professionalLicense!
                         : 'No especificado',
                   ),
                   Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),
                   _buildInfoRow(
                     icon: Icons.local_hospital_outlined,
                     label: 'Consultorio',
-                    value: loginProvider.userProfile?.office?.isNotEmpty == true
-                        ? loginProvider.userProfile!.office!
+                    value: session.userProfile?.office?.isNotEmpty == true
+                        ? session.userProfile!.office!
                         : 'No especificado',
                   ),
                 ],
@@ -155,7 +156,7 @@ class ProfilePage extends StatelessWidget {
                     elevation: 0,
                   ),
                 ),
-                if (loginProvider.userProfile?.role.toLowerCase() == 'doctor') ...[
+                if (session.userProfile?.role.toLowerCase() == 'doctor') ...[
                   SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () {
@@ -309,8 +310,8 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
   }
 
   void _loadPolicies() {
-    final loginProvider = context.read<LoginProvider>();
-    final email = loginProvider.userProfile?.email ?? '';
+    final session = context.read<SessionManager>();
+    final email = session.userProfile?.email ?? '';
     if (email.isNotEmpty) {
       context.read<PrivacyPolicyProvider>().loadAcceptedPolicies(email);
     }
@@ -795,7 +796,7 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = context.read<LoginProvider>();
+    final session = context.read<SessionManager>();
     final registerProvider = context.watch<RegisterProvider>();
     
     return Container(
@@ -904,7 +905,7 @@ class _CreateReceptionistBottomSheetState extends State<_CreateReceptionistBotto
               ElevatedButton(
                 onPressed: registerProvider.isLoading ? null : () async {
                   if (_formKey.currentState!.validate()) {
-                    final doctorId = loginProvider.doctorId;
+                    final doctorId = session.doctorId;
                     if (doctorId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: No se pudo obtener el ID del médico.'), backgroundColor: Colors.red),

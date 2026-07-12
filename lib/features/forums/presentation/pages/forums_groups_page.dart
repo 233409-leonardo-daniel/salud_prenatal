@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../domain/entities/community_group.dart';
 import '../providers/forums_provider.dart';
 import 'forums_state.dart';
@@ -264,9 +264,9 @@ class _ForumsGroupsPageState extends State<ForumsGroupsPage> with SingleTickerPr
   void _showCreateGroupDialog() {
     final nameController = TextEditingController();
     final descController = TextEditingController();
-    final loginProvider = context.read<LoginProvider>();
+    final session = context.read<SessionManager>();
     final forumsProvider = context.read<ForumsProvider>();
-    final currentUserId = loginProvider.userId;
+    final currentUserId = session.userId;
     if (currentUserId == null) return;
 
     showDialog(

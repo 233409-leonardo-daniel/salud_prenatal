@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../domain/entities/conversation_entity.dart';
@@ -43,17 +43,17 @@ class _ChatListPageState extends State<ChatListPage> {
   /// necesitamos, además, el nombre de su doctor asignado (current_doctor),
   /// que el inbox no expone si todavía no hay mensajes con él.
   Future<void> _refreshInbox() async {
-    final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId;
+    final session = context.read<SessionManager>();
+    final currentUserId = session.userId;
     if (currentUserId == null) return; // Sesión no disponible: nada que cargar.
 
-    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final isDoctor = session.role?.toLowerCase().contains('doctor') ?? false;
+    final isReceptionist = session.role == 'receptionist' || session.role == 'recepcionista';
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
 
     if (!isDoctorOrReceptionist) {
       final dashboardProvider = context.read<DashboardProvider>();
-      final patId = loginProvider.patientId ?? currentUserId;
+      final patId = session.patientId ?? currentUserId;
       await dashboardProvider.loadPatientBasicInfo(patId);
       if (!mounted) return;
     }
@@ -95,9 +95,9 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = context.watch<LoginProvider>();
-    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+    final session = context.watch<SessionManager>();
+    final isDoctor = session.role?.toLowerCase().contains('doctor') ?? false;
+    final isReceptionist = session.role == 'receptionist' || session.role == 'recepcionista';
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
 
     return Scaffold(
@@ -181,7 +181,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
   // --- DOCTOR & RECEPTIONIST VIEW: Active Conversations ---
   Widget _buildDoctorChatList() {
-    final loginProvider = context.watch<LoginProvider>();
+    final session = context.watch<SessionManager>();
     final conversationsProvider = context.watch<ConversationsProvider>();
     final conversations = conversationsProvider.conversations;
 
@@ -250,9 +250,9 @@ class _ChatListPageState extends State<ChatListPage> {
         String lastMessageTime = '';
         
         final lastMsg = conv.lastMessage;
-        final unreadCount = (lastMsg != null && lastMsg.senderId == loginProvider.userId) ? 0 : conv.unreadCount;
+        final unreadCount = (lastMsg != null && lastMsg.senderId == session.userId) ? 0 : conv.unreadCount;
         if (lastMsg != null) {
-          final isSentByMe = lastMsg.senderId == loginProvider.userId;
+          final isSentByMe = lastMsg.senderId == session.userId;
           final prefix = isSentByMe ? 'Tú: ' : '';
           lastMessageContent = '$prefix${lastMsg.content}';
           
@@ -358,9 +358,9 @@ class _ChatListPageState extends State<ChatListPage> {
   // --- PATIENT VIEW: List of Doctors & Receptionists ---
   Widget _buildPatientChatList() {
     final dashboardProvider = context.watch<DashboardProvider>();
-    final loginProvider = context.read<LoginProvider>();
+    final session = context.read<SessionManager>();
     final conversationsProvider = context.watch<ConversationsProvider>();
-    final currentUserId = loginProvider.userId;
+    final currentUserId = session.userId;
 
     final docName = dashboardProvider.dashboardData?['current_doctor'] as String?;
     final docSpecialty = dashboardProvider.dashboardData?['current_doctor_specialty'] as String? ?? 'Ginecología y Obstetricia';
@@ -419,13 +419,13 @@ class _ChatListPageState extends State<ChatListPage> {
                         context,
                         MaterialPageRoute(builder: (context) => const InvitationCodePage()),
                       );
-                      final patientId = loginProvider.patientId;
-                      final userId = loginProvider.userId;
+                      final patientId = session.patientId;
+                      final userId = session.userId;
                       if (result == true && mounted && patientId != null && userId != null) {
                         context.read<DashboardProvider>().loadPatientDashboard(
                               patientId,
                               userId,
-                              doctorId: loginProvider.doctorId,
+                              doctorId: session.doctorId,
                             );
                       }
                     },

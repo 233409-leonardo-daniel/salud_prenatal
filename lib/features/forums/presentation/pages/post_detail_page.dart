@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../domain/entities/forum_post.dart';
 import '../providers/forums_provider.dart';
 import 'forums_state.dart';
@@ -36,8 +36,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
   @override
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
-    final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId;
+    final session = context.read<SessionManager>();
+    final currentUserId = session.userId;
 
     final authorName = widget.post.authorAlias ?? 'Usuario';
     final isDoctor = widget.post.authorRole?.toLowerCase().contains('doctor') ?? false;
@@ -317,8 +317,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
   void _showReportDialog(BuildContext context, int? postId, int? commentId) {
     final reasonController = TextEditingController();
     final forumsProvider = context.read<ForumsProvider>();
-    final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId;
+    final session = context.read<SessionManager>();
+    final currentUserId = session.userId;
     if (currentUserId == null) return; // Sesión no disponible.
 
     showDialog(

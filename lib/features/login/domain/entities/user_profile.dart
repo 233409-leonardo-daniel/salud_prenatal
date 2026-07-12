@@ -51,7 +51,7 @@ class UserProfile {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'user_id': userId,
       'name': name,
       'last_name': lastName,
@@ -62,10 +62,16 @@ class UserProfile {
       'is_active': isActive,
       'created_at': createdAt.isNotEmpty ? createdAt : DateTime.now().toUtc().toIso8601String(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
-      'password': password ?? '',
       'specialty': specialty,
       'professional_license': professionalLicense,
       'office': office,
     };
+    // Solo se envía la contraseña cuando se está creando/cambiando de forma
+    // explícita. Un update de perfil pasa password == null y omite la clave,
+    // para no blanquear la credencial en el backend.
+    if (password != null) {
+      map['password'] = password;
+    }
+    return map;
   }
 }

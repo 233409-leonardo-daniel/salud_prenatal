@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../domain/entities/social_profile.dart';
 import '../providers/forums_provider.dart';
 import 'forums_state.dart';
@@ -32,8 +32,8 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final loginProvider = context.read<LoginProvider>();
-      final currentUserId = loginProvider.userId;
+      final session = context.read<SessionManager>();
+      final currentUserId = session.userId;
       if (currentUserId != null) {
         final forumsProvider = context.read<ForumsProvider>();
         await forumsProvider.loadSocialProfile(currentUserId);
@@ -62,9 +62,9 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   @override
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
-    final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId;
-    final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
+    final session = context.read<SessionManager>();
+    final currentUserId = session.userId;
+    final isDoctor = session.role?.toLowerCase().contains('doctor') ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,

@@ -6,7 +6,7 @@ import '../providers/appointment_provider.dart';
 import 'appointment_state.dart';
 import '../../domain/entities/appointment.dart';
 import 'appointment_detail_page.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/create_appointment_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../login/domain/entities/user_profile.dart';
@@ -40,13 +40,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Future<void> _loadPatientsIfNeeded() async {
     final dashboardProvider = context.read<DashboardProvider>();
     if (dashboardProvider.patients.isNotEmpty) return;
-    final doctorId = context.read<LoginProvider>().doctorId;
+    final doctorId = context.read<SessionManager>().doctorId;
     if (doctorId == null) return;
     await dashboardProvider.loadDoctorPatients(doctorId);
   }
 
   void _loadAppointmentsData() {
-    final loginProvider = context.read<LoginProvider>();
+    final loginProvider = context.read<SessionManager>();
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
 
@@ -153,7 +153,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final provider = context.watch<AppointmentsProvider>();
-    final loginProvider = context.watch<LoginProvider>();
+    final loginProvider = context.watch<SessionManager>();
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
 
@@ -184,7 +184,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Appointment _resolveAppointmentNames(Appointment app, BuildContext context) {
     try {
       final dashboardProvider = context.read<DashboardProvider>();
-      final loginProvider = context.read<LoginProvider>();
+      final loginProvider = context.read<SessionManager>();
 
       String resolvedPatient = app.patientName;
       final patientMatch = dashboardProvider.patients.firstWhere(
@@ -229,7 +229,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   Future<void> _showCreateAppointmentDialog(BuildContext context) async {
     final dashboardProvider = context.read<DashboardProvider>();
-    final loginProvider = context.read<LoginProvider>();
+    final loginProvider = context.read<SessionManager>();
 
     // Defensivo: si por alguna razón aún no se cargaron los pacientes
     // (p. ej. la carga inicial no ha terminado), lo intentamos aquí antes

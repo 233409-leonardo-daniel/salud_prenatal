@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/dashboard_provider.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import 'dashboard_state.dart';
 
 class PatientProgressPage extends StatefulWidget {
@@ -30,13 +30,13 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
     if (pIdStr != null) {
       _parsedPatientId = int.tryParse(pIdStr.replaceAll('#SP-', '').trim());
     } else {
-      _parsedPatientId = context.read<LoginProvider>().patientId;
+      _parsedPatientId = context.read<SessionManager>().patientId;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final patientId = _parsedPatientId;
       if (patientId == null) return;
-      final loginProvider = context.read<LoginProvider>();
-      context.read<DashboardProvider>().loadPatientDetails(patientId, doctorId: loginProvider.doctorId);
+      final session = context.read<SessionManager>();
+      context.read<DashboardProvider>().loadPatientDetails(patientId, doctorId: session.doctorId);
     });
   }
 

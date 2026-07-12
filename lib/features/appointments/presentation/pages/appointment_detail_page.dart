@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../../domain/entities/appointment.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/delete_appointment_provider.dart';
 import '../widgets/appointment_status_chip.dart';
@@ -25,7 +25,7 @@ class AppointmentDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = context.watch<LoginProvider>();
+    final loginProvider = context.watch<SessionManager>();
     final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista' || loginProvider.role == 'recepcionist';
     

@@ -21,7 +21,8 @@ abstract class ChatRemoteDataSource {
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   final ApiClient _apiClient;
-  
+  final TokenProvider? _tokenProvider;
+
   WebSocket? _webSocket;
   final StreamController<ChatMessageModel> _messageController = StreamController<ChatMessageModel>.broadcast();
   final StreamController<bool> _connectionController = StreamController<bool>.broadcast();
@@ -32,7 +33,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Timer? _reconnectTimer;
   bool _isDisposed = false;
 
-  ChatRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
+  ChatRemoteDataSourceImpl({
+    required ApiClient apiClient,
+    TokenProvider? tokenProvider,
+  })  : _apiClient = apiClient,
+        _tokenProvider = tokenProvider;
 
   @override
   Stream<ChatMessageModel> get messageStream => _messageController.stream;
@@ -81,7 +86,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     // param (`?token=<JWT>`), no como Authorization header. Ver docu de /chat.
     final baseUri = Uri.parse(ApiConfig.baseUrl);
     final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
-    final token = ApiClient().authToken;
+    final token = _tokenProvider?.call();
     final socketUri = Uri(
       scheme: wsScheme,
       host: baseUri.host,

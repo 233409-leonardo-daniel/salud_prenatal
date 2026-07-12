@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../../core/services/qr_service.dart';
 import '../providers/invitation_provider.dart';
 import 'patient_state.dart';
@@ -21,13 +21,13 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
-      final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+      final session = context.read<SessionManager>();
+      final isDoctor = session.role == 'doctor' || session.role == 'doctor(a)';
       final invitationProvider = context.read<InvitationProvider>();
       invitationProvider.reset();
 
-      if (isDoctor && loginProvider.doctorId != null) {
-        invitationProvider.generateInvitationCode(loginProvider.doctorId!);
+      if (isDoctor && session.doctorId != null) {
+        invitationProvider.generateInvitationCode(session.doctorId!);
       }
     });
   }
@@ -40,8 +40,8 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = context.watch<LoginProvider>();
-    final isDoctor = loginProvider.role == 'doctor' || loginProvider.role == 'doctor(a)';
+    final session = context.watch<SessionManager>();
+    final isDoctor = session.role == 'doctor' || session.role == 'doctor(a)';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -103,7 +103,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
               ],
             InvitationCodeStatus.error => [
                 _buildErrorCard(invitationProvider.error ?? 'Error al generar código', () {
-                  final doctorId = context.read<LoginProvider>().doctorId;
+                  final doctorId = context.read<SessionManager>().doctorId;
                   if (doctorId != null) {
                     invitationProvider.generateInvitationCode(doctorId);
                   }
@@ -117,7 +117,7 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      final doctorId = context.read<LoginProvider>().doctorId;
+                      final doctorId = context.read<SessionManager>().doctorId;
                       if (doctorId != null) {
                         invitationProvider.generateInvitationCode(doctorId);
                       }
@@ -377,8 +377,8 @@ class _InvitationCodePageState extends State<InvitationCodePage> {
                               );
                               return;
                             }
-                            final loginProvider = context.read<LoginProvider>();
-                            final patientId = loginProvider.patientId;
+                            final session = context.read<SessionManager>();
+                            final patientId = session.patientId;
                             if (patientId == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

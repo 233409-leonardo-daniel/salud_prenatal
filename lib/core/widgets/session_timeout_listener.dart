@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../features/login/presentation/providers/login_provider.dart';
-import '../../features/login/presentation/pages/login_state.dart';
+import '../session/session_manager.dart';
 import '../../app.dart';
 
 class SessionTimeoutListener extends StatefulWidget {
@@ -18,7 +17,8 @@ class SessionTimeoutListener extends StatefulWidget {
 class _SessionTimeoutListenerState extends State<SessionTimeoutListener> with WidgetsBindingObserver {
   Timer? _timer;
   static const _timeoutDuration = Duration(minutes: 20);
-  static const _prefsKey = 'last_activity_timestamp';
+  // Clave compartida con SessionManager.restore (misma constante, no se duplica).
+  static const _prefsKey = SessionManager.lastActivityPrefsKey;
   bool _isLoggedIn = false;
 
   @override
@@ -37,8 +37,7 @@ class _SessionTimeoutListenerState extends State<SessionTimeoutListener> with Wi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final loginProvider = context.watch<LoginProvider>();
-    final isLoggedIn = loginProvider.status == LoginStatus.success;
+    final isLoggedIn = context.watch<SessionManager>().isAuthenticated;
 
     if (isLoggedIn != _isLoggedIn) {
       _isLoggedIn = isLoggedIn;
@@ -103,10 +102,9 @@ class _SessionTimeoutListenerState extends State<SessionTimeoutListener> with Wi
 
   void _logout() {
     _cancelTimer();
-    
-    // Log out using provider
-    final loginProvider = context.read<LoginProvider>();
-    loginProvider.reset();
+
+    // Teardown de sesión (limpia memoria + notifica de forma síncrona).
+    context.read<SessionManager>().clear();
 
     // Navigate to login using static navigatorKey to bypass context limitations
     MyApp.navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);

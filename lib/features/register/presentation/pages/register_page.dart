@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/register_provider.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../login/presentation/providers/login_provider.dart';
 import '../../../privacy_policy/presentation/pages/privacy_policy_page.dart';
 
@@ -165,7 +166,7 @@ class _RegisterPageState extends State<RegisterPage> {
           if (role == 'patient') {
             final registeredPatientId = registerProvider.lastRegisteredPatientId;
             if (registeredPatientId != null) {
-              context.read<LoginProvider>().setPatientId(registeredPatientId);
+              context.read<SessionManager>().setPatientId(registeredPatientId);
             }
             Navigator.pushReplacementNamed(context, '/login');
             return;
@@ -176,6 +177,7 @@ class _RegisterPageState extends State<RegisterPage> {
             // el backend informe su subscription_status real y así decidir
             // si debe pasar por la pantalla de pago antes del dashboard.
             final loginProvider = context.read<LoginProvider>();
+            final session = context.read<SessionManager>();
             final loggedIn = await loginProvider.login(
               _emailController.text.trim(),
               _passwordController.text,
@@ -184,7 +186,7 @@ class _RegisterPageState extends State<RegisterPage> {
             if (!mounted) return;
 
             if (loggedIn) {
-              if (loginProvider.needsSubscriptionGate) {
+              if (session.needsSubscriptionGate) {
                 Navigator.pushReplacementNamed(context, '/subscription');
               } else {
                 Navigator.pushReplacementNamed(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
 import '../providers/chat_provider.dart';
 import '../../domain/entities/chat_message.dart';
@@ -38,8 +38,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     _chatProvider = ChatProvider(chatModule.repository);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
-      final currentUserId = loginProvider.userId;
+      final session = context.read<SessionManager>();
+      final currentUserId = session.userId;
       if (currentUserId != null) {
         _chatProvider.initChat(currentUserId, widget.otherUserId);
       }
@@ -154,10 +154,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       value: _chatProvider,
       child: Consumer<ChatProvider>(
         builder: (context, provider, child) {
-          final loginProvider = context.read<LoginProvider>();
-          final currentUserId = loginProvider.userId;
-          final isDoctor = loginProvider.role?.toLowerCase().contains('doctor') ?? false;
-          final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
+          final session = context.read<SessionManager>();
+          final currentUserId = session.userId;
+          final isDoctor = session.role?.toLowerCase().contains('doctor') ?? false;
+          final isReceptionist = session.role == 'receptionist' || session.role == 'recepcionista';
 
           // Auto-scroll when messages update
           if (provider.messages.isNotEmpty) {

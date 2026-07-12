@@ -7,8 +7,9 @@ import '../../../../core/network/api_client.dart';
 
 class PatientDetailProvider with ChangeNotifier {
   final GetPatientDetailsUseCase _getPatientDetailsUseCase;
+  final ApiClient _apiClient;
 
-  PatientDetailProvider(this._getPatientDetailsUseCase);
+  PatientDetailProvider(this._getPatientDetailsUseCase, this._apiClient);
 
   PatientDetailStatus _status = PatientDetailStatus.initial;
   String? _error;
@@ -38,7 +39,7 @@ class PatientDetailProvider with ChangeNotifier {
           final endpoint = doctorId != null
               ? '/medical-records/patient/$patientId?doctor_id=$doctorId'
               : '/medical-records/patient/$patientId';
-          final response = await ApiClient().get(endpoint);
+          final response = await _apiClient.get(endpoint);
           if (response.statusCode == 200) {
             final data = jsonDecode(response.body);
             _rawRecordResponse = data;

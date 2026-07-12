@@ -21,6 +21,8 @@ import 'features/patients/presentation/providers/invitation_provider.dart';
 import 'features/dashboard/di/dashboard_module.dart';
 import 'core/di/core_module.dart';
 import 'core/services/qr_service.dart';
+import 'core/session/session_manager.dart';
+import 'features/profile/presentation/providers/profile_provider.dart';
 import 'features/patient_diaries/di/patient_diaries_module.dart';
 import 'features/patient_diaries/presentation/providers/patient_diaries_provider.dart';
 import 'features/patient_diaries/presentation/pages/patient_diary_page.dart';
@@ -61,15 +63,29 @@ class MyApp extends StatelessWidget {
     final patientDiariesModule = PatientDiariesModule(apiClient);
     final privacyPolicyModule = PrivacyPolicyModule();
     final userModule = UserModule(apiClient);
-    final chatModule = ChatModule(apiClient);
+    final chatModule = ChatModule(
+      apiClient,
+      tokenProvider: () => coreModule.sessionManager.token,
+    );
     final dashboardModule = DashboardModule(apiClient);
     final forumsModule = ForumsModule(apiClient);
     final subscriptionsModule = SubscriptionsModule(apiClient);
+
+    // Fase 2 del wiring: adjunta el cargador de perfil al SessionManager para
+    // romper el ciclo (se hace tras construir loginModule).
+    coreModule.sessionManager.attachProfileLoader(
+      (id) => loginModule.getProfileUseCase.execute(id),
+    );
 
     return MultiProvider(
       providers: [
         Provider<ApiClient>(create: (_) => apiClient),
         Provider<QrService>(create: (_) => coreModule.qrService),
+        // Dueño único de la sesión; su ciclo de vida lo posee CoreModule, por
+        // eso se registra con .value (sin auto-dispose ni doble instancia).
+        ChangeNotifierProvider<SessionManager>.value(
+          value: coreModule.sessionManager,
+        ),
         ChangeNotifierProvider(
           create: (_) => AppointmentsProvider(
             appointmentModule.getAppointmentsByUserIdUsecase,
@@ -95,8 +111,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => LoginProvider(
             loginUseCase: loginModule.loginUseCase,
-            getProfileUseCase: loginModule.getProfileUseCase,
+            session: coreModule.sessionManager,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider(
             updateProfileUseCase: loginModule.updateProfileUseCase,
+            session: coreModule.sessionManager,
           ),
         ),
         ChangeNotifierProvider(
@@ -125,8 +146,10 @@ class MyApp extends StatelessWidget {
               PatientsListProvider(patientsModule.getDoctorPatientsUseCase),
         ),
         ChangeNotifierProvider(
-          create: (_) =>
-              PatientDetailProvider(patientsModule.getPatientDetailsUseCase),
+          create: (_) => PatientDetailProvider(
+            patientsModule.getPatientDetailsUseCase,
+            apiClient,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => InvitationProvider(

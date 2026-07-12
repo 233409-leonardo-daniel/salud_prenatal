@@ -5,7 +5,7 @@ import '../providers/patients_list_provider.dart';
 import 'patient_state.dart';
 import '../../domain/entities/patient.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../dashboard/presentation/pages/patient_progress_page.dart';
 import '../../../dashboard/presentation/pages/patient_record_page.dart';
@@ -26,8 +26,8 @@ class _PatientsListPageState extends State<PatientsListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
-      final doctorId = loginProvider.doctorId?.toString();
+      final session = context.read<SessionManager>();
+      final doctorId = session.doctorId?.toString();
       context.read<PatientsListProvider>().loadPatients(doctorId);
     });
   }
@@ -52,7 +52,7 @@ class _PatientsListPageState extends State<PatientsListPage> {
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  final doctorId = context.read<LoginProvider>().doctorId?.toString();
+                  final doctorId = context.read<SessionManager>().doctorId?.toString();
                   context.read<PatientsListProvider>().loadPatients(doctorId);
                 },
                 child: Text('Reintentar'),

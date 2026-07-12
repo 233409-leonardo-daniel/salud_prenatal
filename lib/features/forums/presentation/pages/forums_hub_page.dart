@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../domain/entities/community_group.dart';
 import '../providers/forums_provider.dart';
 import '../widgets/forum_post_card.dart';
@@ -29,8 +29,8 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final loginProvider = context.read<LoginProvider>();
-      final currentUserId = loginProvider.userId;
+      final session = context.read<SessionManager>();
+      final currentUserId = session.userId;
       if (currentUserId != null) {
         final forumsProvider = context.read<ForumsProvider>();
         await forumsProvider.loadSocialProfile(currentUserId);
@@ -186,14 +186,14 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
                 const SizedBox(height: 28),
                 ElevatedButton(
                   onPressed: () async {
-                    final loginProvider = context.read<LoginProvider>();
+                    final session = context.read<SessionManager>();
                     final forumsProvider = context.read<ForumsProvider>();
                     final created = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const SocialProfilePage()),
                     );
                     if (created == true) {
-                      final currentUserId = loginProvider.userId;
+                      final currentUserId = session.userId;
                       if (currentUserId != null) {
                         await forumsProvider.loadSocialProfile(currentUserId);
                         if (forumsProvider.socialProfile != null) {

@@ -8,7 +8,7 @@ import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 class PatientDetailPage extends StatefulWidget {
   final String patientName;
   final String patientId;
@@ -50,11 +50,11 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
+      final session = context.read<SessionManager>();
       context.read<PatientDetailProvider>().loadPatientDetails(
         widget.userId,
         patientId: widget.patientEntity.patientId,
-        doctorId: loginProvider.doctorId,
+        doctorId: session.doctorId,
       );
       context.read<AppointmentsProvider>().loadAppointments(widget.patientId, isDoctor: false);
     });
@@ -64,8 +64,8 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
   Widget build(BuildContext context) {
     final patientDetailProvider = context.watch<PatientDetailProvider>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
-    final loginProvider = context.read<LoginProvider>();
-    final isDoctor = loginProvider.role?.toLowerCase() == 'doctor' || loginProvider.role?.toLowerCase() == 'doctor(a)';
+    final session = context.read<SessionManager>();
+    final isDoctor = session.role?.toLowerCase() == 'doctor' || session.role?.toLowerCase() == 'doctor(a)';
 
     switch (patientDetailProvider.status) {
       case PatientDetailStatus.initial:
@@ -322,7 +322,7 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                           onPressed: _isSubmittingMedicalRecord
                               ? null
                               : () async {
-                                  final doctorId = loginProvider.doctorId;
+                                  final doctorId = session.doctorId;
                                   if (doctorId == null) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),

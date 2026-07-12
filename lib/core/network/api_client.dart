@@ -3,27 +3,25 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
+/// Provee el token de autenticación vigente al construir cada request.
+/// Modelo PULL: [ApiClient] jala el token vía este closure (lo cablea
+/// [CoreModule] como `() => sessionManager.token`), en lugar de guardarlo.
+typedef TokenProvider = String? Function();
+
 class ApiClient {
   final http.Client _client;
-  static String? _authToken;
+  final TokenProvider? _tokenProvider;
   static final StreamController<void> _paymentRequiredController = StreamController<void>.broadcast();
 
   /// Se emite cada vez que el backend responde 402 (suscripción de doctor
   /// inactiva) a cualquier request, sin importar qué instancia de ApiClient
-  /// lo haya hecho.
+  /// lo haya hecho. Es un bus de eventos de infraestructura (no estado de
+  /// sesión), por eso se mantiene estático.
   static Stream<void> get onPaymentRequired => _paymentRequiredController.stream;
 
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
-
-  String? get authToken => _authToken;
-
-  void setAuthToken(String token) {
-    _authToken = token;
-  }
-
-  void clearAuthToken() {
-    _authToken = null;
-  }
+  ApiClient({http.Client? client, TokenProvider? tokenProvider})
+      : _client = client ?? http.Client(),
+        _tokenProvider = tokenProvider;
 
   void _notifyIfPaymentRequired(http.Response response) {
     if (response.statusCode == 402) {
@@ -35,8 +33,9 @@ class ApiClient {
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
-    if (_authToken != null) {
-      headers['Authorization'] = 'Bearer $_authToken';
+    final token = _tokenProvider?.call();
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
     }
     return headers;
   }

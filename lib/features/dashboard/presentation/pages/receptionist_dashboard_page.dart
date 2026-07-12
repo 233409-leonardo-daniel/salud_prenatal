@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/pages/appointments_list_page.dart';
 import '../../../appointments/presentation/pages/appointment_form_page.dart';
@@ -23,8 +23,8 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
-      final receptionistId = loginProvider.receptionistId;
+      final session = context.read<SessionManager>();
+      final receptionistId = session.receptionistId;
       if (receptionistId != null) {
         context.read<DashboardProvider>().loadReceptionistDashboard(receptionistId);
       }
@@ -42,9 +42,9 @@ class _ReceptionistDashboardPageState extends State<ReceptionistDashboardPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final loginProvider = context.watch<LoginProvider>();
-    final String receptionistName = loginProvider.name.isNotEmpty 
-        ? loginProvider.name 
+    final session = context.watch<SessionManager>();
+    final String receptionistName = session.name.isNotEmpty
+        ? session.name
         : 'Recepcionista';
     final String initial = receptionistName.isNotEmpty ? receptionistName[0].toUpperCase() : 'R';
 

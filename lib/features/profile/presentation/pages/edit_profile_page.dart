@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
+import '../providers/profile_provider.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -25,8 +26,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final loginProvider = context.read<LoginProvider>();
-      final profile = loginProvider.userProfile;
+      final session = context.read<SessionManager>();
+      final profile = session.userProfile;
       _nameController = TextEditingController(text: profile?.name ?? '');
       _lastNameController = TextEditingController(text: profile?.lastName ?? '');
       _phoneController = TextEditingController(text: profile?.phone ?? '');
@@ -52,10 +53,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final loginProvider = context.read<LoginProvider>();
-    final isDoc = loginProvider.isDoctor;
+    final isDoc = context.read<SessionManager>().isDoctor;
+    final profileProvider = context.read<ProfileProvider>();
 
-    final success = await loginProvider.updateProfile(
+    final success = await profileProvider.updateProfile(
       name: _nameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       phone: _phoneController.text.trim(),
@@ -70,7 +71,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(loginProvider.errorMessage ?? 'Error al actualizar perfil'),
+            content: Text(profileProvider.errorMessage ?? 'Error al actualizar perfil'),
             backgroundColor: Colors.red,
           ),
         );
@@ -80,8 +81,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = context.watch<LoginProvider>();
-    final isLoading = loginProvider.isLoading;
+    final session = context.watch<SessionManager>();
+    final isLoading = context.watch<ProfileProvider>().isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -206,7 +207,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                 ),
-                if (loginProvider.isDoctor) ...[
+                if (session.isDoctor) ...[
                   SizedBox(height: 16),
                   TextFormField(
                     controller: _specialtyController,

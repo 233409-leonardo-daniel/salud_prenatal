@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/dashboard_provider.dart';
 
 class CreateMedicalRecordPage extends StatefulWidget {
@@ -102,7 +102,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
   @override
   Widget build(BuildContext context) {
     final dashboardProvider = context.watch<DashboardProvider>();
-    final loginProvider = context.read<LoginProvider>();
+    final session = context.read<SessionManager>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -433,7 +433,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               onPressed: dashboardProvider.isSavingRecord
                   ? null
                   : () async {
-                      final docId = loginProvider.doctorId;
+                      final docId = session.doctorId;
                       if (docId == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

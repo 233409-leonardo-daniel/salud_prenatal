@@ -4,7 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../../data/models/medical_record_response.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../../core/enums/appointment_status.dart';
 import 'create_medical_record_page.dart';
 import 'dashboard_state.dart';
@@ -31,8 +31,8 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     super.initState();
     _parsedPatientId = int.tryParse(widget.patientId.replaceAll('#SP-', '').trim()) ?? 1;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
-      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: loginProvider.doctorId);
+      final session = context.read<SessionManager>();
+      context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: session.doctorId);
     });
   }
 
@@ -193,8 +193,8 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     // 5. Patient Plan
     final planText = consultations.isNotEmpty ? consultations.last.plan : 'Continuar con las indicaciones médicas generales.';
 
-    final loginProvider = context.watch<LoginProvider>();
-    final isDoctor = loginProvider.role?.toLowerCase() == 'doctor' || loginProvider.role?.toLowerCase() == 'doctor(a)';
+    final session = context.watch<SessionManager>();
+    final isDoctor = session.role?.toLowerCase() == 'doctor' || session.role?.toLowerCase() == 'doctor(a)';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -890,7 +890,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               );
               if (result == true) {
                 if (context.mounted) {
-                  final docId = context.read<LoginProvider>().doctorId;
+                  final docId = context.read<SessionManager>().doctorId;
                   context.read<DashboardProvider>().loadPatientDetails(_parsedPatientId, doctorId: docId);
                 }
               }

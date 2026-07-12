@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/chat_provider.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import 'chat_state.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -27,7 +27,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentUserId = context.read<LoginProvider>().userId;
+      final currentUserId = context.read<SessionManager>().userId;
       if (currentUserId != null) {
         context.read<ChatProvider>().initChat(currentUserId, widget.otherUserId);
       }
@@ -54,7 +54,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   Widget build(BuildContext context) {
     final chatProvider = context.watch<ChatProvider>();
-    final currentUserId = context.watch<LoginProvider>().userId;
+    final currentUserId = context.watch<SessionManager>().userId;
 
     // Scroll to bottom when new messages arrive
     WidgetsBinding.instance.addPostFrameCallback((_) {

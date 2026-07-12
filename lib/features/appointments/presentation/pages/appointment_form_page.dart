@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../domain/entities/appointment.dart';
@@ -32,7 +32,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     final dashboardProvider = context.read<DashboardProvider>();
     if (dashboardProvider.patients.isNotEmpty) return;
 
-    final doctorId = context.read<LoginProvider>().doctorId;
+    final doctorId = context.read<SessionManager>().doctorId;
     if (doctorId == null) return;
 
     setState(() => _isLoadingPatients = true);
@@ -48,7 +48,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   }
 
   void _submit() {
-    final doctorId = context.read<LoginProvider>().doctorId;
+    final doctorId = context.read<SessionManager>().doctorId;
     if (doctorId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),

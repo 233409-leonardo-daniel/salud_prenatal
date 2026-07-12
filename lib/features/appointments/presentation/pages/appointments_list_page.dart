@@ -4,7 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../providers/appointment_provider.dart';
 import 'appointment_detail_page.dart';
 import '../widgets/appointment_card.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/create_appointment_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../domain/entities/appointment.dart';
@@ -23,7 +23,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
+      final loginProvider = context.read<SessionManager>();
       final doctorId = loginProvider.doctorId;
       context.read<AppointmentsProvider>().loadAllAppointments(doctorId: doctorId);
       _loadPatientsIfNeeded();
@@ -36,7 +36,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
   Future<void> _loadPatientsIfNeeded() async {
     final dashboardProvider = context.read<DashboardProvider>();
     if (dashboardProvider.patients.isNotEmpty) return;
-    final doctorId = context.read<LoginProvider>().doctorId;
+    final doctorId = context.read<SessionManager>().doctorId;
     if (doctorId == null) return;
     await dashboardProvider.loadDoctorPatients(doctorId);
   }
@@ -44,7 +44,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
   // Resuelve los nombres reales a partir de los IDs de la cita (patientId /
   // doctorId). El backend nunca llena patientName/doctorName (AppointmentResponse
   // solo trae IDs), así que no podemos mostrarlos directamente.
-  Appointment _resolveAppointmentNames(Appointment app, DashboardProvider dashboardProvider, LoginProvider loginProvider) {
+  Appointment _resolveAppointmentNames(Appointment app, DashboardProvider dashboardProvider, SessionManager loginProvider) {
     String resolvedPatient = app.patientName;
     final patientMatch = dashboardProvider.patients.firstWhere(
       (p) => p['patient_id'] == app.patientId,
@@ -84,7 +84,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppointmentsProvider>();
-    final loginProvider = context.watch<LoginProvider>();
+    final loginProvider = context.watch<SessionManager>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -122,7 +122,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
     }
     
     final dashboardProvider = context.watch<DashboardProvider>();
-    final loginProvider = context.watch<LoginProvider>();
+    final loginProvider = context.watch<SessionManager>();
 
     return ListView.builder(
       padding: EdgeInsets.all(16),
@@ -139,7 +139,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
               ),
             );
             if (context.mounted) {
-              final loginProvider = context.read<LoginProvider>();
+              final loginProvider = context.read<SessionManager>();
               final docId = loginProvider.doctorId;
               context.read<AppointmentsProvider>().loadAllAppointments(doctorId: docId);
             }
@@ -151,7 +151,7 @@ class _AppointmentsListPageState extends State<AppointmentsListPage> {
 
   Future<void> _showCreateAppointmentDialog(BuildContext context) async {
     final dashboardProvider = context.read<DashboardProvider>();
-    final loginProvider = context.read<LoginProvider>();
+    final loginProvider = context.read<SessionManager>();
 
     // Si aún no se cargaron los pacientes del doctor (p. ej. porque no se
     // visitó antes el dashboard), los cargamos antes de asumir que no hay

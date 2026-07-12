@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/user_provider.dart';
 
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 
 class UserSearchPage extends StatefulWidget {
@@ -28,9 +28,9 @@ class _UserSearchPageState extends State<UserSearchPage> {
   }
 
   void _loadData() {
-    final loginProvider = context.read<LoginProvider>();
-    final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
-    final docId = isReceptionist ? loginProvider.doctorId : null;
+    final session = context.read<SessionManager>();
+    final isReceptionist = session.role == 'receptionist' || session.role == 'recepcionista';
+    final docId = isReceptionist ? session.doctorId : null;
 
     if (_isDoctor) {
       context.read<UserProvider>().loadDoctors(singleDoctorId: docId);

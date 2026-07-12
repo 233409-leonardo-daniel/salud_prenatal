@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../providers/patient_diaries_provider.dart';
 import '../../domain/entities/patient_diary.dart';
@@ -27,19 +27,19 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   }
 
   Future<void> _loadData() async {
-    final loginProvider = context.read<LoginProvider>();
+    final session = context.read<SessionManager>();
     final dashboardProvider = context.read<DashboardProvider>();
     final diariesProvider = context.read<PatientDiariesProvider>();
 
     if (dashboardProvider.medicalRecord == null) {
-      final userId = loginProvider.userId;
+      final userId = session.userId;
       if (userId != null) {
-        final patId = loginProvider.patientId ?? userId;
-        await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: loginProvider.doctorId);
+        final patId = session.patientId ?? userId;
+        await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: session.doctorId);
       }
     }
 
-    final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
+    final medicalRecordId = session.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
     if (medicalRecordId != null && medicalRecordId > 0) {
       diariesProvider.loadDiaries(medicalRecordId);
     }
@@ -89,8 +89,8 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   void _showFormDialog(BuildContext context, {PatientDiary? diary}) {
     final dashboardProvider = context.read<DashboardProvider>();
     final diariesProvider = context.read<PatientDiariesProvider>();
-    final loginProvider = context.read<LoginProvider>();
-    final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId ?? 0;
+    final session = context.read<SessionManager>();
+    final medicalRecordId = session.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId ?? 0;
 
     final formKey = GlobalKey<FormState>();
     final weightController = TextEditingController(
@@ -400,9 +400,9 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   @override
   Widget build(BuildContext context) {
     final diariesProvider = context.watch<PatientDiariesProvider>();
-    final loginProvider = context.watch<LoginProvider>();
+    final session = context.watch<SessionManager>();
     final dashboardProvider = context.watch<DashboardProvider>();
-    final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
+    final medicalRecordId = session.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -414,7 +414,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
         backgroundColor: AppColors.primary,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: _buildBody(diariesProvider, loginProvider, medicalRecordId),
+      body: _buildBody(diariesProvider, session, medicalRecordId),
       floatingActionButton: (medicalRecordId != null && medicalRecordId > 0)
           ? FloatingActionButton.extended(
               onPressed: () => _showFormDialog(context),
@@ -426,7 +426,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     );
   }
 
-  Widget _buildBody(PatientDiariesProvider provider, LoginProvider loginProvider, int? medicalRecordId) {
+  Widget _buildBody(PatientDiariesProvider provider, SessionManager session, int? medicalRecordId) {
     if (medicalRecordId == null || medicalRecordId <= 0) {
       return Center(
         child: Padding(
@@ -448,7 +448,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
-              if (loginProvider.doctorId == null) ...[
+              if (session.doctorId == null) ...[
                 SizedBox(height: 12),
                 Text(
                   'Aún no estás vinculado a un médico.',

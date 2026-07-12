@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/dashboard_provider.dart';
 import 'dashboard_state.dart';
 import '../../data/models/medical_record_response.dart';
@@ -41,12 +41,12 @@ class _DashboardPageState extends State<DashboardPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInitialized) {
-      final loginProvider = context.read<LoginProvider>();
+      final session = context.read<SessionManager>();
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
         _userRole = args;
       } else {
-        final providerRole = loginProvider.role;
+        final providerRole = session.role;
         if (providerRole != null) {
           final raw = providerRole.toLowerCase();
           if (raw == 'doctor' || raw == 'doctor(a)') {
@@ -64,13 +64,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadDashboardData() async {
-    final loginProvider = context.read<LoginProvider>();
+    final session = context.read<SessionManager>();
     final dashboardProvider = context.read<DashboardProvider>();
     final appointmentsProvider = context.read<AppointmentsProvider>();
     final diariesProvider = context.read<PatientDiariesProvider>();
 
     if (_userRole == 'doctor') {
-      final docId = loginProvider.doctorId;
+      final docId = session.doctorId;
       if (docId == null) return; // Sesión sin doctorId: nada que cargar.
       await dashboardProvider.loadDoctorDashboard(docId);
       if (!mounted) return;
@@ -79,10 +79,10 @@ class _DashboardPageState extends State<DashboardPage> {
       // sola (vía notifyListeners) en cuanto terminen las peticiones en paralelo.
       dashboardProvider.loadCriticalPatients(docId);
     } else {
-      final userId = loginProvider.userId;
+      final userId = session.userId;
       if (userId == null) return; // Sesión sin userId: nada que cargar.
-      final patId = loginProvider.patientId ?? userId;
-      await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: loginProvider.doctorId);
+      final patId = session.patientId ?? userId;
+      await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: session.doctorId);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(patId.toString(), isDoctor: false);
 
@@ -132,13 +132,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final loginProvider = context.watch<LoginProvider>();
-    final String doctorName = loginProvider.name.isNotEmpty 
-        ? 'Dr(a). ${loginProvider.name}' 
+    final session = context.watch<SessionManager>();
+    final String doctorName = session.name.isNotEmpty
+        ? 'Dr(a). ${session.name}'
         : 'Médico';
-    final String doctorInitial = loginProvider.name.isNotEmpty
-        ? loginProvider.name[0].toUpperCase()
-        : (loginProvider.email.isNotEmpty ? loginProvider.email[0].toUpperCase() : 'D');
+    final String doctorInitial = session.name.isNotEmpty
+        ? session.name[0].toUpperCase()
+        : (session.email.isNotEmpty ? session.email[0].toUpperCase() : 'D');
 
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
@@ -640,12 +640,12 @@ class _DashboardPageState extends State<DashboardPage> {
       case DashboardStatus.success:
         break;
     }
-    final loginProvider = context.watch<LoginProvider>();
+    final session = context.watch<SessionManager>();
     final appointmentsProvider = context.watch<AppointmentsProvider>();
     final diariesProvider = context.watch<PatientDiariesProvider>();
 
-    final String displayName = loginProvider.fullName.isNotEmpty
-        ? loginProvider.fullName
+    final String displayName = session.fullName.isNotEmpty
+        ? session.fullName
         : 'Paciente';
 
     final rawWeeks = dashboardProvider.currentPatientData?['current_gestational_weeks'];
@@ -876,9 +876,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         MaterialPageRoute(builder: (context) => const InvitationCodePage()),
                       );
                       if (result == true && mounted) {
-                        final loginProvider = context.read<LoginProvider>();
-                        final patientId = loginProvider.patientId;
-                        final userId = loginProvider.userId;
+                        final session = context.read<SessionManager>();
+                        final patientId = session.patientId;
+                        final userId = session.userId;
                         if (patientId != null && userId != null) {
                           context.read<DashboardProvider>().loadPatientDashboard(patientId, userId);
                         }
@@ -905,7 +905,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           Builder(
             builder: (context) {
-              final medicalRecordId = loginProvider.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
+              final medicalRecordId = session.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
               
               if (medicalRecordId == null || medicalRecordId <= 0) {
                 return Container(
@@ -924,7 +924,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
                       ),
-                      if (loginProvider.doctorId == null) ...[
+                      if (session.doctorId == null) ...[
                         SizedBox(height: 4),
                         Text(
                           'Aún no estás vinculado a un médico.',

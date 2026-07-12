@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../providers/conversations_provider.dart';
 import '../widgets/contacts_bottom_sheet.dart';
-import '../../../login/presentation/providers/login_provider.dart';
+import '../../../../core/session/session_manager.dart';
 import 'chat_detail_page.dart';
 
 class ConversationsListPage extends StatefulWidget {
@@ -21,8 +21,8 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
   }
 
   Future<void> _loadInbox() async {
-    final loginProvider = context.read<LoginProvider>();
-    final currentUserId = loginProvider.userId;
+    final session = context.read<SessionManager>();
+    final currentUserId = session.userId;
     if (currentUserId == null) return;
 
     await context.read<ConversationsProvider>().loadConversations(currentUserId);
@@ -31,7 +31,7 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ConversationsProvider>();
-    final currentUserId = context.watch<LoginProvider>().userId;
+    final currentUserId = context.watch<SessionManager>().userId;
 
     return Scaffold(
       backgroundColor: AppColors.background,

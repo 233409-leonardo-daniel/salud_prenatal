@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/session/session_manager.dart';
 import '../providers/login_provider.dart';
 import 'login_state.dart';
 
@@ -28,6 +29,7 @@ class _LoginPageState extends State<LoginPage> {
   void _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
       final loginProvider = context.read<LoginProvider>();
+      final session = context.read<SessionManager>();
       final email = _emailController.text.trim();
       final success = await loginProvider.login(
         email,
@@ -36,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         if (success) {
-          final String rawRole = loginProvider.role ??
+          final String rawRole = session.role ??
               (email.toLowerCase().contains('doctor') ? 'doctor' : (email.toLowerCase().contains('recepcionista') ? 'recepcionista' : 'paciente'));
           final String role =
               (rawRole.toLowerCase() == 'doctor' ||
@@ -46,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
                       ? 'receptionist'
                       : 'patient';
 
-          if (loginProvider.needsSubscriptionGate) {
+          if (session.needsSubscriptionGate) {
             Navigator.pushReplacementNamed(context, '/subscription');
           } else {
             Navigator.pushReplacementNamed(

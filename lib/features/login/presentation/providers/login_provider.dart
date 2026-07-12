@@ -102,7 +102,7 @@ class LoginProvider with ChangeNotifier {
       }
 
       try {
-        _userProfile = await _getProfileUseCase.execute(response.userId);
+        _userProfile = await _getProfileUseCase.execute(response.userId, doctorId: response.doctorId);
       } catch (e) {
         // No se pudo obtener el perfil tras un login exitoso: se deja en null
         // en vez de inventar un nombre falso. La UI que consume userProfile
@@ -181,7 +181,7 @@ class LoginProvider with ChangeNotifier {
         office: office ?? _userProfile?.office,
       );
       
-      _userProfile = await _updateProfileUseCase.execute(_userId!, updatedProfile);
+      _userProfile = await _updateProfileUseCase.execute(_userId!, updatedProfile, doctorId: _doctorId);
       _status = LoginStatus.success;
       notifyListeners();
       return true;

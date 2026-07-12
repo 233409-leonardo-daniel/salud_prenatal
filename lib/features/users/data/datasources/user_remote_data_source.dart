@@ -11,6 +11,7 @@ abstract class UserRemoteDataSource {
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   final ApiClient _apiClient;
+  static final Map<int, int> _userToDoctorMap = {};
 
   UserRemoteDataSourceImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
@@ -57,29 +58,61 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       var user = UserDto.fromJson(data);
 
       final isDoc = user.role.toLowerCase() == 'doctor' || user.role.toLowerCase() == 'doctor(a)';
-      final docId = data['doctor_id'] ?? data['doctorId'];
-      if (isDoc && docId != null) {
-        try {
-          final docResponse = await _apiClient.get('/doctors/$docId');
-          if (docResponse.statusCode == 200) {
-            final docData = jsonDecode(docResponse.body);
-            user = UserDto(
-              id: user.id,
-              email: docData['email'] ?? user.email,
-              fullName: '${docData['name'] ?? ''} ${docData['last_name'] ?? ''}'.trim().isNotEmpty
-                  ? '${docData['name']} ${docData['last_name']}'.trim()
-                  : user.fullName,
-              role: user.role,
-              phoneNumber: docData['phone'] ?? user.phoneNumber,
-              profilePicture: docData['image_url'] ?? user.profilePicture,
-              doctorId: docId,
-              specialty: docData['specialty'],
-              professionalLicense: docData['professional_license'],
-              office: docData['office'],
-            );
+      if (isDoc) {
+        int? docId = _userToDoctorMap[id] ?? data['doctor_id'] ?? data['doctorId'];
+        
+        if (docId == null) {
+          // Scan doctors sequentially to map user_id -> doctor_id (up to 50, stopping on 5 consecutive failures)
+          int consecutiveFailures = 0;
+          for (int testId = 1; testId <= 50; testId++) {
+            try {
+              final docResponse = await _apiClient.get('/doctors/$testId');
+              if (docResponse.statusCode == 200) {
+                consecutiveFailures = 0;
+                final docData = jsonDecode(docResponse.body);
+                final int docUserId = docData['user_id'] ?? 0;
+                final int foundDocId = docData['doctor_id'] ?? testId;
+                if (docUserId > 0) {
+                  _userToDoctorMap[docUserId] = foundDocId;
+                  if (docUserId == id) {
+                    docId = foundDocId;
+                  }
+                }
+              } else {
+                consecutiveFailures++;
+              }
+            } catch (_) {
+              consecutiveFailures++;
+            }
+            if (consecutiveFailures >= 5) break;
+            if (docId != null) break;
           }
-        } catch (e) {
-          debugPrint('Error al obtener detalles del doctor $docId en getUserById: $e');
+        }
+
+        if (docId != null) {
+          _userToDoctorMap[id] = docId;
+          try {
+            final docResponse = await _apiClient.get('/doctors/$docId');
+            if (docResponse.statusCode == 200) {
+              final docData = jsonDecode(docResponse.body);
+              user = UserDto(
+                id: user.id,
+                email: docData['email'] ?? user.email,
+                fullName: '${docData['name'] ?? ''} ${docData['last_name'] ?? ''}'.trim().isNotEmpty
+                    ? '${docData['name']} ${docData['last_name']}'.trim()
+                    : user.fullName,
+                role: user.role,
+                phoneNumber: docData['phone'] ?? user.phoneNumber,
+                profilePicture: docData['image_url'] ?? user.profilePicture,
+                doctorId: docId,
+                specialty: docData['specialty'],
+                professionalLicense: docData['professional_license'],
+                office: docData['office'],
+              );
+            }
+          } catch (e) {
+            debugPrint('Error al obtener detalles del doctor $docId en getUserById: $e');
+          }
         }
       }
       return user;

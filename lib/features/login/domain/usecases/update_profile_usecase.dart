@@ -6,7 +6,7 @@ class UpdateProfileUseCase {
 
   const UpdateProfileUseCase({required this.repository});
 
-  Future<UserProfile> execute(int userId, UserProfile profile) {
-    return repository.updateUserProfile(userId, profile);
+  Future<UserProfile> execute(int userId, UserProfile profile, {int? doctorId}) {
+    return repository.updateUserProfile(userId, profile, doctorId: doctorId);
   }
 }

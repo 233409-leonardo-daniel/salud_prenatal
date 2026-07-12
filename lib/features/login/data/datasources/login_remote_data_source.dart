@@ -8,8 +8,8 @@ import '../models/login_request.dart';
 abstract class LoginRemoteDataSource {
   /// Sends login credentials to the backend. Returns LoginResponse.
   Future<LoginResponse> login(LoginRequest request);
-  Future<UserProfile> getUserProfile(int userId);
-  Future<UserProfile> updateUserProfile(int userId, UserProfile profile);
+  Future<UserProfile> getUserProfile(int userId, {int? doctorId});
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile, {int? doctorId});
 }
 
 class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
@@ -48,38 +48,65 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
   }
 
   @override
-  Future<UserProfile> getUserProfile(int userId) async {
+  Future<UserProfile> getUserProfile(int userId, {int? doctorId}) async {
     final response = await _apiClient.get('/users/$userId');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       var profile = UserProfile.fromJson(data);
       
       final isDoc = profile.role.toLowerCase() == 'doctor' || profile.role.toLowerCase() == 'doctor(a)';
-      final docId = data['doctor_id'] ?? data['doctorId'];
-      if (isDoc && docId != null) {
-        try {
-          final docResponse = await _apiClient.get('/doctors/$docId');
-          if (docResponse.statusCode == 200) {
-            final docData = jsonDecode(docResponse.body);
-            profile = UserProfile(
-              userId: profile.userId,
-              name: docData['name'] ?? profile.name,
-              lastName: docData['last_name'] ?? profile.lastName,
-              email: docData['email'] ?? profile.email,
-              role: profile.role,
-              phone: docData['phone'] ?? profile.phone,
-              imageUrl: docData['image_url'] ?? profile.imageUrl,
-              isActive: profile.isActive,
-              createdAt: profile.createdAt,
-              updatedAt: profile.updatedAt,
-              password: profile.password,
-              specialty: docData['specialty'],
-              professionalLicense: docData['professional_license'],
-              office: docData['office'],
-            );
+      if (isDoc) {
+        int? docId = doctorId ?? data['doctor_id'] ?? data['doctorId'];
+        
+        if (docId == null) {
+          int consecutiveFailures = 0;
+          for (int testId = 1; testId <= 50; testId++) {
+            try {
+              final docResponse = await _apiClient.get('/doctors/$testId');
+              if (docResponse.statusCode == 200) {
+                consecutiveFailures = 0;
+                final docData = jsonDecode(docResponse.body);
+                final int docUserId = docData['user_id'] ?? 0;
+                final int foundDocId = docData['doctor_id'] ?? testId;
+                if (docUserId == userId) {
+                  docId = foundDocId;
+                  break;
+                }
+              } else {
+                consecutiveFailures++;
+              }
+            } catch (_) {
+              consecutiveFailures++;
+            }
+            if (consecutiveFailures >= 5) break;
           }
-        } catch (e) {
-          debugPrint('Error al obtener detalles del doctor $docId: $e');
+        }
+
+        if (docId != null) {
+          try {
+            final docResponse = await _apiClient.get('/doctors/$docId');
+            if (docResponse.statusCode == 200) {
+              final docData = jsonDecode(docResponse.body);
+              profile = UserProfile(
+                userId: profile.userId,
+                name: docData['name'] ?? profile.name,
+                lastName: docData['last_name'] ?? profile.lastName,
+                email: docData['email'] ?? profile.email,
+                role: profile.role,
+                phone: docData['phone'] ?? profile.phone,
+                imageUrl: docData['image_url'] ?? profile.imageUrl,
+                isActive: profile.isActive,
+                createdAt: profile.createdAt,
+                updatedAt: profile.updatedAt,
+                password: profile.password,
+                specialty: docData['specialty'],
+                professionalLicense: docData['professional_license'],
+                office: docData['office'],
+              );
+            }
+          } catch (e) {
+            debugPrint('Error al obtener detalles del doctor $docId: $e');
+          }
         }
       }
       return profile;
@@ -88,7 +115,7 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
   }
 
   @override
-  Future<UserProfile> updateUserProfile(int userId, UserProfile profile) async {
+  Future<UserProfile> updateUserProfile(int userId, UserProfile profile, {int? doctorId}) async {
     final response = await _apiClient.put(
       '/users/$userId',
       profile.toJson(),
@@ -98,30 +125,57 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
       var updated = UserProfile.fromJson(data);
       
       final isDoc = updated.role.toLowerCase() == 'doctor' || updated.role.toLowerCase() == 'doctor(a)';
-      final docId = data['doctor_id'] ?? data['doctorId'];
-      if (isDoc && docId != null) {
-        try {
-          final docResponse = await _apiClient.get('/doctors/$docId');
-          if (docResponse.statusCode == 200) {
-            final docData = jsonDecode(docResponse.body);
-            updated = UserProfile(
-              userId: updated.userId,
-              name: docData['name'] ?? updated.name,
-              lastName: docData['last_name'] ?? updated.lastName,
-              email: docData['email'] ?? updated.email,
-              role: updated.role,
-              phone: docData['phone'] ?? updated.phone,
-              imageUrl: docData['image_url'] ?? updated.imageUrl,
-              isActive: updated.isActive,
-              createdAt: updated.createdAt,
-              updatedAt: updated.updatedAt,
-              password: updated.password,
-              specialty: docData['specialty'],
-              professionalLicense: docData['professional_license'],
-              office: docData['office'],
-            );
+      if (isDoc) {
+        int? docId = doctorId ?? data['doctor_id'] ?? data['doctorId'];
+        
+        if (docId == null) {
+          int consecutiveFailures = 0;
+          for (int testId = 1; testId <= 50; testId++) {
+            try {
+              final docResponse = await _apiClient.get('/doctors/$testId');
+              if (docResponse.statusCode == 200) {
+                consecutiveFailures = 0;
+                final docData = jsonDecode(docResponse.body);
+                final int docUserId = docData['user_id'] ?? 0;
+                final int foundDocId = docData['doctor_id'] ?? testId;
+                if (docUserId == userId) {
+                  docId = foundDocId;
+                  break;
+                }
+              } else {
+                consecutiveFailures++;
+              }
+            } catch (_) {
+              consecutiveFailures++;
+            }
+            if (consecutiveFailures >= 5) break;
           }
-        } catch (_) {}
+        }
+
+        if (docId != null) {
+          try {
+            final docResponse = await _apiClient.get('/doctors/$docId');
+            if (docResponse.statusCode == 200) {
+              final docData = jsonDecode(docResponse.body);
+              updated = UserProfile(
+                userId: updated.userId,
+                name: docData['name'] ?? updated.name,
+                lastName: docData['last_name'] ?? updated.lastName,
+                email: docData['email'] ?? updated.email,
+                role: updated.role,
+                phone: docData['phone'] ?? updated.phone,
+                imageUrl: docData['image_url'] ?? updated.imageUrl,
+                isActive: updated.isActive,
+                createdAt: updated.createdAt,
+                updatedAt: updated.updatedAt,
+                password: updated.password,
+                specialty: docData['specialty'],
+                professionalLicense: docData['professional_license'],
+                office: docData['office'],
+              );
+            }
+          } catch (_) {}
+        }
       }
       return updated;
     }

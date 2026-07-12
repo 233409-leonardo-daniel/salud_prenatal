@@ -275,7 +275,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -349,7 +349,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         margin: EdgeInsets.symmetric(vertical: 16),
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
+          color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -463,7 +463,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.pink.shade50),
+                  border: Border.all(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
                 ),
                 child: Icon(
                   isDoctor ? Icons.lightbulb_outline : Icons.assignment_outlined,

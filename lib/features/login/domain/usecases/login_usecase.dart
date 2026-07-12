@@ -18,7 +18,7 @@ class GetProfileUseCase {
 
   const GetProfileUseCase({required this.repository});
 
-  Future<UserProfile> execute(int userId) {
-    return repository.getUserProfile(userId);
+  Future<UserProfile> execute(int userId, {int? doctorId}) {
+    return repository.getUserProfile(userId, doctorId: doctorId);
   }
 }

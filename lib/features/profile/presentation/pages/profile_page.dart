@@ -27,7 +27,7 @@ class ProfilePage extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: const Color(0xFFFFE0EF),
+                backgroundColor: AppColors.primaryLight,
                 child: Text(
                   initial,
                   style: TextStyle(
@@ -409,7 +409,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.verified_user_outlined, color: Color(0xFF2E7D32), size: 18),
+                            Icon(Icons.verified_user_outlined, color: AppColors.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF2E7D32), size: 18),
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -417,7 +417,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E7D32),
+                                  color: AppColors.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
                                 ),
                               ),
                             ),
@@ -489,7 +489,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: AppColors.isDarkMode ? const Color(0xFF1A3320) : const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -497,7 +497,7 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
+                    color: AppColors.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
                   ),
                 ),
               ),
@@ -740,7 +740,7 @@ class _AccountDeletionTile extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 16),

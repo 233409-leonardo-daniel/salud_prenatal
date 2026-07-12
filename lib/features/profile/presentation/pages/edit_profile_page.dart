@@ -85,7 +85,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final isLoading = context.watch<ProfileProvider>().isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Editar Perfil',
@@ -115,15 +115,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: InputDecoration(
                     labelText: 'Nombre',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.cardBackground,
                     prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                     ),
                   ),
                   validator: (value) {
@@ -141,15 +141,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: InputDecoration(
                     labelText: 'Apellidos',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.cardBackground,
                     prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                     ),
                   ),
                   validator: (value) {
@@ -168,15 +168,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: InputDecoration(
                     labelText: 'Teléfono',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.cardBackground,
                     prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                      borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                     ),
                   ),
                   validator: (value) {
@@ -195,7 +195,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: InputDecoration(
                     labelText: 'Correo Electrónico (No editable)',
                     filled: true,
-                    fillColor: const Color(0xFFF5F5F5),
+                    fillColor: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F5),
                     prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -214,15 +214,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: InputDecoration(
                       labelText: 'Especialidad médica',
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: AppColors.cardBackground,
                       prefixIcon: Icon(Icons.medical_services_outlined, color: AppColors.primary),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                       ),
                     ),
                   ),
@@ -232,15 +232,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: InputDecoration(
                       labelText: 'Cédula profesional',
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: AppColors.cardBackground,
                       prefixIcon: Icon(Icons.badge_outlined, color: AppColors.primary),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                       ),
                     ),
                   ),
@@ -250,15 +250,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: InputDecoration(
                       labelText: 'Consultorio / Dirección de oficina',
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: AppColors.cardBackground,
                       prefixIcon: Icon(Icons.local_hospital_outlined, color: AppColors.primary),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Color(0xFFFFE0EF)),
+                        borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFFFE0EF)),
                       ),
                     ),
                   ),

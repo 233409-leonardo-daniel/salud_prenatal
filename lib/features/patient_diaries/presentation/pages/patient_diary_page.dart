@@ -574,7 +574,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                 color: AppColors.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(color: Colors.grey.shade100, width: 1),
+                  side: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.06) : Colors.grey.shade100, width: 1),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
@@ -619,7 +619,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                                 Container(
                                   padding: EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: Colors.pink.shade50,
+                                    color: AppColors.primaryLight,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(Icons.favorite_outline, color: AppColors.primary, size: 20),
@@ -645,7 +645,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                                 Container(
                                   padding: EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: Colors.pink.shade50,
+                                    color: AppColors.primaryLight,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(Icons.monitor_weight_outlined, color: AppColors.primary, size: 20),
@@ -668,7 +668,7 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                         ],
                       ),
                       SizedBox(height: 12),
-                      const Divider(height: 1, color: Color(0xFFF2F2F7)),
+                      Divider(height: 1, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7)),
                       SizedBox(height: 12),
                       if (item.symptoms.isNotEmpty &&
                           item.symptoms.toLowerCase() != 'ninguno' &&

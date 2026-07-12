@@ -110,7 +110,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 height: 4,
                 margin: EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.textMuted.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

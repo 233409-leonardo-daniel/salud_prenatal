@@ -203,7 +203,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                     onPressed: (_canContinue && !isSaving) ? _onAcceptAndContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      disabledBackgroundColor: const Color(0xFFE0E0E0),
+                      disabledBackgroundColor: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFE0E0E0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),

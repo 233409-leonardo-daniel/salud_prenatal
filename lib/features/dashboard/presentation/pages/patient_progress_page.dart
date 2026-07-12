@@ -182,7 +182,7 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -270,7 +270,7 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border(left: BorderSide(color: color, width: 4)),
         boxShadow: [

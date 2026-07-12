@@ -862,8 +862,8 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         children: [
           Container(
             width: double.infinity,
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFF0F0F0))),
             ),
             child: content,
           ),

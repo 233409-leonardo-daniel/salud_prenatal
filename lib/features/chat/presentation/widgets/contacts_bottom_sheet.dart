@@ -29,7 +29,7 @@ void showContactsBottomSheet(BuildContext context, {VoidCallback? onReturn}) {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: AppColors.textMuted.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

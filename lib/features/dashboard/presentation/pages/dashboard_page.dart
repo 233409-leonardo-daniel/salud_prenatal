@@ -115,15 +115,14 @@ class _DashboardPageState extends State<DashboardPage> {
     );
 
     if (_userRole == 'doctor') {
-      // El footer del doctor (_buildBottomNavBar) usa un color oscuro fijo
-      // (0xFF1E1E1E) sin importar el tema. Sin esto, en tema claro Android
-      // pinta la barra de navegación del sistema (debajo del footer) de
-      // blanco por defecto, generando un salto de color justo debajo del
-      // footer de la app. Forzamos aquí ese mismo color fijo.
+      // El footer del doctor (_buildBottomNavBar) es reactivo al tema
+      // (AppColors.cardBackground). Igualamos aquí la barra de navegación
+      // del sistema (Android, debajo del footer) a ese mismo color/tema
+      // para que no haya un salto de color justo debajo del footer.
       return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(
-          systemNavigationBarColor: Color(0xFF1E1E1E),
-          systemNavigationBarIconBrightness: Brightness.light,
+        value: SystemUiOverlayStyle(
+          systemNavigationBarColor: AppColors.cardBackground,
+          systemNavigationBarIconBrightness: AppColors.isDarkMode ? Brightness.light : Brightness.dark,
         ),
         child: scaffold,
       );
@@ -362,7 +361,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E5EA),
+                  color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -417,7 +416,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     reason,
                     reason.toLowerCase().contains('urgente') || status == 'cancelled',
                   ),
-                  const Divider(height: 1, color: Color(0xFFE5E5EA)),
+                  Divider(height: 1, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)),
                 ],
               );
             }),
@@ -493,7 +492,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           SizedBox(width: 12),
           CircleAvatar(
-            backgroundColor: const Color(0xFFFFEBEA),
+            backgroundColor: AppColors.isDarkMode ? const Color(0xFF3A1F1F) : const Color(0xFFFFEBEA),
             radius: 20,
             child: Text(
               initials,
@@ -578,7 +577,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Container(
             width: 1,
             height: 30,
-            color: Colors.pink.shade50,
+            color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50,
           ),
           SizedBox(width: 16),
           Expanded(
@@ -602,7 +601,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.chevron_right, color: Color(0xFFC7C7CC)),
+            icon: Icon(Icons.chevron_right, color: AppColors.textMuted),
             onPressed: () {},
           ),
         ],
@@ -764,10 +763,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isActive ? AppColors.primary : (isFuture ? Colors.grey.shade200 : const Color(0xFFFFF0F6)),
+                  color: isActive
+                      ? AppColors.primary
+                      : (isFuture
+                          ? (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade200)
+                          : AppColors.primaryLight),
                 ),
-                child: isActive 
-                    ? const Icon(Icons.check, color: Colors.white, size: 18) 
+                child: isActive
+                    ? const Icon(Icons.check, color: Colors.white, size: 18)
                     : (isFuture ? null : const Icon(Icons.close, color: Color(0xFFFF85C0), size: 18)),
               ),
               const SizedBox(height: 8),
@@ -834,16 +837,16 @@ class _DashboardPageState extends State<DashboardPage> {
               margin: EdgeInsets.only(bottom: 24),
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F6),
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.pink.shade100, width: 1),
+                border: Border.all(color: AppColors.isDarkMode ? const Color(0xFF5C2E42) : Colors.pink.shade100, width: 1),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBackground,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.medical_services_outlined, color: AppColors.primary),
@@ -1218,7 +1221,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ? 'Atención: Tu presión muestra variaciones. Reporta cualquier malestar de inmediato.'
                       : 'Tu presión se mantiene estable dentro de los rangos normales.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -1234,7 +1237,7 @@ class _DashboardPageState extends State<DashboardPage> {
       width: 8,
       height: heightPercentage,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primary : Colors.grey.shade200,
+        color: isActive ? AppColors.primary : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade200),
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -1265,10 +1268,10 @@ class _DashboardPageState extends State<DashboardPage> {
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.white60,
+        unselectedItemColor: AppColors.textMuted,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppColors.cardBackground,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
@@ -1405,8 +1408,8 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Container(
             padding: EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: iconColor, size: 24),

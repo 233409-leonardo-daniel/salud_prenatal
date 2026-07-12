@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/login/domain/entities/login_response.dart';
 import '../../features/login/domain/entities/user_profile.dart';
+import '../services/notification_service.dart';
 
 /// Dueño único del estado de sesión de la app.
 ///
@@ -135,6 +136,10 @@ class SessionManager extends ChangeNotifier {
     }
 
     await _persist();
+    
+    // Registrar el dispositivo para notificaciones push tras iniciar sesión
+    NotificationService.registerDevice();
+    
     notifyListeners();
   }
 
@@ -199,6 +204,10 @@ class SessionManager extends ChangeNotifier {
     }
 
     notifyListeners();
+    
+    // Registrar/actualizar dispositivo en segundo plano al restaurar sesión
+    NotificationService.registerDevice();
+    
     return true;
   }
 
@@ -206,6 +215,9 @@ class SessionManager extends ChangeNotifier {
   /// (para que `isAuthenticated` pase a false y el token pull de ApiClient
   /// devuelva null de inmediato), luego el borrado asíncrono en storage.
   Future<void> clear() async {
+    // Desregistrar dispositivo de notificaciones push antes de limpiar las credenciales
+    await NotificationService.unregisterDevice();
+
     _token = null;
     _role = null;
     _userId = null;

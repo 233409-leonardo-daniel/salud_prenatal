@@ -21,6 +21,7 @@ import 'features/patients/presentation/providers/invitation_provider.dart';
 import 'features/dashboard/di/dashboard_module.dart';
 import 'core/di/core_module.dart';
 import 'core/services/qr_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/session/session_manager.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
 import 'features/patient_diaries/di/patient_diaries_module.dart';
@@ -55,6 +56,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final coreModule = CoreModule();
     final apiClient = coreModule.apiClient;
+    
+    // Inicializar notificaciones push
+    NotificationService.initialize(apiClient);
 
     final appointmentModule = AppointmentModule(apiClient);
     final loginModule = LoginModule(apiClient);

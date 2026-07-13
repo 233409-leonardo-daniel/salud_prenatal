@@ -9,6 +9,7 @@ import '../../../../core/session/session_manager.dart';
 import '../../../../core/enums/appointment_status.dart';
 import 'create_medical_record_page.dart';
 import 'new_consultation_dialog.dart';
+import 'consultation_detail_sheet.dart';
 import 'dashboard_state.dart';
 
 class PatientRecordPage extends StatefulWidget {
@@ -143,20 +144,37 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
         final c = consultations[i];
         final formattedDate = '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}';
         consultationsWidgets.add(
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 6.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$formattedDate - Consulta #${c.consultationId}',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-                SizedBox(height: 2),
-                Text('Notas: ${c.notes}', style: TextStyle(fontSize: 13)),
-                Text('Objetivo: ${c.objective}', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
-                if (i < consultations.length - 1) const Divider(),
-              ],
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => showConsultationDetailSheet(context, c),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 6.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '$formattedDate - Consulta #${c.consultationId}',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, size: 18, color: AppColors.textMuted),
+                    ],
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Motivo: ${c.reportedFacts.trim().isEmpty ? 'Sin información' : c.reportedFacts}',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  if (c.objective.trim().isNotEmpty)
+                    Text('Objetivo: ${c.objective}', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                  if (c.notes.trim().isNotEmpty)
+                    Text('Notas: ${c.notes}', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                  if (i < consultations.length - 1) const Divider(),
+                ],
+              ),
             ),
           ),
         );
@@ -413,18 +431,32 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
             _buildExpansionSection(
               title: 'Consultas Previas',
               icon: Icons.history,
-              titleAction: (isDoctor && record != null)
-                  ? IconButton(
-                      icon: Icon(Icons.add_circle_outline, color: AppColors.primary, size: 22),
-                      tooltip: 'Nueva consulta',
-                      onPressed: () => _openNewConsultationDialog(context, record.medicalRecordId),
-                    )
-                  : null,
               content: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: consultationsWidgets,
+                  children: [
+                    if (isDoctor && record != null) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _openNewConsultationDialog(context, record.medicalRecordId),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Nueva consulta',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                    ],
+                    ...consultationsWidgets,
+                  ],
                 ),
               ),
             ),

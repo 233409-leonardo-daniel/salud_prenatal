@@ -359,10 +359,18 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.note_add_outlined, color: AppColors.primary),
-                tooltip: 'Nueva consulta',
+              ElevatedButton(
                 onPressed: () => _handleNewConsultation(patientEntity, name),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Nueva consulta',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
               ),
             ],
           ),

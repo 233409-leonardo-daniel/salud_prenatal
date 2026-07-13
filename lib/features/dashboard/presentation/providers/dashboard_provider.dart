@@ -254,7 +254,12 @@ class DashboardProvider with ChangeNotifier {
       }
       _activeMedicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId);
       if (_activeMedicalRecord != null) {
-        _activeConsultations = await _getConsultationsFromPatientEndpointUseCase.call(patientId, doctorId: doctorId);
+        // GET /consultations/medical-record/{medical_record_id}: fuente de
+        // verdad para las consultas del expediente activo (en vez del array
+        // `consultations` embebido en /medical-records/patient/{id}).
+        _activeConsultations = await _getConsultationsByMedicalRecordUseCase.call(
+          _activeMedicalRecord!.medicalRecordId,
+        );
       }
       _detailsStatus = DashboardDetailsStatus.success;
     } catch (e) {

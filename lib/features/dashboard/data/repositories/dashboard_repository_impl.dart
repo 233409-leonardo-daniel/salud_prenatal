@@ -58,4 +58,21 @@ class DashboardRepositoryImpl implements DashboardRepository {
   Future<RiskPrediction> evaluateRisk(int medicalRecordId) {
     return remoteDataSource.evaluateRisk(medicalRecordId);
   }
+
+  @override
+  Future<ConsultationResponse> createConsultation({
+    required int medicalRecordId,
+    String? notes,
+    String? objective,
+    String? plan,
+    required String reportedFacts,
+  }) {
+    return remoteDataSource.createConsultation(
+      medicalRecordId: medicalRecordId,
+      notes: notes,
+      objective: objective,
+      plan: plan,
+      reportedFacts: reportedFacts,
+    );
+  }
 }

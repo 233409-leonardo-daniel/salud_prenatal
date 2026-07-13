@@ -9,6 +9,7 @@ import '../../../../core/session/session_manager.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../dashboard/presentation/pages/patient_progress_page.dart';
 import '../../../dashboard/presentation/pages/patient_record_page.dart';
+import '../../../dashboard/presentation/pages/new_consultation_dialog.dart';
 
 class PatientsListPage extends StatefulWidget {
   const PatientsListPage({super.key});
@@ -273,6 +274,38 @@ class _PatientsListPageState extends State<PatientsListPage> {
     );
   }
 
+  /// Resuelve el expediente médico de la paciente (necesario para conocer
+  /// su medical_record_id, que el card de "Mis Pacientes" no trae) y, si
+  /// existe, abre el diálogo de nueva consulta. Si aún no tiene expediente,
+  /// avisa al doctor en vez de intentar crear la consulta con un id inválido.
+  Future<void> _handleNewConsultation(PatientEntity patient, String patientName) async {
+    final doctorId = context.read<SessionManager>().doctorId;
+    if (doctorId == null) return;
+
+    final dashboardProvider = context.read<DashboardProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: CircularProgressIndicator(color: AppColors.primary)),
+    );
+
+    await dashboardProvider.loadPatientDetails(patient.patientId, doctorId: doctorId);
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+
+    final record = dashboardProvider.activeMedicalRecord;
+    if (record == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Esta paciente aún no tiene expediente médico. Créalo primero desde "Ver Detalle".')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    await showNewConsultationDialog(context, medicalRecordId: record.medicalRecordId, patientName: patientName);
+  }
+
   Widget _buildPatientListCard({
     required String name,
     required String id,
@@ -325,6 +358,11 @@ class _PatientsListPageState extends State<PatientsListPage> {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: Icon(Icons.note_add_outlined, color: AppColors.primary),
+                tooltip: 'Nueva consulta',
+                onPressed: () => _handleNewConsultation(patientEntity, name),
               ),
             ],
           ),

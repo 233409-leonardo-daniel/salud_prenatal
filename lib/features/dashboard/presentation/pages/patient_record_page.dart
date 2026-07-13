@@ -8,6 +8,7 @@ import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../../core/enums/appointment_status.dart';
 import 'create_medical_record_page.dart';
+import 'new_consultation_dialog.dart';
 import 'dashboard_state.dart';
 
 class PatientRecordPage extends StatefulWidget {
@@ -412,6 +413,13 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
             _buildExpansionSection(
               title: 'Consultas Previas',
               icon: Icons.history,
+              titleAction: (isDoctor && record != null)
+                  ? IconButton(
+                      icon: Icon(Icons.add_circle_outline, color: AppColors.primary, size: 22),
+                      tooltip: 'Nueva consulta',
+                      onPressed: () => _openNewConsultationDialog(context, record.medicalRecordId),
+                    )
+                  : null,
               content: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Column(
@@ -964,6 +972,14 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     );
   }
 
+  Future<void> _openNewConsultationDialog(BuildContext context, int medicalRecordId) async {
+    await showNewConsultationDialog(
+      context,
+      medicalRecordId: medicalRecordId,
+      patientName: widget.patientName,
+    );
+  }
+
   String _formatDateTime(DateTime dt) {
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
@@ -1027,6 +1043,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     required String title,
     required IconData icon,
     required Widget content,
+    Widget? titleAction,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1043,9 +1060,16 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
       child: ExpansionTile(
         shape: Border(),
         leading: Icon(icon, color: AppColors.primary),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+              ),
+            ),
+            if (titleAction != null) titleAction,
+          ],
         ),
         children: [
           Container(

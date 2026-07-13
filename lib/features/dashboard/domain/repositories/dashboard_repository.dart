@@ -22,4 +22,11 @@ abstract class DashboardRepository {
   Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
   Future<RiskPrediction> evaluateRisk(int medicalRecordId);
+  Future<ConsultationResponse> createConsultation({
+    required int medicalRecordId,
+    String? notes,
+    String? objective,
+    String? plan,
+    required String reportedFacts,
+  });
 }

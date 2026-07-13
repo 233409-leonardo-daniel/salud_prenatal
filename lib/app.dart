@@ -139,6 +139,7 @@ class MyApp extends StatelessWidget {
             getReceptionistDashboardUseCase: dashboardModule.getReceptionistDashboardUseCase,
             createMedicalRecordUseCase: dashboardModule.createMedicalRecordUseCase,
             evaluateRiskUseCase: dashboardModule.evaluateRiskUseCase,
+            createConsultationUseCase: dashboardModule.createConsultationUseCase,
           ),
         ),
         ChangeNotifierProvider(

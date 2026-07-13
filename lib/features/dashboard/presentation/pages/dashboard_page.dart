@@ -21,6 +21,7 @@ import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../forums/presentation/pages/forums_hub_page.dart';
 import 'receptionist_dashboard_page.dart';
 import '../../../../core/enums/appointment_status.dart';
+import 'new_consultation_dialog.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -421,9 +422,160 @@ class _DashboardPageState extends State<DashboardPage> {
               );
             }),
           const SizedBox(height: 20),
+          _buildNewConsultationCard(),
+          const SizedBox(height: 20),
         ],
       ),
     );
+  }
+
+  Widget _buildNewConsultationCard() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+            child: Icon(Icons.note_add_outlined, color: AppColors.primary),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Registrar consulta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+                SizedBox(height: 2),
+                Text(
+                  'Elige una paciente y añade una nueva consulta',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _openPatientPickerForConsultation,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text('Nueva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Modal que carga a los pacientes del doctor (mismo patrón que el
+  /// selector de "Nueva Cita") para elegir a quién registrarle una consulta
+  /// desde el dashboard, sin tener que entrar primero a su expediente.
+  Future<void> _openPatientPickerForConsultation() async {
+    final session = context.read<SessionManager>();
+    final doctorId = session.doctorId;
+    if (doctorId == null) return;
+
+    final dashboardProvider = context.read<DashboardProvider>();
+    if (dashboardProvider.patients.isEmpty) {
+      await dashboardProvider.loadDoctorPatients(doctorId);
+    }
+    if (!mounted) return;
+
+    final selected = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return Consumer<DashboardProvider>(
+          builder: (context, provider, _) {
+            final patients = provider.patients;
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Selecciona una paciente',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 12),
+                    if (patients.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text('No hay pacientes registradas.', style: TextStyle(color: AppColors.textMuted)),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: patients.length,
+                          itemBuilder: (itemContext, index) {
+                            final patient = patients[index];
+                            final pId = patient['patient_id'] as int;
+                            final user = provider.users.firstWhere(
+                              (u) => u.userId == patient['user_id'],
+                              orElse: () => UserProfile(name: 'Paciente', lastName: '$pId', email: '', role: 'paciente'),
+                            );
+                            final fullName = '${user.name} ${user.lastName}'.trim();
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: AppColors.primaryLight,
+                                child: Text(
+                                  fullName.isNotEmpty ? fullName[0].toUpperCase() : 'P',
+                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              title: Text(fullName, style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w600)),
+                              subtitle: Text('#SP-$pId', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                              onTap: () => Navigator.pop(sheetContext, {'patientId': pId, 'name': fullName}),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (selected == null || !mounted) return;
+
+    final patientId = selected['patientId'] as int;
+    final patientName = selected['name'] as String;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: CircularProgressIndicator(color: AppColors.primary)),
+    );
+
+    await dashboardProvider.loadPatientDetails(patientId, doctorId: doctorId);
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+
+    final record = dashboardProvider.activeMedicalRecord;
+    if (record == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Esta paciente aún no tiene expediente médico. Créalo primero desde su detalle.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    await showNewConsultationDialog(context, medicalRecordId: record.medicalRecordId, patientName: patientName);
   }
 
   Widget _buildDoctorStatCard(String title, String count, IconData icon, Color color) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/app_colors_ext.dart';
 import '../../../appointments/presentation/pages/appointments_page.dart';
 import '../../../../core/session/session_manager.dart';
 import '../providers/dashboard_provider.dart';
@@ -1257,6 +1258,11 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- BOTTOM NAV BAR BUILDER ---
 
   Widget _buildBottomNavBar() {
+    // Leer del tema (no de `AppColors`) hace que este widget dependa del tema y
+    // se reconstruya solo cuando el SO cambia claro/oscuro. `primary` es
+    // constante entre variantes, por eso se deja como `AppColors.primary`.
+    final theme = Theme.of(context);
+    final colors = theme.extension<AppColorsExt>()!;
     if (_userRole == 'doctor') {
       // Bottom nav bar for Doctor role
       return BottomNavigationBar(
@@ -1268,10 +1274,10 @@ class _DashboardPageState extends State<DashboardPage> {
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
+        unselectedItemColor: colors.textMuted,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: theme.colorScheme.surface,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
@@ -1308,7 +1314,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } else {
       // Bottom nav bar for Patient role (which has a central circular "+" button)
       return BottomAppBar(
-        color: AppColors.cardBackground,
+        color: theme.colorScheme.surface,
         elevation: 10,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1326,7 +1332,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: theme.colorScheme.surface,
                   shape: BoxShape.circle,
                   boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
                 ),
@@ -1350,6 +1356,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildPatientTabItem(int index, IconData outlineIcon, IconData filledIcon, String label) {
     final isSelected = _currentTab == index;
+    final colors = Theme.of(context).extension<AppColorsExt>()!;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1361,14 +1368,14 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Icon(
             isSelected ? filledIcon : outlineIcon,
-            color: isSelected ? AppColors.primary : AppColors.textMuted,
+            color: isSelected ? AppColors.primary : colors.textMuted,
             size: 24,
           ),
           SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
+              color: isSelected ? AppColors.primary : colors.textMuted,
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),

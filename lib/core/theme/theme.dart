@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors_ext.dart';
+
 class DynamicColor extends Color {
   final int lightValue;
   final int darkValue;
@@ -21,14 +23,14 @@ class AppColors {
   static Color get cardBackground => isDarkMode ? _cardBackgroundDark : _cardBackgroundLight; // White -> dark card grey
 
   // Risk levels
-  static Color get riskHighBg => isDarkMode ? const Color(0xFF421C1A) : const Color(0xFFFFEBEA);
-  static Color get riskHighText => isDarkMode ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F);
+  static Color get riskHighBg => isDarkMode ? _riskHighBgDark : _riskHighBgLight;
+  static Color get riskHighText => isDarkMode ? _riskHighTextDark : _riskHighTextLight;
 
-  static Color get riskMediumBg => isDarkMode ? const Color(0xFF422E1A) : const Color(0xFFFFF4E5);
-  static Color get riskMediumText => isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFE65100);
+  static Color get riskMediumBg => isDarkMode ? _riskMediumBgDark : _riskMediumBgLight;
+  static Color get riskMediumText => isDarkMode ? _riskMediumTextDark : _riskMediumTextLight;
 
-  static Color get riskLowBg => isDarkMode ? const Color(0xFF1A3835) : const Color(0xFFE0F2F1);
-  static Color get riskLowText => isDarkMode ? const Color(0xFF80CBC4) : const Color(0xFF00796B);
+  static Color get riskLowBg => isDarkMode ? _riskLowBgDark : _riskLowBgLight;
+  static Color get riskLowText => isDarkMode ? _riskLowTextDark : _riskLowTextLight;
 
   static Color get textDark => isDarkMode ? _textDarkDark : _textDarkLight; // Dark grey text -> soft white text
   static Color get textMuted => isDarkMode ? _textMutedDark : _textMutedLight; // Grey text -> light grey text
@@ -40,10 +42,16 @@ class AppColors {
   /// (oscurece en claro, aclara en oscuro) sin importar qué valores tengan
   /// esos colores — no puede quedar fuera de sync con el tema como pasó con
   /// un hex hardcodeado aparte que terminó siendo igual a `cardBackground`.
-  static Color get skeletonBase => Color.alphaBlend(
-        textDark.withOpacity(0.06),
-        cardBackground,
-      );
+  ///
+  /// La fórmula vive en [skeletonBaseFor] para poder reutilizarla desde
+  /// `AppTheme` (registro de `AppColorsExt`) sin duplicar el cálculo ni volver
+  /// a un hex fijo — mismo motivo que los demás literales `_xxxLight/_xxxDark`.
+  static Color get skeletonBase => skeletonBaseFor(textDark, cardBackground);
+
+  /// Skeleton derivado para una variante concreta (recibe los literales fijos
+  /// en vez de leer los getters, que dependen de `isDarkMode`).
+  static Color skeletonBaseFor(Color textDark, Color cardBackground) =>
+      Color.alphaBlend(textDark.withOpacity(0.06), cardBackground);
 
   // --- Literales fijos por variante ---
   //
@@ -67,6 +75,18 @@ class AppColors {
   static const Color _textDarkDark = Color(0xFFFAF6F8);
   static const Color _textMutedLight = Color(0xFF757579);
   static const Color _textMutedDark = Color(0xFF9E9EAE);
+  static const Color _riskHighBgLight = Color(0xFFFFEBEA);
+  static const Color _riskHighBgDark = Color(0xFF421C1A);
+  static const Color _riskHighTextLight = Color(0xFFD32F2F);
+  static const Color _riskHighTextDark = Color(0xFFFF8A80);
+  static const Color _riskMediumBgLight = Color(0xFFFFF4E5);
+  static const Color _riskMediumBgDark = Color(0xFF422E1A);
+  static const Color _riskMediumTextLight = Color(0xFFE65100);
+  static const Color _riskMediumTextDark = Color(0xFFFFB74D);
+  static const Color _riskLowBgLight = Color(0xFFE0F2F1);
+  static const Color _riskLowBgDark = Color(0xFF1A3835);
+  static const Color _riskLowTextLight = Color(0xFF00796B);
+  static const Color _riskLowTextDark = Color(0xFF80CBC4);
 }
 
 class AppTheme {
@@ -80,6 +100,33 @@ class AppTheme {
         primary: AppColors.primary,
         background: AppColors._backgroundLight,
         surface: AppColors._cardBackgroundLight,
+      ),
+      extensions: [
+        AppColorsExt(
+          primaryLight: AppColors._primaryLightLight,
+          textDark: AppColors._textDarkLight,
+          textMuted: AppColors._textMutedLight,
+          skeletonBase: AppColors.skeletonBaseFor(
+            AppColors._textDarkLight,
+            AppColors._cardBackgroundLight,
+          ),
+          riskHighBg: AppColors._riskHighBgLight,
+          riskHighText: AppColors._riskHighTextLight,
+          riskMediumBg: AppColors._riskMediumBgLight,
+          riskMediumText: AppColors._riskMediumTextLight,
+          riskLowBg: AppColors._riskLowBgLight,
+          riskLowText: AppColors._riskLowTextLight,
+        ),
+      ],
+      textTheme: const TextTheme(
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors._textDarkLight,
+        ),
+        bodyLarge: TextStyle(fontSize: 16, color: AppColors._textDarkLight),
+        bodyMedium: TextStyle(fontSize: 14, color: AppColors._textDarkLight),
+        bodySmall: TextStyle(fontSize: 12, color: AppColors._textMutedLight),
       ),
       scaffoldBackgroundColor: AppColors._backgroundLight,
       cardColor: AppColors._cardBackgroundLight,
@@ -147,6 +194,33 @@ class AppTheme {
         brightness: Brightness.dark,
         background: AppColors._backgroundDark,
         surface: AppColors._cardBackgroundDark,
+      ),
+      extensions: [
+        AppColorsExt(
+          primaryLight: AppColors._primaryLightDark,
+          textDark: AppColors._textDarkDark,
+          textMuted: AppColors._textMutedDark,
+          skeletonBase: AppColors.skeletonBaseFor(
+            AppColors._textDarkDark,
+            AppColors._cardBackgroundDark,
+          ),
+          riskHighBg: AppColors._riskHighBgDark,
+          riskHighText: AppColors._riskHighTextDark,
+          riskMediumBg: AppColors._riskMediumBgDark,
+          riskMediumText: AppColors._riskMediumTextDark,
+          riskLowBg: AppColors._riskLowBgDark,
+          riskLowText: AppColors._riskLowTextDark,
+        ),
+      ],
+      textTheme: const TextTheme(
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors._textDarkDark,
+        ),
+        bodyLarge: TextStyle(fontSize: 16, color: AppColors._textDarkDark),
+        bodyMedium: TextStyle(fontSize: 14, color: AppColors._textDarkDark),
+        bodySmall: TextStyle(fontSize: 12, color: AppColors._textMutedDark),
       ),
       scaffoldBackgroundColor: AppColors._backgroundDark,
       cardColor: AppColors._cardBackgroundDark,

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../../../../core/network/api_client.dart';
 import '../models/patient_diary_model.dart';
+import '../models/extracted_symptom_model.dart';
+import '../models/aggregated_symptom_model.dart';
 import '../../domain/entities/patient_diary.dart';
 
 abstract class PatientDiaryRemoteDataSource {
@@ -16,6 +18,12 @@ abstract class PatientDiaryRemoteDataSource {
     String notes,
   );
   Future<void> deletePatientDiary(int patientDiaryId);
+  /// Síntomas/zonas detectados por el NLP en UNA bitácora específica
+  /// (incluye negados y detalle crudo).
+  Future<List<ExtractedSymptomModel>> getDiarySymptoms(int patientDiaryId);
+  /// Historial de síntomas agregado por concepto clínico a lo largo de
+  /// todo el embarazo (sin negados, zonas como códigos).
+  Future<List<AggregatedSymptomModel>> getMedicalRecordSymptomHistory(int medicalRecordId);
 }
 
 class PatientDiaryRemoteDataSourceImpl implements PatientDiaryRemoteDataSource {
@@ -97,5 +105,31 @@ class PatientDiaryRemoteDataSourceImpl implements PatientDiaryRemoteDataSource {
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Error al eliminar bitácora (Status: ${response.statusCode})');
     }
+  }
+
+  @override
+  Future<List<ExtractedSymptomModel>> getDiarySymptoms(int patientDiaryId) async {
+    final response = await _apiClient.get('/patient-diaries/$patientDiaryId/symptoms');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data
+          .whereType<Map>()
+          .map((item) => ExtractedSymptomModel.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    throw Exception('Error al obtener síntomas detectados (Status: ${response.statusCode})');
+  }
+
+  @override
+  Future<List<AggregatedSymptomModel>> getMedicalRecordSymptomHistory(int medicalRecordId) async {
+    final response = await _apiClient.get('/patient-diaries/medical-record/$medicalRecordId/symptoms');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data
+          .whereType<Map>()
+          .map((item) => AggregatedSymptomModel.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    throw Exception('Error al obtener historial de síntomas (Status: ${response.statusCode})');
   }
 }

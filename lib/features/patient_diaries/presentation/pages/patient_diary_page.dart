@@ -5,6 +5,8 @@ import '../../../../core/session/session_manager.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../providers/patient_diaries_provider.dart';
 import '../../domain/entities/patient_diary.dart';
+import '../../domain/entities/extracted_symptom.dart';
+import '../../domain/entities/aggregated_symptom.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 
 class PatientDiaryPage extends StatefulWidget {
@@ -16,6 +18,9 @@ class PatientDiaryPage extends StatefulWidget {
 
 class _PatientDiaryPageState extends State<PatientDiaryPage> {
   bool _isInitialized = false;
+  // Bitácoras con la sección "síntomas detectados (NLP)" expandida.
+  final Set<int> _expandedSymptomIds = {};
+  bool _showSymptomHistory = false;
 
   @override
   void didChangeDependencies() {
@@ -554,6 +559,8 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
             diastolic: latest.diastolic,
             weightKg: latest.weightKg,
           ),
+          SizedBox(height: 16),
+          _buildSymptomHistorySection(provider, medicalRecordId),
           SizedBox(height: 24),
           Text(
             'HISTORIAL DE MEDICIONES',
@@ -710,6 +717,8 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                         ),
                         SizedBox(height: 12),
                       ],
+                      _buildDetectedSymptomsSection(item, provider),
+                      SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -735,6 +744,220 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
           SizedBox(height: 60),
         ],
       ),
+    );
+  }
+
+  String _formatShortDate(DateTime d) {
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  }
+
+  /// Botón expandible "Ver síntomas detectados (NLP)" dentro de una tarjeta
+  /// de bitácora — trae GET /patient-diaries/{id}/symptoms de forma perezosa
+  /// (solo al expandir). Marca alarma con color/ícono y separa los síntomas
+  /// negados ("la persona lo niega") de los presentes.
+  Widget _buildDetectedSymptomsSection(PatientDiary item, PatientDiariesProvider provider) {
+    final isExpanded = _expandedSymptomIds.contains(item.patientDiaryId);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedSymptomIds.remove(item.patientDiaryId);
+              } else {
+                _expandedSymptomIds.add(item.patientDiaryId);
+              }
+            });
+            if (!isExpanded) {
+              provider.loadDiarySymptoms(item.patientDiaryId);
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+              SizedBox(width: 4),
+              Text(
+                isExpanded ? 'Ocultar síntomas detectados (NLP)' : 'Ver síntomas detectados (NLP)',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+              Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: AppColors.primary),
+            ],
+          ),
+        ),
+        if (isExpanded) ...[
+          SizedBox(height: 8),
+          if (provider.isLoadingSymptomsFor(item.patientDiaryId))
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+              ),
+            )
+          else
+            _buildSymptomsContent(provider.symptomsForDiary(item.patientDiaryId) ?? []),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSymptomsContent(List<ExtractedSymptom> symptoms) {
+    if (symptoms.isEmpty) {
+      return Text(
+        'No se detectaron síntomas en el texto de esta entrada.',
+        style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+      );
+    }
+    final visible = symptoms.where((s) => !s.negated).toList();
+    final negated = symptoms.where((s) => s.negated).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (visible.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: visible.map(_buildSymptomChip).toList(),
+          ),
+        if (negated.isNotEmpty) ...[
+          SizedBox(height: 6),
+          Text(
+            'Descartados (la paciente los niega): ${negated.map((s) => s.label).join(', ')}',
+            style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSymptomChip(ExtractedSymptom s) {
+    final zonesLabel = s.zones.isNotEmpty ? ' — ${s.zones.map((z) => z.label).join(', ')}' : '';
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: s.alarm ? AppColors.riskHighBg : AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(100),
+        border: s.alarm ? Border.all(color: AppColors.riskHighText.withOpacity(0.4)) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (s.alarm) ...[
+            Icon(Icons.warning_amber_rounded, size: 12, color: AppColors.riskHighText),
+            SizedBox(width: 4),
+          ],
+          Text(
+            '${s.label}$zonesLabel',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: s.alarm ? AppColors.riskHighText : AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sección expandible "Historial de síntomas (NLP)" — agregado de todo el
+  /// embarazo (GET /patient-diaries/medical-record/{id}/symptoms), distinto
+  /// del detalle por bitácora: aquí `zones` son strings y no hay negados
+  /// (el backend ya los excluyó al agregar).
+  Widget _buildSymptomHistorySection(PatientDiariesProvider provider, int? medicalRecordId) {
+    return Card(
+      elevation: 0,
+      color: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.06) : Colors.grey.shade100, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: Icon(Icons.auto_awesome, color: AppColors.primary),
+            title: Text(
+              'Historial de síntomas (detección automática)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
+            ),
+            trailing: Icon(
+              _showSymptomHistory ? Icons.expand_less : Icons.expand_more,
+              color: AppColors.textMuted,
+            ),
+            onTap: () {
+              setState(() => _showSymptomHistory = !_showSymptomHistory);
+              if (_showSymptomHistory && medicalRecordId != null) {
+                provider.loadSymptomHistory(medicalRecordId);
+              }
+            },
+          ),
+          if (_showSymptomHistory)
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: provider.symptomHistoryStatus == PatientDiariesStatus.loading
+                  ? Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    )
+                  : _buildSymptomHistoryList(provider.symptomHistory),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSymptomHistoryList(List<AggregatedSymptom> history) {
+    if (history.isEmpty) {
+      return Text(
+        'No se ha detectado ningún síntoma recurrente en tu embarazo todavía.',
+        style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: history.map((s) {
+        final range = s.firstSeen != null && s.lastSeen != null
+            ? '${_formatShortDate(s.firstSeen!)} — ${_formatShortDate(s.lastSeen!)}'
+            : '';
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                s.alarm ? Icons.warning_amber_rounded : Icons.circle,
+                size: s.alarm ? 16 : 8,
+                color: s.alarm ? AppColors.riskHighText : AppColors.textMuted,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${s.label} — ${s.occurrences} registro${s.occurrences == 1 ? '' : 's'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: s.alarm ? AppColors.riskHighText : AppColors.textDark,
+                      ),
+                    ),
+                    if (range.isNotEmpty)
+                      Text(range, style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                    if (s.zones.isNotEmpty)
+                      Text('Zonas: ${s.zones.join(', ')}', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

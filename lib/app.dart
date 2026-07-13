@@ -163,6 +163,8 @@ class MyApp extends StatelessWidget {
             createDiaryUseCase: patientDiariesModule.createDiaryUseCase,
             updateDiaryUseCase: patientDiariesModule.updateDiaryUseCase,
             deleteDiaryUseCase: patientDiariesModule.deleteDiaryUseCase,
+            getDiarySymptomsUseCase: patientDiariesModule.getDiarySymptomsUseCase,
+            getSymptomHistoryUseCase: patientDiariesModule.getSymptomHistoryUseCase,
           ),
         ),
         ChangeNotifierProvider(

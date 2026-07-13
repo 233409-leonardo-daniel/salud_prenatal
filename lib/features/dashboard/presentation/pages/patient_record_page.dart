@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../data/models/medical_record_response.dart';
+import '../../../patient_diaries/domain/entities/aggregated_symptom.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../../core/session/session_manager.dart';
@@ -215,6 +216,10 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               _buildNoRecordBanner(context, isDoctor),
               SizedBox(height: 16),
             ] else ...[
+              if (record.symptomAlert.isNotEmpty) ...[
+                _buildSymptomAlertBanner(record.symptomAlert),
+                SizedBox(height: 16),
+              ],
               _buildResumenIA(context, record, isDoctor),
               SizedBox(height: 16),
             ],
@@ -763,12 +768,195 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               ),
             ),
           ],
+          if (riskPrediction.recomendaciones != null) ...[
+            SizedBox(height: 8),
+            _buildSomanzSection(riskPrediction.recomendaciones!),
+          ],
           if (isDoctor) ...[
             SizedBox(height: 12),
             _buildEvaluateRiskButton(
               context,
               record.medicalRecordId,
               label: riskPrediction.stale ? 'Re-evaluar riesgo' : 'Evaluar riesgo de nuevo',
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Aviso accionable para el doctor: síntomas registrados por la paciente
+  /// desde la última consulta (symptom_alert dentro de GET
+  /// /medical-records/patient/{id}). Si el expediente no tiene ninguna
+  /// consulta todavía, el backend manda TODO el historial aquí.
+  Widget _buildSymptomAlertBanner(List<AggregatedSymptom> alerts) {
+    final hasAlarm = alerts.any((a) => a.alarm);
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: hasAlarm ? AppColors.riskHighBg : AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasAlarm ? AppColors.riskHighText.withOpacity(0.35) : AppColors.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.notifications_active_outlined,
+                color: hasAlarm ? AppColors.riskHighText : AppColors.primary,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Síntomas registrados desde tu última consulta',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: hasAlarm ? AppColors.riskHighText : AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
+          ...alerts.map(
+            (a) => Padding(
+              padding: EdgeInsets.only(bottom: 6),
+              child: Text(
+                '• ${a.label} (${a.occurrences} registro${a.occurrences == 1 ? '' : 's'})'
+                '${a.zones.isNotEmpty ? ' — ${a.zones.join(', ')}' : ''}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textDark,
+                  fontWeight: a.alarm ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bloque de recomendaciones clínicas SOMANZ dentro de la predicción de
+  /// riesgo — solo se llama cuando `riskPrediction.recomendaciones` no es
+  /// null (perfil "Alto Riesgo Hipertensivo / Preeclampsia"). El `descargo`
+  /// se muestra siempre de forma prominente: no es una prescripción, la
+  /// decisión final es del médico tratante.
+  Widget _buildSomanzSection(Map<String, dynamic> rec) {
+    final fuente = rec['fuente']?.toString() ?? '';
+    final descargo = rec['descargo']?.toString() ?? '';
+    final items = (rec['items'] as List? ?? []).whereType<Map>().toList();
+    final noRecomendados = (rec['no_recomendados'] as List? ?? []).whereType<Map>().toList();
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.medical_services_outlined, color: AppColors.primary, size: 18),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Recomendaciones clínicas (SOMANZ)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
+          if (descargo.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(color: AppColors.riskHighBg, borderRadius: BorderRadius.circular(10)),
+              child: Text(
+                descargo,
+                style: TextStyle(fontSize: 11, color: AppColors.riskHighText, fontWeight: FontWeight.w600, height: 1.4),
+              ),
+            ),
+          SizedBox(height: 12),
+          ...items.map((raw) {
+            final item = Map<String, dynamic>.from(raw);
+            final aplicable = item['aplicable_ahora'] == true;
+            return Opacity(
+              opacity: aplicable ? 1.0 : 0.55,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item['intervencion']?.toString() ?? '',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppColors.textDark),
+                          ),
+                        ),
+                        if (item['grade'] != null)
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(100)),
+                            child: Text(
+                              'GRADE ${item['grade']}',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            ),
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      item['recomendacion']?.toString() ?? '',
+                      style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.3),
+                    ),
+                    if (!aplicable && item['nota'] != null) ...[
+                      SizedBox(height: 3),
+                      Text(
+                        item['nota'].toString(),
+                        style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textMuted),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+          if (noRecomendados.isNotEmpty) ...[
+            Divider(height: 20),
+            Text(
+              'No recomendados por evidencia insuficiente',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+            ),
+            SizedBox(height: 6),
+            ...noRecomendados.map((raw) {
+              final item = Map<String, dynamic>.from(raw);
+              return Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Text(
+                  '• ${item['intervencion'] ?? ''} (GRADE ${item['grade'] ?? ''})',
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                ),
+              );
+            }),
+          ],
+          if (fuente.isNotEmpty) ...[
+            SizedBox(height: 10),
+            Text(
+              'Fuente: $fuente',
+              style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontStyle: FontStyle.italic),
             ),
           ],
         ],

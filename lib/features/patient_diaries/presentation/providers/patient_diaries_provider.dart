@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/patient_diary.dart';
+import '../../domain/entities/extracted_symptom.dart';
+import '../../domain/entities/aggregated_symptom.dart';
 import '../../domain/usecases/create_patient_diary_usecase.dart';
 import '../../domain/usecases/delete_patient_diary_usecase.dart';
 import '../../domain/usecases/get_patient_diaries_usecase.dart';
 import '../../domain/usecases/update_patient_diary_usecase.dart';
+import '../../domain/usecases/get_diary_symptoms_usecase.dart';
+import '../../domain/usecases/get_medical_record_symptom_history_usecase.dart';
 
 enum PatientDiariesStatus { initial, loading, success, error }
 
@@ -12,26 +16,86 @@ class PatientDiariesProvider with ChangeNotifier {
   final CreatePatientDiaryUseCase _createDiaryUseCase;
   final UpdatePatientDiaryUseCase _updateDiaryUseCase;
   final DeletePatientDiaryUseCase _deleteDiaryUseCase;
+  final GetDiarySymptomsUseCase _getDiarySymptomsUseCase;
+  final GetMedicalRecordSymptomHistoryUseCase _getSymptomHistoryUseCase;
 
   PatientDiariesProvider({
     required GetDiariesByMedicalRecordUseCase getDiariesUseCase,
     required CreatePatientDiaryUseCase createDiaryUseCase,
     required UpdatePatientDiaryUseCase updateDiaryUseCase,
     required DeletePatientDiaryUseCase deleteDiaryUseCase,
+    required GetDiarySymptomsUseCase getDiarySymptomsUseCase,
+    required GetMedicalRecordSymptomHistoryUseCase getSymptomHistoryUseCase,
   })  : _getDiariesUseCase = getDiariesUseCase,
         _createDiaryUseCase = createDiaryUseCase,
         _updateDiaryUseCase = updateDiaryUseCase,
-        _deleteDiaryUseCase = deleteDiaryUseCase;
+        _deleteDiaryUseCase = deleteDiaryUseCase,
+        _getDiarySymptomsUseCase = getDiarySymptomsUseCase,
+        _getSymptomHistoryUseCase = getSymptomHistoryUseCase;
 
   PatientDiariesStatus _status = PatientDiariesStatus.initial;
   String? _errorMessage;
   List<PatientDiary> _diaries = [];
+
+  // Síntomas detectados por bitácora (§1.3) — cacheados por patientDiaryId
+  // para no repetir la llamada si el usuario colapsa/expande la misma
+  // entrada varias veces.
+  final Map<int, List<ExtractedSymptom>> _diarySymptoms = {};
+  final Set<int> _loadingDiarySymptoms = {};
+
+  // Historial agregado de síntomas del embarazo (§1.4).
+  PatientDiariesStatus _symptomHistoryStatus = PatientDiariesStatus.initial;
+  List<AggregatedSymptom> _symptomHistory = [];
 
   PatientDiariesStatus get status => _status;
   String? get errorMessage => _errorMessage;
   List<PatientDiary> get diaries => _diaries;
 
   bool get isLoading => _status == PatientDiariesStatus.loading;
+
+  List<ExtractedSymptom>? symptomsForDiary(int patientDiaryId) => _diarySymptoms[patientDiaryId];
+  bool isLoadingSymptomsFor(int patientDiaryId) => _loadingDiarySymptoms.contains(patientDiaryId);
+
+  PatientDiariesStatus get symptomHistoryStatus => _symptomHistoryStatus;
+  List<AggregatedSymptom> get symptomHistory => _symptomHistory;
+
+  /// Trae los síntomas detectados por el NLP en UNA bitácora (lazy, con
+  /// caché en memoria). Lista vacía `[]` es un resultado normal (nada
+  /// detectado o NLP no disponible), no un error.
+  Future<void> loadDiarySymptoms(int patientDiaryId) async {
+    if (_diarySymptoms.containsKey(patientDiaryId) || _loadingDiarySymptoms.contains(patientDiaryId)) {
+      return;
+    }
+    _loadingDiarySymptoms.add(patientDiaryId);
+    notifyListeners();
+
+    try {
+      _diarySymptoms[patientDiaryId] = await _getDiarySymptomsUseCase.execute(patientDiaryId);
+    } catch (e) {
+      debugPrint('Error loading diary symptoms for $patientDiaryId: $e');
+      _diarySymptoms[patientDiaryId] = [];
+    } finally {
+      _loadingDiarySymptoms.remove(patientDiaryId);
+      notifyListeners();
+    }
+  }
+
+  /// Historial agregado de síntomas de todo el embarazo (botón "ver
+  /// historial completo" en el expediente/bitácora).
+  Future<void> loadSymptomHistory(int medicalRecordId) async {
+    _symptomHistoryStatus = PatientDiariesStatus.loading;
+    notifyListeners();
+
+    try {
+      _symptomHistory = await _getSymptomHistoryUseCase.execute(medicalRecordId);
+      _symptomHistoryStatus = PatientDiariesStatus.success;
+    } catch (e) {
+      debugPrint('Error loading symptom history for $medicalRecordId: $e');
+      _symptomHistoryStatus = PatientDiariesStatus.error;
+    } finally {
+      notifyListeners();
+    }
+  }
 
   Future<void> loadDiaries(int medicalRecordId) async {
     _status = PatientDiariesStatus.loading;

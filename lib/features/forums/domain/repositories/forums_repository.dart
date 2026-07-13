@@ -1,4 +1,5 @@
 import '../entities/social_profile.dart';
+import '../entities/profile_timeline.dart';
 import '../entities/community_group.dart';
 import '../entities/forum_post.dart';
 import '../entities/forum_comment.dart';
@@ -7,6 +8,8 @@ import '../entities/forum_report.dart';
 abstract class ForumsRepository {
   Future<SocialProfile> getSocialProfile(int userId);
   Future<SocialProfile> createOrUpdateSocialProfile(SocialProfile profile);
+  Future<SocialProfile> updateSocialProfile(SocialProfile profile);
+  Future<ProfileTimeline> getProfileTimeline(int userId, {int limit = 50, int offset = 0});
   Future<CommunityGroup> createGroup(CommunityGroup group);
   Future<List<CommunityGroup>> getGroups();
   Future<List<CommunityGroup>> getRecommendedGroups();

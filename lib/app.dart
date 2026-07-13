@@ -202,6 +202,8 @@ class MyApp extends StatelessWidget {
           create: (_) => ForumsProvider(
             getSocialProfileUseCase: forumsModule.getSocialProfileUseCase,
             createSocialProfileUseCase: forumsModule.createSocialProfileUseCase,
+            updateSocialProfileUseCase: forumsModule.updateSocialProfileUseCase,
+            getProfileTimelineUseCase: forumsModule.getProfileTimelineUseCase,
             createGroupUseCase: forumsModule.createGroupUseCase,
             getGroupsUseCase: forumsModule.getGroupsUseCase,
             getRecommendedGroupsUseCase: forumsModule.getRecommendedGroupsUseCase,

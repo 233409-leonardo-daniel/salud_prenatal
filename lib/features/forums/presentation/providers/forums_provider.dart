@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/social_profile.dart';
+import '../../domain/entities/profile_timeline.dart';
 import '../../domain/entities/community_group.dart';
 import '../../domain/entities/forum_post.dart';
 import '../../domain/entities/forum_comment.dart';
 import '../../domain/entities/forum_report.dart';
 import '../../domain/usecases/get_social_profile_use_case.dart';
 import '../../domain/usecases/create_social_profile_use_case.dart';
+import '../../domain/usecases/update_social_profile_use_case.dart';
+import '../../domain/usecases/get_profile_timeline_use_case.dart';
 import '../../domain/usecases/create_group_use_case.dart';
 import '../../domain/usecases/get_groups_use_case.dart';
 import '../../domain/usecases/get_recommended_groups_use_case.dart';
@@ -22,6 +25,8 @@ import '../pages/forums_state.dart';
 class ForumsProvider with ChangeNotifier {
   final GetSocialProfileUseCase _getSocialProfileUseCase;
   final CreateSocialProfileUseCase _createSocialProfileUseCase;
+  final UpdateSocialProfileUseCase _updateSocialProfileUseCase;
+  final GetProfileTimelineUseCase _getProfileTimelineUseCase;
   final CreateGroupUseCase _createGroupUseCase;
   final GetGroupsUseCase _getGroupsUseCase;
   final GetRecommendedGroupsUseCase _getRecommendedGroupsUseCase;
@@ -36,6 +41,8 @@ class ForumsProvider with ChangeNotifier {
   ForumsProvider({
     required GetSocialProfileUseCase getSocialProfileUseCase,
     required CreateSocialProfileUseCase createSocialProfileUseCase,
+    required UpdateSocialProfileUseCase updateSocialProfileUseCase,
+    required GetProfileTimelineUseCase getProfileTimelineUseCase,
     required CreateGroupUseCase createGroupUseCase,
     required GetGroupsUseCase getGroupsUseCase,
     required GetRecommendedGroupsUseCase getRecommendedGroupsUseCase,
@@ -48,6 +55,8 @@ class ForumsProvider with ChangeNotifier {
     required CreateReportUseCase createReportUseCase,
   })  : _getSocialProfileUseCase = getSocialProfileUseCase,
         _createSocialProfileUseCase = createSocialProfileUseCase,
+        _updateSocialProfileUseCase = updateSocialProfileUseCase,
+        _getProfileTimelineUseCase = getProfileTimelineUseCase,
         _createGroupUseCase = createGroupUseCase,
         _getGroupsUseCase = getGroupsUseCase,
         _getRecommendedGroupsUseCase = getRecommendedGroupsUseCase,
@@ -89,6 +98,11 @@ class ForumsProvider with ChangeNotifier {
   ForumsStatus _globalFeedStatus = ForumsStatus.initial;
   String? _globalFeedError;
 
+  // Timeline público de un perfil (GET /forums/profiles/{user_id}/timeline).
+  ForumsStatus _timelineStatus = ForumsStatus.initial;
+  String? _timelineError;
+  ProfileTimeline? _timeline;
+
   // Getters
   ForumsStatus get forumsStatus => _forumsStatus;
   ForumsStatus get feedStatus => _feedStatus;
@@ -100,6 +114,11 @@ class ForumsProvider with ChangeNotifier {
   String? get recommendedGroupsError => _recommendedGroupsError;
   ForumsStatus get globalFeedStatus => _globalFeedStatus;
   String? get globalFeedError => _globalFeedError;
+
+  ForumsStatus get timelineStatus => _timelineStatus;
+  String? get timelineError => _timelineError;
+  ProfileTimeline? get timeline => _timeline;
+  bool get isTimelineLoading => _timelineStatus == ForumsStatus.loading;
 
   String? get forumsError => _forumsError;
   String? get feedError => _feedError;
@@ -166,6 +185,46 @@ class ForumsProvider with ChangeNotifier {
       _saveError = _resolveError(e);
       _saveStatus = SaveStatus.error;
       return false;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Actualiza el perfil propio vía PATCH /forums/profiles/me (sin
+  /// {user_id}: el backend lo deriva del token). Úsese cuando ya existe un
+  /// perfil (p. ej. tras [loadSocialProfile]); para la primera creación usar
+  /// [saveSocialProfile] (POST).
+  Future<bool> updateSocialProfile(SocialProfile profile) async {
+    _saveStatus = SaveStatus.loading;
+    _saveError = null;
+    notifyListeners();
+
+    try {
+      _socialProfile = await _updateSocialProfileUseCase.call(profile);
+      _saveStatus = SaveStatus.success;
+      return true;
+    } catch (e) {
+      _saveError = _resolveError(e);
+      _saveStatus = SaveStatus.error;
+      return false;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Timeline público de un usuario: su perfil + TODAS sus publicaciones
+  /// (incluye posts de grupo y anuncios), paginado.
+  Future<void> loadProfileTimeline(int userId, {int limit = 50, int offset = 0}) async {
+    _timelineStatus = ForumsStatus.loading;
+    _timelineError = null;
+    notifyListeners();
+
+    try {
+      _timeline = await _getProfileTimelineUseCase.call(userId, limit: limit, offset: offset);
+      _timelineStatus = ForumsStatus.success;
+    } catch (e) {
+      _timelineError = _resolveError(e);
+      _timelineStatus = ForumsStatus.error;
     } finally {
       notifyListeners();
     }

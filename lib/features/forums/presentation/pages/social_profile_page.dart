@@ -18,6 +18,10 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   final _aliasController = TextEditingController();
   final _bioController = TextEditingController();
   String _selectedAvatar = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+  // true si ya existía un perfil social al cargar la página: determina si al
+  // guardar se llama PATCH /forums/profiles/me (actualizar) o POST
+  // /forums/profiles (crear por primera vez).
+  bool _hasExistingProfile = false;
 
   final List<String> _avatars = [
     'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
@@ -41,6 +45,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
         final profile = forumsProvider.socialProfile;
         if (profile != null) {
           setState(() {
+            _hasExistingProfile = true;
             _aliasController.text = profile.alias;
             _bioController.text = profile.bio ?? '';
             if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
@@ -201,7 +206,9 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                               );
                               final messenger = ScaffoldMessenger.of(context);
                               final navigator = Navigator.of(context);
-                              final success = await forumsProvider.saveSocialProfile(profile);
+                              final success = _hasExistingProfile
+                                  ? await forumsProvider.updateSocialProfile(profile)
+                                  : await forumsProvider.saveSocialProfile(profile);
                               if (success) {
                                 navigator.pop(true);
                               } else if (forumsProvider.sessionExpired) {

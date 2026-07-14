@@ -217,6 +217,7 @@ class MyApp extends StatelessWidget {
             createCommentUseCase: forumsModule.createCommentUseCase,
             getCommentsUseCase: forumsModule.getCommentsUseCase,
             createReportUseCase: forumsModule.createReportUseCase,
+            getUserByIdUseCase: userModule.getUserByIdUseCase,
           ),
         ),
       ],

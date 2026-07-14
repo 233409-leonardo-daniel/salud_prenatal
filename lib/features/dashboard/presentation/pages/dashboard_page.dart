@@ -22,6 +22,7 @@ import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../forums/presentation/pages/forums_hub_page.dart';
 import 'receptionist_dashboard_page.dart';
 import '../../../../core/enums/appointment_status.dart';
+import '../../../appointments/domain/entities/appointment.dart';
 import 'new_consultation_dialog.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -397,11 +398,15 @@ class _DashboardPageState extends State<DashboardPage> {
               final String reason = app['reason'] ?? 'Consulta general';
               final String status = app['status'] ?? 'pending';
               final String timeRaw = app['appointment_time'] ?? '';
+              final int? appointmentId = app['appointment_id'] as int?;
+              final int? patientId = app['patient_id'] as int?;
 
+              DateTime parsedDateTime = DateTime.now();
               String timeStr = 'Hora no esp.';
               if (timeRaw.isNotEmpty) {
                 try {
                   final dt = DateTime.parse(timeRaw).toLocal();
+                  parsedDateTime = dt;
                   final isPm = dt.hour >= 12;
                   final hour = dt.hour == 0
                       ? 12
@@ -417,6 +422,16 @@ class _DashboardPageState extends State<DashboardPage> {
                     patientName,
                     reason,
                     reason.toLowerCase().contains('urgente') || status == 'cancelled',
+                    onTap: (appointmentId == null || patientId == null)
+                        ? null
+                        : () => _openDoctorAppointmentDetail(
+                              appointmentId: appointmentId,
+                              patientId: patientId,
+                              patientName: patientName,
+                              reason: reason,
+                              status: status,
+                              dateTime: parsedDateTime,
+                            ),
                   ),
                   Divider(height: 1, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)),
                 ],
@@ -705,59 +720,98 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildDoctorAppointmentItem(String time, String name, String subtitle, bool isUrgent) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      color: AppColors.cardBackground,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 60,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  time.split(' ')[0],
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                ),
-                Text(
-                  time.split(' ')[1],
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 30,
-            color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50,
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12, 
-                    color: isUrgent ? Colors.red.shade700 : AppColors.textMuted,
-                    fontWeight: isUrgent ? FontWeight.bold : FontWeight.normal,
+  /// Antes el chevron de "Próximas Citas" (dashboard del doctor) no hacía
+  /// nada (`onPressed: () {}`), a diferencia de la recepcionista, que sí
+  /// puede entrar al detalle desde su lista. El dashboard del doctor solo
+  /// trae datos crudos (Map) de `today_appointments`, así que reconstruimos
+  /// aquí un `Appointment` con esos campos para navegar al mismo
+  /// `AppointmentDetailPage` que usa la recepcionista.
+  void _openDoctorAppointmentDetail({
+    required int appointmentId,
+    required int patientId,
+    required String patientName,
+    required String reason,
+    required String status,
+    required DateTime dateTime,
+  }) async {
+    final session = context.read<SessionManager>();
+    final doctorId = session.doctorId;
+    if (doctorId == null) return;
+    final doctorFullName = '${session.name} ${session.lastName}'.trim();
+
+    final appointment = Appointment(
+      id: appointmentId,
+      doctorId: doctorId,
+      patientId: patientId,
+      doctorName: doctorFullName,
+      patientName: patientName,
+      dateTime: dateTime,
+      status: AppointmentStatusExtension.fromString(status),
+      reason: reason,
+    );
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AppointmentDetailPage(appointment: appointment)),
+    );
+    if (mounted) {
+      _loadDashboardData();
+    }
+  }
+
+  Widget _buildDoctorAppointmentItem(String time, String name, String subtitle, bool isUrgent, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        color: AppColors.cardBackground,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 60,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    time.split(' ')[0],
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
                   ),
-                ),
-              ],
+                  Text(
+                    time.split(' ')[1],
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
             ),
-          ),
-          IconButton(
-            icon: Icon(Icons.chevron_right, color: AppColors.textMuted),
-            onPressed: () {},
-          ),
-        ],
+            Container(
+              width: 1,
+              height: 30,
+              color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50,
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isUrgent ? Colors.red.shade700 : AppColors.textMuted,
+                      fontWeight: isUrgent ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -1464,7 +1518,8 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       );
     } else {
-      // Bottom nav bar for Patient role (which has a central circular "+" button)
+      // Bottom nav bar for Patient role (has a central circular button that
+      // opens the "Bitácora" / patient diary)
       return BottomAppBar(
         color: theme.colorScheme.surface,
         elevation: 10,
@@ -1474,7 +1529,7 @@ class _DashboardPageState extends State<DashboardPage> {
             _buildPatientTabItem(0, Icons.home_outlined, Icons.home, 'Inicio'),
             _buildPatientTabItem(1, Icons.calendar_today_outlined, Icons.calendar_today, 'Citas'),
             _buildPatientTabItem(2, Icons.forum_outlined, Icons.forum, 'Foros'),
-            // Central floating circular add button
+            // Central floating circular button -> Bitácora
             GestureDetector(
               onTap: () {
                 Navigator.pushNamed(context, '/patient-diaries');
@@ -1494,7 +1549,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.add, color: Colors.white, size: 28),
+                  child: Icon(Icons.menu_book_outlined, color: Colors.white, size: 26),
                 ),
               ),
             ),

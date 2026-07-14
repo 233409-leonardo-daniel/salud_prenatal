@@ -23,11 +23,16 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   late final TabController _tabController;
+  bool _isDoctor = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _isDoctor = context.read<SessionManager>().isDoctor;
+    // El doctor no tiene "Para ti" (esa recomendación se arma a partir del
+    // cluster de riesgo del paciente): solo ve "Explorar", así que no
+    // necesita un TabBar de 2 pestañas.
+    _tabController = TabController(length: _isDoctor ? 1 : 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final session = context.read<SessionManager>();
       final currentUserId = session.userId;
@@ -35,7 +40,9 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
         final forumsProvider = context.read<ForumsProvider>();
         await forumsProvider.loadSocialProfile(currentUserId);
         if (forumsProvider.socialProfile != null) {
-          forumsProvider.loadRecommendedFeed();
+          if (!_isDoctor) {
+            forumsProvider.loadRecommendedFeed();
+          }
           forumsProvider.loadGlobalFeed();
         }
       }
@@ -50,8 +57,10 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
   }
 
   void _refreshFeed() {
-    context.read<ForumsProvider>().loadRecommendedFeed();
-    context.read<ForumsProvider>().loadGlobalFeed();
+    if (!_isDoctor) {
+      context.read<ForumsProvider>().loadRecommendedFeed(page: 0);
+    }
+    context.read<ForumsProvider>().loadGlobalFeed(page: 0);
   }
 
   void _refreshGroups() {
@@ -79,6 +88,11 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
         actions: [
           if (hasProfile) ...[
             IconButton(
+              icon: Icon(Icons.edit_outlined, color: AppColors.textMuted),
+              tooltip: 'Editar mi perfil',
+              onPressed: _editProfile,
+            ),
+            IconButton(
               icon: Icon(Icons.add_box_outlined, color: AppColors.primary),
               tooltip: 'Nueva publicación',
               onPressed: _showCreatePost,
@@ -91,7 +105,7 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
             ),
           ],
         ],
-        bottom: hasProfile
+        bottom: (hasProfile && !_isDoctor)
             ? TabBar(
                 controller: _tabController,
                 labelColor: AppColors.primary,
@@ -110,13 +124,15 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
           ProfileStatus.loading => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
           _ => !hasProfile
               ? _buildProfileOnboarding()
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildFeedTab(),
-                    _buildGlobalFeedTab(),
-                  ],
-                ),
+              : _isDoctor
+                  ? _buildGlobalFeedTab()
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildFeedTab(),
+                        _buildGlobalFeedTab(),
+                      ],
+                    ),
         },
       ),
       floatingActionButton: hasProfile
@@ -235,8 +251,10 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
   Widget _buildFeedList() {
     final forumsProvider = context.watch<ForumsProvider>();
     final posts = forumsProvider.recommendedFeed;
+    final page = forumsProvider.recommendedFeedPage;
+    final hasMore = forumsProvider.recommendedFeedHasMore;
 
-    if (posts.isEmpty) {
+    if (posts.isEmpty && page == 0) {
       return _buildEmptyState(
         icon: Icons.dynamic_feed_outlined,
         title: 'Nada por aquí todavía',
@@ -249,21 +267,85 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-        return ForumPostCard(
-          post: post,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
-            );
-          },
-        );
-      },
+    return Column(
+      children: [
+        Expanded(
+          child: posts.isEmpty
+              ? Center(
+                  child: Text('No hay más publicaciones.', style: TextStyle(color: AppColors.textMuted)),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return ForumPostCard(
+                      post: post,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+        _buildFeedPaginator(
+          page: page,
+          hasMore: hasMore,
+          onPrevious: page > 0 ? () => forumsProvider.loadRecommendedFeed(page: page - 1) : null,
+          onNext: hasMore ? () => forumsProvider.loadRecommendedFeed(page: page + 1) : null,
+        ),
+      ],
+    );
+  }
+
+  /// Controles "< Página N >" compartidos por "Para ti" y "Explorar". El
+  /// backend pagina con limit/offset y no da un total, así que "hasMore" se
+  /// infiere en el provider comparando el tamaño de la página recibida
+  /// contra `feedPageSize`. Se oculta si hay una sola página completa.
+  Widget _buildFeedPaginator({
+    required int page,
+    required bool hasMore,
+    required VoidCallback? onPrevious,
+    required VoidCallback? onNext,
+  }) {
+    if (page == 0 && !hasMore) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F2),
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.chevron_left,
+              color: onPrevious != null ? AppColors.primary : AppColors.textMuted.withOpacity(0.3),
+            ),
+            onPressed: onPrevious,
+          ),
+          Text(
+            'Página ${page + 1}',
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 13),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.chevron_right,
+              color: onNext != null ? AppColors.primary : AppColors.textMuted.withOpacity(0.3),
+            ),
+            onPressed: onNext,
+          ),
+        ],
+      ),
     );
   }
 
@@ -274,6 +356,24 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
     );
     if (created == true && mounted) {
       _refreshFeed();
+    }
+  }
+
+  // Editar el perfil social ya existente (tanto doctor como paciente): antes
+  // solo se podía llegar a SocialProfilePage desde el onboarding (cuando aún
+  // no había perfil); esta es la única forma de reabrirlo para actualizarlo.
+  void _editProfile() async {
+    final session = context.read<SessionManager>();
+    final forumsProvider = context.read<ForumsProvider>();
+    final updated = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SocialProfilePage()),
+    );
+    if (updated == true && mounted) {
+      final currentUserId = session.userId;
+      if (currentUserId != null) {
+        await forumsProvider.loadSocialProfile(currentUserId);
+      }
     }
   }
 
@@ -296,8 +396,10 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
   Widget _buildGlobalFeedList() {
     final forumsProvider = context.watch<ForumsProvider>();
     final posts = forumsProvider.globalFeed;
+    final page = forumsProvider.globalFeedPage;
+    final hasMore = forumsProvider.globalFeedHasMore;
 
-    if (posts.isEmpty) {
+    if (posts.isEmpty && page == 0) {
       return _buildEmptyState(
         icon: Icons.dynamic_feed_outlined,
         title: 'Nada por aquí todavía',
@@ -310,23 +412,41 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-        return ForumPostCard(
-          post: post,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
-            );
-          },
-        );
-      },
+    return Column(
+      children: [
+        Expanded(
+          child: posts.isEmpty
+              ? Center(
+                  child: Text('No hay más publicaciones.', style: TextStyle(color: AppColors.textMuted)),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return ForumPostCard(
+                      post: post,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+        _buildFeedPaginator(
+          page: page,
+          hasMore: hasMore,
+          onPrevious: page > 0 ? () => forumsProvider.loadGlobalFeed(page: page - 1) : null,
+          onNext: hasMore ? () => forumsProvider.loadGlobalFeed(page: page + 1) : null,
+        ),
+      ],
     );
-  }  Widget _buildErrorView({
+  }
+
+  Widget _buildErrorView({
     required String message,
     required bool sessionExpired,
     required VoidCallback onRetry,

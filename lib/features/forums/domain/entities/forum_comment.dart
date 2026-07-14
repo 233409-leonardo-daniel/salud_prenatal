@@ -16,4 +16,21 @@ class ForumComment {
     this.authorAlias,
     this.authorAvatarUrl,
   });
+
+  /// Igual que en `ForumPost`: el backend solo devuelve `author_id` en
+  /// `CommentResponse`, así que el alias/avatar se resuelven en el cliente.
+  ForumComment copyWithAuthorInfo({
+    String? authorAlias,
+    String? authorAvatarUrl,
+  }) {
+    return ForumComment(
+      commentId: commentId,
+      postId: postId,
+      authorId: authorId,
+      content: content,
+      createdAt: createdAt,
+      authorAlias: authorAlias ?? this.authorAlias,
+      authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
+    );
+  }
 }

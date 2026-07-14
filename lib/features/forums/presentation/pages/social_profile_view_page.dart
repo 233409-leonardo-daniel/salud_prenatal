@@ -381,13 +381,13 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
 
           // Publicaciones del usuario (GET /forums/profiles/{user_id}/timeline).
           const SizedBox(height: 20),
-          _buildPostsSection(isDark, forumsProvider),
+          _buildPostsSection(isDark, forumsProvider, isDoctor),
         ],
       ),
     );
   }
 
-  Widget _buildPostsSection(bool isDark, ForumsProvider forumsProvider) {
+  Widget _buildPostsSection(bool isDark, ForumsProvider forumsProvider, bool isDoctor) {
     final posts = forumsProvider.timeline?.posts ?? [];
 
     return Container(
@@ -431,13 +431,13 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
               style: TextStyle(fontSize: 13, color: AppColors.textMuted, fontStyle: FontStyle.italic),
             )
           else
-            ...posts.map((post) => _buildPostRow(post)),
+            ...posts.map((post) => _buildPostRow(post, isDoctor)),
         ],
       ),
     );
   }
 
-  Widget _buildPostRow(ForumPost post) {
+  Widget _buildPostRow(ForumPost post, bool isDoctor) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
@@ -465,7 +465,7 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (post.isAd)
+                if (isDoctor)
                   Container(
                     margin: const EdgeInsets.only(left: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

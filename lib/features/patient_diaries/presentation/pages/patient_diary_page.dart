@@ -6,7 +6,6 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../providers/patient_diaries_provider.dart';
 import '../../domain/entities/patient_diary.dart';
 import '../../domain/entities/extracted_symptom.dart';
-import '../../domain/entities/aggregated_symptom.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 
 class PatientDiaryPage extends StatefulWidget {
@@ -20,7 +19,6 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   bool _isInitialized = false;
   // Bitácoras con la sección "síntomas detectados (NLP)" expandida.
   final Set<int> _expandedSymptomIds = {};
-  bool _showSymptomHistory = false;
 
   @override
   void didChangeDependencies() {
@@ -47,6 +45,11 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     final medicalRecordId = session.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
     if (medicalRecordId != null && medicalRecordId > 0) {
       diariesProvider.loadDiaries(medicalRecordId);
+      // Se carga en silencio (sin mostrar el detalle técnico NLP al
+      // paciente, eso es solo para el doctor) únicamente para saber si hay
+      // algún síntoma con alarma y así decidir si mostrar la leyenda de
+      // "ve con tu doctor".
+      diariesProvider.loadSymptomHistory(medicalRecordId);
     }
   }
 
@@ -546,6 +549,13 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
     // Header showing the summary of the last reading
     final latest = provider.diaries.first;
+    final latestRisk = _evaluatePressureRisk(latest.systolic, latest.diastolic);
+    // El detalle técnico de síntomas (NLP) es solo para el doctor (lo ve en
+    // el expediente); a la paciente, si hay riesgo alto —ya sea por presión
+    // o por algún síntoma con alarma detectado en su bitácora— se le muestra
+    // solo una leyenda simple en vez de la lista técnica.
+    final hasAlarmSymptom = provider.symptomHistory.any((s) => s.alarm);
+    final showHighRiskBanner = latestRisk['label'] == 'Riesgo Alto' || hasAlarmSymptom;
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -559,8 +569,10 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
             diastolic: latest.diastolic,
             weightKg: latest.weightKg,
           ),
-          SizedBox(height: 16),
-          _buildSymptomHistorySection(provider, medicalRecordId),
+          if (showHighRiskBanner) ...[
+            SizedBox(height: 12),
+            _buildHighRiskBanner(),
+          ],
           SizedBox(height: 24),
           Text(
             'HISTORIAL DE MEDICIONES',
@@ -862,102 +874,30 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     );
   }
 
-  /// Sección expandible "Historial de síntomas (NLP)" — agregado de todo el
-  /// embarazo (GET /patient-diaries/medical-record/{id}/symptoms), distinto
-  /// del detalle por bitácora: aquí `zones` son strings y no hay negados
-  /// (el backend ya los excluyó al agregar).
-  Widget _buildSymptomHistorySection(PatientDiariesProvider provider, int? medicalRecordId) {
-    return Card(
-      elevation: 0,
-      color: AppColors.cardBackground,
-      shape: RoundedRectangleBorder(
+  /// Leyenda simple para la paciente cuando hay riesgo alto (presión alta o
+  /// algún síntoma con alarma detectado en su bitácora). El detalle técnico
+  /// de qué síntoma exactamente y con qué frecuencia es clínico y solo se le
+  /// muestra al doctor en el expediente (`patient_record_page.dart`).
+  Widget _buildHighRiskBanner() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.riskHighBg,
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.06) : Colors.grey.shade100, width: 1),
+        border: Border.all(color: AppColors.riskHighText.withOpacity(0.3)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          ListTile(
-            leading: Icon(Icons.auto_awesome, color: AppColors.primary),
-            title: Text(
-              'Historial de síntomas (detección automática)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
+          Icon(Icons.local_hospital_outlined, color: AppColors.riskHighText),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Ve con tu doctor o agenda una cita',
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.riskHighText, fontSize: 14),
             ),
-            trailing: Icon(
-              _showSymptomHistory ? Icons.expand_less : Icons.expand_more,
-              color: AppColors.textMuted,
-            ),
-            onTap: () {
-              setState(() => _showSymptomHistory = !_showSymptomHistory);
-              if (_showSymptomHistory && medicalRecordId != null) {
-                provider.loadSymptomHistory(medicalRecordId);
-              }
-            },
           ),
-          if (_showSymptomHistory)
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: provider.symptomHistoryStatus == PatientDiariesStatus.loading
-                  ? Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      ),
-                    )
-                  : _buildSymptomHistoryList(provider.symptomHistory),
-            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSymptomHistoryList(List<AggregatedSymptom> history) {
-    if (history.isEmpty) {
-      return Text(
-        'No se ha detectado ningún síntoma recurrente en tu embarazo todavía.',
-        style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontStyle: FontStyle.italic),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: history.map((s) {
-        final range = s.firstSeen != null && s.lastSeen != null
-            ? '${_formatShortDate(s.firstSeen!)} — ${_formatShortDate(s.lastSeen!)}'
-            : '';
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                s.alarm ? Icons.warning_amber_rounded : Icons.circle,
-                size: s.alarm ? 16 : 8,
-                color: s.alarm ? AppColors.riskHighText : AppColors.textMuted,
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${s.label} — ${s.occurrences} registro${s.occurrences == 1 ? '' : 's'}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: s.alarm ? AppColors.riskHighText : AppColors.textDark,
-                      ),
-                    ),
-                    if (range.isNotEmpty)
-                      Text(range, style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                    if (s.zones.isNotEmpty)
-                      Text('Zonas: ${s.zones.join(', ')}', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 }

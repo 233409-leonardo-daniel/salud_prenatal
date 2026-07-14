@@ -6,6 +6,7 @@ import '../../domain/entities/appointment.dart';
 import '../../../../core/session/session_manager.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/delete_appointment_provider.dart';
+import '../providers/update_appointment_provider.dart';
 import '../widgets/appointment_status_chip.dart';
 import 'appointment_state.dart';
 
@@ -96,9 +97,9 @@ class AppointmentDetailPage extends StatelessWidget {
             
             SizedBox(height: 32),
             
-            if (isReceptionist) ..._buildActionButtons(context, currentAppointment, provider),
+            if (isReceptionist || isDoctor) ..._buildActionButtons(context, currentAppointment, provider),
 
-            if (!isReceptionist)
+            if (!isReceptionist && !isDoctor)
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
@@ -181,6 +182,104 @@ class AppointmentDetailPage extends StatelessWidget {
       updateStatus(AppointmentStatus.cancelled);
     }
 
+    void rescheduleAppointment() async {
+      DateTime newDateTime = appointment.dateTime;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          return StatefulBuilder(
+            builder: (dialogCtx, setDialogState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                title: Text('Reagendar Cita', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Nueva fecha y hora:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final baseDate = newDateTime.isBefore(DateTime.now()) ? DateTime.now() : newDateTime;
+                        final date = await showDatePicker(
+                          context: dialogCtx,
+                          initialDate: baseDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          final time = await showTimePicker(
+                            context: dialogCtx,
+                            initialTime: TimeOfDay.fromDateTime(newDateTime),
+                          );
+                          if (time != null) {
+                            setDialogState(() {
+                              newDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                            });
+                          }
+                        }
+                      },
+                      icon: Icon(Icons.calendar_today, color: AppColors.primary),
+                      label: Text(
+                        '${newDateTime.day}/${newDateTime.month}/${newDateTime.year} - ${newDateTime.hour.toString().padLeft(2, '0')}:${newDateTime.minute.toString().padLeft(2, '0')}',
+                        style: TextStyle(color: AppColors.textDark),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx, false),
+                    child: Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(dialogCtx, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Guardar', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (confirmed != true || !context.mounted) return;
+
+      final updated = Appointment(
+        id: appointment.id,
+        doctorId: appointment.doctorId,
+        patientId: appointment.patientId,
+        doctorName: appointment.doctorName,
+        patientName: appointment.patientName,
+        dateTime: newDateTime,
+        status: appointment.status,
+        reason: appointment.reason,
+      );
+
+      final updateProvider = context.read<UpdateAppointmentProvider>();
+      await updateProvider.updateAppointment(updated);
+      if (!context.mounted) return;
+      if (updateProvider.status == UpdateAppointmentStatus.success) {
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo reagendar la cita: ${updateProvider.error ?? "Error desconocido"}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+
     void deleteAndGoBack() async {
       final confirm = await showDialog<bool>(
         context: context,
@@ -212,10 +311,14 @@ class AppointmentDetailPage extends StatelessWidget {
     if (appointment.status == AppointmentStatus.pending) {
       buttons.add(_actionButton('Confirmar Asistencia', Colors.blue, () => updateStatus(AppointmentStatus.confirmed)));
       buttons.add(SizedBox(height: 8));
+      buttons.add(_actionButton('Reagendar Cita', AppColors.primary, rescheduleAppointment));
+      buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Cancelar Cita', Colors.orange, cancelAppointment));
       buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));
     } else if (appointment.status == AppointmentStatus.confirmed) {
+      buttons.add(_actionButton('Reagendar Cita', AppColors.primary, rescheduleAppointment));
+      buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Cancelar Cita', Colors.orange, cancelAppointment));
       buttons.add(SizedBox(height: 8));
       buttons.add(_actionButton('Eliminar Cita', Colors.red, deleteAndGoBack));

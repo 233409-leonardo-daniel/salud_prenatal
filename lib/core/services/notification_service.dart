@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../network/api_client.dart';
 import '../../app.dart';
+import '../../features/chat/presentation/pages/chat_list_page.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -92,6 +93,14 @@ class NotificationService {
         debugPrint("Notificación cliqueada (segundo plano): ${message.messageId}");
         _handleNotificationClick(jsonEncode(message.data));
       });
+
+      // 6b. Cubre el caso en que la app estaba completamente cerrada y el
+      // usuario la abrió tocando la notificación (onMessageOpenedApp no
+      // cubre este caso, solo background).
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        _handleNotificationClick(jsonEncode(initialMessage.data));
+      }
 
       // 7. Escuchar refresco del token
       FirebaseMessaging.instance.onTokenRefresh.listen((String token) {
@@ -186,12 +195,22 @@ class NotificationService {
     }
   }
 
-  /// Maneja la acción al presionar una notificación.
+  /// Maneja la acción al presionar una notificación. El payload es el
+  /// `data` del mensaje FCM (ver `type` enviado por el backend: por ahora
+  /// `chat_message` o `daily_reminder`).
   static void _handleNotificationClick(String? payload) {
     if (payload == null) return;
     try {
       final context = MyApp.navigatorKey.currentContext;
-      if (context != null) {
+      if (context == null) return;
+
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      if (data['type'] == 'chat_message') {
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ChatListPage()),
+        );
+      } else {
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     } catch (e) {

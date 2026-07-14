@@ -248,25 +248,28 @@ void main() {
       expect(second.userProfile?.email, 'ana@example.com');
     });
 
-    test('inactividad mayor al timeout descarta la sesión', () async {
+    test(
+        'la inactividad ya no descarta la sesión (se quitó el logout automático)',
+        () async {
       final first = SessionManager()
         ..attachProfileLoader((_) async => _profile());
       await first.saveFromLogin(_response(role: 'paciente', userId: 7));
 
-      // Simular actividad vencida (> 20 min).
+      // Ya no existe una guarda de inactividad en restore(): un timestamp
+      // de "última actividad" viejo (heredado de una versión anterior de la
+      // app, o de la extinta SessionTimeoutListener) no debe afectar nada.
       final prefs = await SharedPreferences.getInstance();
       final stale = DateTime.now()
-          .subtract(const Duration(minutes: 25))
+          .subtract(const Duration(hours: 5))
           .millisecondsSinceEpoch;
-      await prefs.setInt(SessionManager.lastActivityPrefsKey, stale);
+      await prefs.setInt('last_activity_timestamp', stale);
 
       final second = SessionManager()
         ..attachProfileLoader((_) async => _profile());
       final ok = await second.restore();
 
-      expect(ok, isFalse);
-      expect(second.isAuthenticated, isFalse);
-      expect(secureStore['session.token'], isNull);
+      expect(ok, isTrue);
+      expect(second.isAuthenticated, isTrue);
     });
 
     test('sonda de liveness fallida descarta la sesión', () async {

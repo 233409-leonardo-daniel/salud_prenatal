@@ -43,7 +43,6 @@ import 'features/subscriptions/di/subscriptions_module.dart';
 import 'features/subscriptions/presentation/providers/subscriptions_provider.dart';
 import 'features/subscriptions/presentation/pages/subscription_plan_page.dart';
 
-import 'core/widgets/session_timeout_listener.dart';
 import 'core/widgets/subscription_gate_listener.dart';
 
 class MyApp extends StatelessWidget {
@@ -57,8 +56,11 @@ class MyApp extends StatelessWidget {
     final coreModule = CoreModule();
     final apiClient = coreModule.apiClient;
     
-    // Inicializar notificaciones push
+    // Inicializar notificaciones push y registrar el token a nivel de
+    // dispositivo desde el arranque, haya o no sesión iniciada: así los
+    // recordatorios diarios llegan aunque el usuario no esté logueado.
     NotificationService.initialize(apiClient);
+    NotificationService.registerDevice();
 
     final appointmentModule = AppointmentModule(apiClient);
     final loginModule = LoginModule(apiClient);
@@ -230,9 +232,7 @@ class MyApp extends StatelessWidget {
         builder: (context, child) {
           final brightness = MediaQuery.of(context).platformBrightness;
           AppColors.isDarkMode = brightness == Brightness.dark;
-          return SubscriptionGateListener(
-            child: SessionTimeoutListener(child: child!),
-          );
+          return SubscriptionGateListener(child: child!);
         },
         routes: {
           '/login': (context) => const LoginPage(),

@@ -5,8 +5,7 @@ import '../../app.dart';
 
 /// Escucha las respuestas 402 (suscripción de doctor inactiva) que emite
 /// [ApiClient] desde cualquier request y redirige a la pantalla de
-/// suscripción, igual que [SessionTimeoutListener] hace para el logout
-/// automático.
+/// suscripción.
 class SubscriptionGateListener extends StatefulWidget {
   final Widget child;
 

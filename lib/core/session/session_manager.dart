@@ -19,14 +19,6 @@ import '../services/notification_service.dart';
 /// - `userProfile` -> SOLO en memoria (es PII: email/teléfono/cédula); se
 ///   re-obtiene en [restore] mediante el `profileLoader`.
 class SessionManager extends ChangeNotifier {
-  /// Clave compartida con [SessionTimeoutListener]: ambos leen/escriben el
-  /// mismo timestamp de inactividad. No se duplica en otra constante.
-  static const String lastActivityPrefsKey = 'last_activity_timestamp';
-
-  /// Ventana de inactividad tras la cual [restore] descarta la sesión, en
-  /// paralelo con el logout automático de [SessionTimeoutListener].
-  static const Duration inactivityTimeout = Duration(minutes: 20);
-
   // ---- Claves de almacenamiento ----
   static const String _kToken = 'session.token'; // solo en secure storage
   static const String _kUserId = 'session.user_id';
@@ -178,18 +170,6 @@ class SessionManager extends ChangeNotifier {
     _receptionistId = prefs.getInt(_kReceptionistId);
     _subscriptionStatus = prefs.getString(_kSubscriptionStatus);
 
-    // Guarda de inactividad (reutiliza el timestamp de SessionTimeoutListener).
-    final lastActivity = prefs.getInt(lastActivityPrefsKey);
-    if (lastActivity != null) {
-      final elapsed = DateTime.now().difference(
-        DateTime.fromMillisecondsSinceEpoch(lastActivity),
-      );
-      if (elapsed > inactivityTimeout) {
-        await clear();
-        return false;
-      }
-    }
-
     _token = token; // ApiClient lo verá vía el tokenProvider callback.
 
     // Sonda de liveness: un getProfile de una vez valida el token.
@@ -215,9 +195,9 @@ class SessionManager extends ChangeNotifier {
   /// (para que `isAuthenticated` pase a false y el token pull de ApiClient
   /// devuelva null de inmediato), luego el borrado asíncrono en storage.
   Future<void> clear() async {
-    // Desregistrar dispositivo de notificaciones push antes de limpiar las credenciales
-    await NotificationService.unregisterDevice();
-
+    // El token FCM NO se desregistra aquí a propósito: es un token de
+    // dispositivo (no de sesión), para que los recordatorios diarios sigan
+    // llegando aunque el usuario haya cerrado sesión.
     _token = null;
     _role = null;
     _userId = null;

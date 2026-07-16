@@ -34,11 +34,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   void initState() {
     super.initState();
     final apiClient = context.read<ApiClient>();
-    final chatModule = ChatModule(apiClient);
+    final session = context.read<SessionManager>();
+    // El tokenProvider es obligatorio en la práctica: sin él el WS se conecta
+    // sin `?token=` y el gateway rechaza el handshake con 403.
+    final chatModule = ChatModule(
+      apiClient,
+      tokenProvider: () => session.token,
+    );
     _chatProvider = ChatProvider(chatModule.repository);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final session = context.read<SessionManager>();
       final currentUserId = session.userId;
       if (currentUserId != null) {
         _chatProvider.initChat(currentUserId, widget.otherUserId);

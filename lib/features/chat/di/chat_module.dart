@@ -11,7 +11,7 @@ class ChatModule {
   late final GetConversationsUseCase getConversationsUseCase;
   late final GetChatContactsUseCase getChatContactsUseCase;
 
-  ChatModule(ApiClient apiClient, {TokenProvider? tokenProvider}) {
+  ChatModule(ApiClient apiClient, {required TokenProvider tokenProvider}) {
     remoteDataSource = ChatRemoteDataSourceImpl(
       apiClient: apiClient,
       tokenProvider: tokenProvider,

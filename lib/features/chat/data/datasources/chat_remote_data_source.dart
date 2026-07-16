@@ -21,7 +21,7 @@ abstract class ChatRemoteDataSource {
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   final ApiClient _apiClient;
-  final TokenProvider? _tokenProvider;
+  final TokenProvider _tokenProvider;
 
   WebSocket? _webSocket;
   final StreamController<ChatMessageModel> _messageController = StreamController<ChatMessageModel>.broadcast();
@@ -35,7 +35,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   ChatRemoteDataSourceImpl({
     required ApiClient apiClient,
-    TokenProvider? tokenProvider,
+    required TokenProvider tokenProvider,
   })  : _apiClient = apiClient,
         _tokenProvider = tokenProvider;
 
@@ -86,16 +86,24 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     // param (`?token=<JWT>`), no como Authorization header. Ver docu de /chat.
     final baseUri = Uri.parse(ApiConfig.baseUrl);
     final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
-    final token = _tokenProvider?.call();
+    final token = _tokenProvider();
+    if (token == null) {
+      // Sin token el gateway rechaza el handshake con 403; conectar de todos
+      // modos solo produce un bucle de reintentos silencioso.
+      debugPrint('Chat: no hay token de sesión, no se intenta conectar el WebSocket.');
+      _handleDisconnect(canRetry: false);
+      return;
+    }
+
     final socketUri = Uri(
       scheme: wsScheme,
       host: baseUri.host,
       port: baseUri.hasPort ? baseUri.port : null,
       path: '${baseUri.path}/chat/ws',
-      queryParameters: token != null ? {'token': token} : null,
+      queryParameters: {'token': token},
     );
 
-    debugPrint('Intentando conectar WebSocket a: $socketUri');
+    debugPrint('Intentando conectar WebSocket a: ${socketUri.replace(queryParameters: {'token': '***'})}');
 
     try {
       _webSocket = await WebSocket.connect(socketUri.toString()).timeout(const Duration(seconds: 5));

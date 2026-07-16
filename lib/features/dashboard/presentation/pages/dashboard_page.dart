@@ -1529,29 +1529,13 @@ class _DashboardPageState extends State<DashboardPage> {
             _buildPatientTabItem(0, Icons.home_outlined, Icons.home, 'Inicio'),
             _buildPatientTabItem(1, Icons.calendar_today_outlined, Icons.calendar_today, 'Citas'),
             _buildPatientTabItem(2, Icons.forum_outlined, Icons.forum, 'Foros'),
-            // Central floating circular button -> Bitácora
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/patient-diaries');
-              },
-              child: Container(
-                margin: EdgeInsets.only(bottom: 12),
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
-                ),
-                child: Container(
-                  margin: EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.menu_book_outlined, color: Colors.white, size: 26),
-                ),
-              ),
+            // Bitácora: se muestra como un ítem más del nav (mismo estilo que el
+            // resto) en lugar de un botón circular flotante. Abre otra ruta, así
+            // que no participa del estado seleccionado (`_currentTab`).
+            _buildPatientNavAction(
+              Icons.menu_book_outlined,
+              'Bitácora',
+              () => Navigator.pushNamed(context, '/patient-diaries'),
             ),
             _buildPatientTabItem(3, Icons.message_outlined, Icons.message, 'Mensajes'),
             _buildPatientTabItem(4, Icons.person_outline, Icons.person, 'Perfil'),
@@ -1585,6 +1569,32 @@ class _DashboardPageState extends State<DashboardPage> {
               color: isSelected ? AppColors.primary : colors.textMuted,
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Ítem del nav de paciente que dispara una acción (ej. abrir la Bitácora en
+  /// otra ruta) en vez de cambiar de pestaña. Usa exactamente el mismo layout
+  /// e estilo "no seleccionado" que `_buildPatientTabItem` para que se vea igual
+  /// que el resto de los botones.
+  Widget _buildPatientNavAction(IconData outlineIcon, String label, VoidCallback onTap) {
+    final colors = Theme.of(context).extension<AppColorsExt>()!;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(outlineIcon, color: colors.textMuted, size: 24),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.normal,
             ),
           ),
         ],

@@ -17,6 +17,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _aliasController = TextEditingController();
   final _bioController = TextEditingController();
+  final _officeAddressController = TextEditingController();
   String _selectedAvatar = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
   // true si ya existía un perfil social al cargar la página: determina si al
   // guardar se llama PATCH /forums/profiles/me (actualizar) o POST
@@ -48,6 +49,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
             _hasExistingProfile = true;
             _aliasController.text = profile.alias;
             _bioController.text = profile.bio ?? '';
+            _officeAddressController.text = profile.officeAddress ?? '';
             if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
               _selectedAvatar = profile.avatarUrl!;
             }
@@ -61,6 +63,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   void dispose() {
     _aliasController.dispose();
     _bioController.dispose();
+    _officeAddressController.dispose();
     super.dispose();
   }
 
@@ -185,6 +188,22 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                       ),
                     ),
                   ),
+                  if (isDoctor) ...[
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _officeAddressController,
+                      decoration: InputDecoration(
+                        labelText: 'Dirección del consultorio',
+                        hintText: 'Ej. Av. Reforma 123, Consultorio 4',
+                        filled: true,
+                        fillColor: AppColors.cardBackground,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: forumsProvider.isSaving
@@ -202,7 +221,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                                 alias: _aliasController.text.trim(),
                                 bio: _bioController.text.trim(),
                                 avatarUrl: _selectedAvatar,
-                                officeAddress: isDoctor ? 'Consultorio Principal' : null,
+                                officeAddress: isDoctor ? _officeAddressController.text.trim() : null,
                               );
                               final messenger = ScaffoldMessenger.of(context);
                               final navigator = Navigator.of(context);

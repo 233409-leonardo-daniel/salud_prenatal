@@ -17,7 +17,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Future<List<UserDto>> getDoctors() async {
-    final response = await _apiClient.get('/users');
+    // Ruta de colección con '/' final: evita el redirect 307 del gateway
+    // (el resto del código ya usa '/users/').
+    final response = await _apiClient.get('/users/');
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       final list = data.map((e) => UserDto.fromJson(e)).toList();

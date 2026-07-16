@@ -571,7 +571,10 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
           ),
           if (showHighRiskBanner) ...[
             SizedBox(height: 12),
-            _buildHighRiskBanner(),
+            _buildHighRiskBanner(
+              pressureHigh: latestRisk['label'] == 'Riesgo Alto',
+              hasAlarmSymptom: hasAlarmSymptom,
+            ),
           ],
           SizedBox(height: 24),
           Text(
@@ -878,7 +881,18 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
   /// algún síntoma con alarma detectado en su bitácora). El detalle técnico
   /// de qué síntoma exactamente y con qué frecuencia es clínico y solo se le
   /// muestra al doctor en el expediente (`patient_record_page.dart`).
-  Widget _buildHighRiskBanner() {
+  Widget _buildHighRiskBanner({required bool pressureHigh, required bool hasAlarmSymptom}) {
+    // Explica el porqué de la alerta según qué disparó el riesgo: presión alta,
+    // síntomas anormales detectados en la bitácora, o ambos.
+    final String reason;
+    if (pressureHigh && hasAlarmSymptom) {
+      reason = 'Tu presión arterial está muy alta y últimamente has presentado síntomas anormales.';
+    } else if (pressureHigh) {
+      reason = 'Tu presión arterial está muy alta.';
+    } else {
+      reason = 'Últimamente has presentado síntomas anormales.';
+    }
+
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -887,13 +901,24 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
         border: Border.all(color: AppColors.riskHighText.withOpacity(0.3)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.local_hospital_outlined, color: AppColors.riskHighText),
           SizedBox(width: 12),
           Expanded(
-            child: Text(
-              'Ve con tu doctor o agenda una cita',
-              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.riskHighText, fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ve con tu médico o agenda una cita',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.riskHighText, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  reason,
+                  style: TextStyle(color: AppColors.riskHighText, fontSize: 12),
+                ),
+              ],
             ),
           ),
         ],

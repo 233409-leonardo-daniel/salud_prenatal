@@ -23,14 +23,14 @@ class UserProvider with ChangeNotifier {
   String? get error => _error;
   List<UserEntity> get users => _users;
 
-  Future<void> loadDoctors({int? singleDoctorId}) async {
+  Future<void> loadDoctors({int? singleDoctorId, int? doctorId}) async {
     _viewState = UserViewState.loading;
     _error = null;
     notifyListeners();
 
     try {
       if (singleDoctorId != null) {
-        final user = await _getUserByIdUseCase.call(singleDoctorId);
+        final user = await _getUserByIdUseCase.call(singleDoctorId, doctorId: doctorId);
         _users = [user];
       } else {
         _users = await _getDoctorsUseCase.call();
@@ -60,7 +60,7 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  Future<UserEntity> fetchUserById(int id) async {
-    return await _getUserByIdUseCase.call(id);
+  Future<UserEntity> fetchUserById(int id, {int? doctorId}) async {
+    return await _getUserByIdUseCase.call(id, doctorId: doctorId);
   }
 }

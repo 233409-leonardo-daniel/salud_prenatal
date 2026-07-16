@@ -13,7 +13,12 @@ class SubscriptionsRepositoryImpl implements SubscriptionsRepository {
   }
 
   @override
-  Future<String> createCheckoutSession(String planType) {
-    return remoteDataSource.createCheckoutSession(planType);
+  Future<String> createCheckoutSession(String planType, String paymentMode) {
+    return remoteDataSource.createCheckoutSession(planType, paymentMode);
+  }
+
+  @override
+  Future<String> refreshToken() {
+    return remoteDataSource.refreshToken();
   }
 }

@@ -27,6 +27,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
   ];
 
   String _selectedPlan = 'basic';
+  // 'recurring' -> tarjeta con renovación automática.
+  // 'one_time'  -> pago de un mes; en Stripe habilita OXXO/SPEI (asíncronos).
+  String _paymentMode = 'recurring';
+  // Modo del checkout que estamos esperando confirmar; distingue la UI de
+  // "confirmando..." (tarjeta) de la de instrucciones de ficha (OXXO/SPEI).
+  String? _awaitingPaymentMode;
   bool _awaitingConfirmation = false;
   bool _confirmationTimedOut = false;
   Timer? _pollTimer;
@@ -91,7 +97,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
     setState(() => _confirmationTimedOut = false);
 
     final provider = context.read<SubscriptionsProvider>();
-    final checkoutUrl = await provider.startCheckout(_selectedPlan);
+    final checkoutUrl = await provider.startCheckout(_selectedPlan, _paymentMode);
     if (!mounted) return;
 
     if (checkoutUrl == null || checkoutUrl.isEmpty) {
@@ -117,6 +123,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
 
   void _startPolling() {
     setState(() {
+      _awaitingPaymentMode = _paymentMode;
       _awaitingConfirmation = true;
       _confirmationTimedOut = false;
     });
@@ -132,6 +139,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
 
     if (provider.subscription?.isActive == true) {
       _pollTimer?.cancel();
+      // El gating lee subscription_status del JWT; hay que reemplazar el token
+      // por uno fresco antes de navegar o el doctor seguiría gateado.
+      await provider.refreshSessionToken();
+      if (!mounted) return;
       // El pago se confirmó mientras esperábamos: entra directo al dashboard
       // en vez de dejar al doctor parado en esta pantalla de confirmación.
       _goToDoctorDashboard();
@@ -140,6 +151,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
 
     if (_pollStartedAt != null && DateTime.now().difference(_pollStartedAt!) >= _pollTimeout) {
       _pollTimer?.cancel();
+      // OXXO/SPEI son asíncronos: el polling SIEMPRE expira porque el doctor
+      // aún no paga (tiene ficha/CLABE). No es error: se mantiene la pantalla
+      // de instrucciones con el botón "Ya pagué" en vez de volver al picker.
+      if (_awaitingPaymentMode == 'one_time') return;
       setState(() {
         _awaitingConfirmation = false;
         _confirmationTimedOut = true;
@@ -149,6 +164,24 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
 
   void _goToDoctorDashboard() {
     Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (route) => false, arguments: 'doctor');
+  }
+
+  String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
+
+  Widget _noticeBox({required MaterialColor color, required String text}) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: color.shade800),
+      ),
+    );
   }
 
   @override
@@ -212,6 +245,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
   }
 
   Widget _buildAwaitingConfirmation(ThemeData theme) {
+    if (_awaitingPaymentMode == 'one_time') {
+      return _buildAsyncPaymentInstructions(theme);
+    }
     return Column(
       children: [
         const SizedBox(height: 100),
@@ -226,6 +262,64 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
           'Esto puede tardar unos segundos.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+        ),
+      ],
+    );
+  }
+
+  /// Pantalla para OXXO/SPEI: el pago es asíncrono (ficha en efectivo o
+  /// transferencia), así que NO afirmamos "confirmando pago" — instruimos al
+  /// doctor a pagar su ficha/CLABE y le dejamos un botón para reverificar.
+  Widget _buildAsyncPaymentInstructions(ThemeData theme) {
+    final provider = context.watch<SubscriptionsProvider>();
+    final isChecking = provider.fetchStatus == SubscriptionFetchStatus.loading;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 32),
+        Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 48),
+        const SizedBox(height: 16),
+        Text(
+          'Completa tu pago',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textDark),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Genera y paga tu ficha OXXO en tienda, o realiza tu transferencia SPEI '
+          'con la CLABE que te dio Stripe. Tu acceso se activa en cuanto se '
+          'registre el pago: puede tardar hasta 72 h en OXXO y unos minutos en SPEI.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textMuted, height: 1.4),
+        ),
+        const SizedBox(height: 28),
+        ElevatedButton(
+          onPressed: isChecking ? null : _checkStatus,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          ),
+          child: isChecking
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                )
+              : const Text('Ya pagué, verificar de nuevo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () {
+            _pollTimer?.cancel();
+            setState(() {
+              _awaitingConfirmation = false;
+              _awaitingPaymentMode = null;
+              _confirmationTimedOut = false;
+            });
+          },
+          child: const Text('Volver a los planes'),
         ),
       ],
     );
@@ -254,11 +348,26 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
         if (periodEnd != null) ...[
           const SizedBox(height: 4),
           Text(
-            'Vence el ${periodEnd.day}/${periodEnd.month}/${periodEnd.year}',
+            subscription.autoRenewal ? 'Se renueva el ${_formatDate(periodEnd)}' : 'Vence el ${_formatDate(periodEnd)}',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
           ),
         ],
+        // Pago único (OXXO/SPEI o tarjeta suelta): no se renueva solo, hay que
+        // avisar del vencimiento para que el doctor renueve a tiempo.
+        if (subscription.isOneTimeActive && periodEnd != null)
+          _noticeBox(
+            color: Colors.orange,
+            text: 'Pago único: tu acceso vence el ${_formatDate(periodEnd)}. '
+                'Renueva antes de esa fecha para no perder acceso.',
+          ),
+        // Recurrente marcada para cancelarse al final del periodo.
+        if (subscription.autoRenewal && subscription.cancelAtPeriodEnd && periodEnd != null)
+          _noticeBox(
+            color: Colors.orange,
+            text: 'Tu plan se cancelará el ${_formatDate(periodEnd)}. '
+                'Después de esa fecha perderás el acceso.',
+          ),
         const SizedBox(height: 32),
         ElevatedButton(
           onPressed: () {
@@ -334,6 +443,25 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
           planType: 'premium',
           label: 'Premium',
           features: _sharedPlanFeatures,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Forma de pago',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+        ),
+        const SizedBox(height: 12),
+        _paymentModeCard(
+          mode: 'recurring',
+          icon: Icons.credit_card,
+          label: 'Tarjeta',
+          description: 'Renovación automática cada mes.',
+        ),
+        const SizedBox(height: 12),
+        _paymentModeCard(
+          mode: 'one_time',
+          icon: Icons.storefront_outlined,
+          label: 'Efectivo o transferencia',
+          description: 'Pago único de 1 mes con OXXO o SPEI. No se renueva solo.',
         ),
         const SizedBox(height: 28),
         ElevatedButton(
@@ -423,6 +551,61 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
                     ),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _paymentModeCard({
+    required String mode,
+    required IconData icon,
+    required String label,
+    required String description,
+  }) {
+    final isSelected = _paymentMode == mode;
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () => setState(() => _paymentMode = mode),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.transparent, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 12),
+            Icon(icon, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.3),
+                  ),
+                ],
               ),
             ),
           ],

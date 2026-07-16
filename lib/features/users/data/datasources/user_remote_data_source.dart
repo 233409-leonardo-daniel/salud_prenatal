@@ -6,7 +6,7 @@ import '../models/user_dto.dart';
 abstract class UserRemoteDataSource {
   Future<List<UserDto>> getDoctors();
   Future<List<UserDto>> getPatients({int? doctorId});
-  Future<UserDto> getUserById(int id);
+  Future<UserDto> getUserById(int id, {int? doctorId});
 }
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
@@ -53,7 +53,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
-  Future<UserDto> getUserById(int id) async {
+  Future<UserDto> getUserById(int id, {int? doctorId}) async {
     final response = await _apiClient.get('/users/$id');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -61,7 +61,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
       final isDoc = user.role.toLowerCase() == 'doctor' || user.role.toLowerCase() == 'doctor(a)';
       if (isDoc) {
-        int? docId = _userToDoctorMap[id] ?? data['doctor_id'] ?? data['doctorId'];
+        // `doctorId` explícito (cuando el llamador lo conoce) tiene prioridad y
+        // evita el escaneo secuencial de `/doctors/1..50` de más abajo.
+        int? docId = doctorId ?? _userToDoctorMap[id] ?? data['doctor_id'] ?? data['doctorId'];
         
         if (docId == null) {
           // Scan doctors sequentially to map user_id -> doctor_id (up to 50, stopping on 5 consecutive failures)

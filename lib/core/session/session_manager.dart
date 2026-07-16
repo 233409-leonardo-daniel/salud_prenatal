@@ -32,13 +32,14 @@ class SessionManager extends ChangeNotifier {
   final FlutterSecureStorage _secureStorage;
 
   SessionManager({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-              iOptions: IOSOptions(
-                accessibility: KeychainAccessibility.first_unlock,
-              ),
-            );
+    : _secureStorage =
+          secureStorage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(encryptedSharedPreferences: true),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+          );
 
   // ---- Estado en memoria (fuente única de verdad) ----
   String? _token;
@@ -54,7 +55,7 @@ class SessionManager extends ChangeNotifier {
   /// Callback inyectado en dos fases (ver [attachProfileLoader]) para obtener
   /// el perfil sin que [SessionManager] dependa de un usecase en su
   /// constructor (rompe el ciclo ApiClient <-> SessionManager).
-  Future<UserProfile?> Function(int userId)? _profileLoader;
+  Future<UserProfile?> Function(int userId, {int? doctorId})? _profileLoader;
 
   // ---- Getters (espejo del antiguo LoginProvider para migración 1:1) ----
   String? get token => _token;
@@ -71,8 +72,7 @@ class SessionManager extends ChangeNotifier {
 
   /// True cuando un doctor autenticado no tiene una suscripción activa y debe
   /// pasar por la pantalla de pago antes de usar el sistema.
-  bool get needsSubscriptionGate =>
-      isDoctor && _subscriptionStatus != null && _subscriptionStatus != 'active';
+  bool get needsSubscriptionGate => isDoctor && _subscriptionStatus != 'active';
 
   String get name => _userProfile?.name ?? '';
   String get lastName => _userProfile?.lastName ?? '';
@@ -90,8 +90,13 @@ class SessionManager extends ChangeNotifier {
   // ---- Ciclo de vida ----
 
   /// Fase 2 del wiring en el composition root: adjunta el cargador de perfil.
-  /// `loader = (id) => loginModule.getProfileUseCase.execute(id)`.
-  void attachProfileLoader(Future<UserProfile?> Function(int userId) loader) {
+  /// `loader = (id, {doctorId}) => loginModule.getProfileUseCase.execute(id, doctorId: doctorId)`.
+  /// El `doctorId` es clave para doctores: sin él, `getUserProfile` escanea
+  /// `/doctors/1..50` uno por uno para descubrir el `doctor_id`; pasándolo
+  /// (viene en la respuesta del login) esa ráfaga se salta por completo.
+  void attachProfileLoader(
+    Future<UserProfile?> Function(int userId, {int? doctorId}) loader,
+  ) {
     _profileLoader = loader;
   }
 
@@ -120,18 +125,20 @@ class SessionManager extends ChangeNotifier {
     }
 
     // Best-effort: si falla queda null; la UI ya maneja userProfile null.
+    // Se pasa `_doctorId` (que ya viene del login) para evitar el escaneo
+    // secuencial de `/doctors/1..50` al construir el perfil del doctor.
     try {
-      _userProfile = await _profileLoader?.call(_userId!);
+      _userProfile = await _profileLoader?.call(_userId!, doctorId: _doctorId);
     } catch (e) {
       debugPrint('SessionManager: no se pudo obtener el perfil tras login: $e');
       _userProfile = null;
     }
 
     await _persist();
-    
+
     // Registrar el dispositivo para notificaciones push tras iniciar sesión
     NotificationService.registerDevice();
-    
+
     notifyListeners();
   }
 
@@ -149,6 +156,31 @@ class SessionManager extends ChangeNotifier {
   void setUserProfile(UserProfile profile) {
     _userProfile = profile;
     notifyListeners();
+  }
+
+  /// Reemplaza el token vigente por uno recién emitido (p. ej. tras activarse
+  /// la suscripción de un doctor). El gating lee `subscription_status` desde el
+  /// JWT, así que hay que sustituir el token; opcionalmente se actualiza el
+  /// `subscriptionStatus` en memoria/prefs para que [needsSubscriptionGate]
+  /// deje de disparar de inmediato.
+  Future<void> applyRefreshedToken(
+    String token, {
+    String? subscriptionStatus,
+  }) async {
+    if (token.isEmpty) return;
+    _token = token;
+    if (subscriptionStatus != null) _subscriptionStatus = subscriptionStatus;
+    notifyListeners();
+
+    await _secureStorage.write(key: _kToken, value: _token);
+    if (subscriptionStatus != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await _setOrRemoveString(
+        prefs,
+        _kSubscriptionStatus,
+        _subscriptionStatus,
+      );
+    }
   }
 
   /// Restaura la sesión al arranque. Devuelve true si hay sesión válida.
@@ -173,9 +205,13 @@ class SessionManager extends ChangeNotifier {
     _token = token; // ApiClient lo verá vía el tokenProvider callback.
 
     // Sonda de liveness: un getProfile de una vez valida el token.
+    // `_doctorId` restaurado de prefs evita reescanear `/doctors/1..50`.
     if (_userId != null && _profileLoader != null) {
       try {
-        _userProfile = await _profileLoader!.call(_userId!);
+        _userProfile = await _profileLoader!.call(
+          _userId!,
+          doctorId: _doctorId,
+        );
       } catch (e) {
         debugPrint('SessionManager: sonda de liveness falló en restore: $e');
         await clear();
@@ -184,10 +220,10 @@ class SessionManager extends ChangeNotifier {
     }
 
     notifyListeners();
-    
+
     // Registrar/actualizar dispositivo en segundo plano al restaurar sesión
     NotificationService.registerDevice();
-    
+
     return true;
   }
 
@@ -243,13 +279,11 @@ class SessionManager extends ChangeNotifier {
     SharedPreferences prefs,
     String key,
     int? value,
-  ) =>
-      value == null ? prefs.remove(key) : prefs.setInt(key, value);
+  ) => value == null ? prefs.remove(key) : prefs.setInt(key, value);
 
   Future<void> _setOrRemoveString(
     SharedPreferences prefs,
     String key,
     String? value,
-  ) =>
-      value == null ? prefs.remove(key) : prefs.setString(key, value);
+  ) => value == null ? prefs.remove(key) : prefs.setString(key, value);
 }

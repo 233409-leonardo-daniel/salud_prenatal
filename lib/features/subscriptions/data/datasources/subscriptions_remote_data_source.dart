@@ -4,7 +4,15 @@ import '../models/subscription_status_model.dart';
 
 abstract class SubscriptionsRemoteDataSource {
   Future<SubscriptionStatusModel> getStatus();
-  Future<String> createCheckoutSession(String planType);
+
+  /// [paymentMode]: `"recurring"` (tarjeta, renovación automática) o
+  /// `"one_time"` (habilita OXXO/SPEI, pago de un solo mes).
+  Future<String> createCheckoutSession(String planType, String paymentMode);
+
+  /// Reobtiene un JWT fresco tras confirmarse el pago. El gating lee
+  /// `subscription_status` desde el token, así que hay que reemplazarlo.
+  /// Devuelve el nuevo `access_token`.
+  Future<String> refreshToken();
 }
 
 class SubscriptionsRemoteDataSourceImpl implements SubscriptionsRemoteDataSource {
@@ -34,12 +42,25 @@ class SubscriptionsRemoteDataSourceImpl implements SubscriptionsRemoteDataSource
   }
 
   @override
-  Future<String> createCheckoutSession(String planType) async {
-    final response = await _apiClient.post('/subscriptions/checkout-session', {'plan_type': planType});
+  Future<String> createCheckoutSession(String planType, String paymentMode) async {
+    final response = await _apiClient.post(
+      '/subscriptions/checkout-session',
+      {'plan_type': planType, 'payment_mode': paymentMode},
+    );
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
       return data['checkout_url'] ?? '';
     }
     throw Exception(_extractDetail(response.body, response.statusCode, 'Error al iniciar el proceso de pago'));
+  }
+
+  @override
+  Future<String> refreshToken() async {
+    final response = await _apiClient.post('/users/refresh', {});
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data['access_token'] ?? data['accessToken'] ?? '';
+    }
+    throw Exception(_extractDetail(response.body, response.statusCode, 'Error al actualizar la sesión'));
   }
 }

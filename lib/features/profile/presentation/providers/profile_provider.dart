@@ -67,7 +67,13 @@ class ProfileProvider with ChangeNotifier {
         office: office ?? current?.office,
       );
 
-      final updated = await _updateProfileUseCase.execute(userId, updatedProfile);
+      // Se pasa el `doctorId` de sesión para que `updateUserProfile` no tenga
+      // que escanear `/doctors/1..50` buscando el doctor_id del usuario actual.
+      final updated = await _updateProfileUseCase.execute(
+        userId,
+        updatedProfile,
+        doctorId: _session.doctorId,
+      );
       _session.setUserProfile(updated);
       _isLoading = false;
       notifyListeners();

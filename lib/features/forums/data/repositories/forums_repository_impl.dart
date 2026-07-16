@@ -1,4 +1,5 @@
 import '../../domain/entities/social_profile.dart';
+import '../../domain/entities/profile_timeline.dart';
 import '../../domain/entities/community_group.dart';
 import '../../domain/entities/forum_post.dart';
 import '../../domain/entities/forum_comment.dart';
@@ -24,6 +25,16 @@ class ForumsRepositoryImpl implements ForumsRepository {
   @override
   Future<SocialProfile> createOrUpdateSocialProfile(SocialProfile profile) {
     return remoteDataSource.createOrUpdateSocialProfile(SocialProfileModel.fromEntity(profile));
+  }
+
+  @override
+  Future<SocialProfile> updateSocialProfile(SocialProfile profile) {
+    return remoteDataSource.updateSocialProfile(SocialProfileModel.fromEntity(profile));
+  }
+
+  @override
+  Future<ProfileTimeline> getProfileTimeline(int userId, {int limit = 50, int offset = 0}) {
+    return remoteDataSource.getProfileTimeline(userId, limit: limit, offset: offset);
   }
 
   @override

@@ -1,3 +1,6 @@
+import '../../../patient_diaries/domain/entities/aggregated_symptom.dart';
+import '../../../patient_diaries/data/models/aggregated_symptom_model.dart';
+
 /// Predicción de riesgo (preeclampsia) tal como la devuelve el expediente médico
 /// (GET /medical-records/patient/{patient_id}) o la evaluación manual
 /// (POST /medical-records/{id}/risk-evaluation).
@@ -63,6 +66,17 @@ class RiskPrediction {
     final raw = prediction?['pacientes_similares'];
     if (raw is! List) return [];
     return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  /// Recomendaciones clínicas SOMANZ — solo viene cuando el perfil calculado
+  /// es "Alto Riesgo Hipertensivo / Preeclampsia" (risk_cluster: 1). Para
+  /// cualquier otro perfil este campo es null; siempre tratarlo como
+  /// opcional. Se expone como Map crudo (igual que `afinidad`/
+  /// `factoresDeterminantes`) porque su forma ya viene lista para pintar
+  /// directamente desde el backend.
+  Map<String, dynamic>? get recomendaciones {
+    final raw = prediction?['recomendaciones'];
+    return raw is Map ? Map<String, dynamic>.from(raw) : null;
   }
 
   factory RiskPrediction.fromJson(Map<String, dynamic> json) {
@@ -133,6 +147,12 @@ class MedicalRecordResponse {
   final int? age;
   final RiskPrediction? riskPrediction;
 
+  /// Síntomas nuevos desde la última consulta registrada (misma forma que
+  /// GET /patient-diaries/medical-record/{id}/symptoms). Si el expediente
+  /// no tiene ninguna consulta todavía, trae TODO el historial. Lista
+  /// vacía = nada nuevo que mostrar.
+  final List<AggregatedSymptom> symptomAlert;
+
   MedicalRecordResponse({
     required this.medicalRecordId,
     required this.patientId,
@@ -168,6 +188,7 @@ class MedicalRecordResponse {
     this.currentGestationalWeeks,
     this.age,
     this.riskPrediction,
+    this.symptomAlert = const [],
   });
 
   factory MedicalRecordResponse.fromJson(Map<String, dynamic> json) {
@@ -179,6 +200,14 @@ class MedicalRecordResponse {
     final riskPrediction = riskPredJson is Map<String, dynamic>
         ? RiskPrediction.fromJson(riskPredJson)
         : null;
+
+    final symptomAlertJson = json['symptom_alert'];
+    final symptomAlert = symptomAlertJson is List
+        ? symptomAlertJson
+            .whereType<Map>()
+            .map((e) => AggregatedSymptomModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+        : <AggregatedSymptom>[];
 
     int? parseInt(dynamic v) => v is int ? v : (v != null ? int.tryParse(v.toString()) : null);
     double? parseDouble(dynamic v) => v is num ? v.toDouble() : (v != null ? double.tryParse(v.toString()) : null);
@@ -228,6 +257,7 @@ class MedicalRecordResponse {
       currentGestationalWeeks: parseInt(json['current_gestational_weeks']),
       age: parseInt(json['age']),
       riskPrediction: riskPrediction,
+      symptomAlert: symptomAlert,
     );
   }
 
@@ -270,6 +300,7 @@ class MedicalRecordResponse {
       currentGestationalWeeks: currentGestationalWeeks,
       age: age,
       riskPrediction: riskPrediction,
+      symptomAlert: symptomAlert,
     );
   }
 

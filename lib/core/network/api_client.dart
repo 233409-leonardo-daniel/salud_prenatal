@@ -83,6 +83,17 @@ class ApiClient {
     return response;
   }
 
+  Future<http.Response> patch(String endpoint, Map<String, dynamic> body) async {
+    final url = _buildUrl(endpoint);
+    final response = await _client.patch(
+      url,
+      headers: _headers,
+      body: jsonEncode(body),
+    );
+    _notifyIfPaymentRequired(response);
+    return response;
+  }
+
   Future<http.Response> delete(String endpoint) async {
     final url = _buildUrl(endpoint);
     final response = await _client.delete(url, headers: _headers);

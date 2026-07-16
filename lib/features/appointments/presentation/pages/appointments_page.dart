@@ -540,7 +540,23 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           if (allAppointments.isEmpty)
             Text('No hay citas programadas', style: TextStyle(color: AppColors.textMuted))
           else
-            ...allAppointments.take(3).map((app) => _buildAppointmentCard(app, theme, isCompact: false)),
+            ...allAppointments.take(3).map((app) => InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AppointmentDetailPage(
+                          appointment: _resolveAppointmentNames(app, context),
+                        ),
+                      ),
+                    );
+                    if (context.mounted) {
+                      _loadAppointmentsData();
+                    }
+                  },
+                  child: _buildAppointmentCard(app, theme, isCompact: false),
+                )),
         ],
       ),
     );
@@ -641,7 +657,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     ],
                   ),
                 ),
-                if (isCompact) Icon(Icons.chevron_right, color: AppColors.textMuted),
+                Icon(Icons.chevron_right, color: AppColors.textMuted),
               ],
             ),
           ],

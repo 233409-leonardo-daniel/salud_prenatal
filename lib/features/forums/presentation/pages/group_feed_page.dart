@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/utils/relative_time.dart';
 import '../../domain/entities/community_group.dart';
 import '../providers/forums_provider.dart';
 import 'forums_state.dart';
@@ -108,16 +109,24 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final post = posts[index];
-        final authorName = post.authorAlias ?? 'Usuario';
+        // El estilo "De un doctor" (acento rosa) se aplica a TODAS las
+        // publicaciones de un doctor según su rol actual, no según el valor
+        // guardado de `post.isAd` (ver ForumPostCard): así se ven igual de
+        // consistentes aquí que en el feed global/"Para ti".
         final isDoctor = post.authorRole?.toLowerCase().contains('doctor') ?? false;
+        final authorName = post.authorAlias ?? (isDoctor ? 'Consultorio' : 'Usuario');
         final displayName = isDoctor ? 'Dr. $authorName' : authorName;
         final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
+        final accentColor = AppColors.primary;
+        final cardColor = isDoctor ? AppColors.primaryLight : AppColors.cardBackground;
+        final borderColor = isDoctor ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: cardColor,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(4),
@@ -156,8 +165,8 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
                           radius: 20,
                           backgroundColor: AppColors.primaryLight,
                           backgroundImage: post.authorAvatarUrl != null ? NetworkImage(post.authorAvatarUrl!) : null,
-                          child: post.authorAvatarUrl == null 
-                              ? Text(initials, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                          child: post.authorAvatarUrl == null
+                              ? Text(initials, style: TextStyle(color: accentColor, fontWeight: FontWeight.bold))
                               : null,
                         ),
                         const SizedBox(width: 10),
@@ -165,32 +174,27 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                                  ),
-                                  if (isDoctor) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryLight,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        'Doctor',
-                                        style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ]
-                                ],
-                              ),
                               Text(
-                                'Hace un momento',
-                                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                displayName,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                               ),
+                              if (isDoctor)
+                                Row(
+                                  children: [
+                                    Icon(Icons.campaign_outlined, size: 12, color: accentColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'De un doctor',
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: accentColor),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Text(
+                                  formatRelativeTime(post.createdAt),
+                                  style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                ),
                             ],
                           ),
                         ),
@@ -210,16 +214,28 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
                     style: TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.4),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.chat_bubble_outline, size: 16, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Ver comentarios',
-                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                      ),
-                    ],
-                  )
+                  if (isDoctor)
+                    Row(
+                      children: [
+                        Icon(Icons.open_in_new, size: 14, color: accentColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ver más',
+                          style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 16, color: AppColors.textMuted),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ver comentarios',
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

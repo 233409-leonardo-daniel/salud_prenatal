@@ -15,6 +15,13 @@ abstract class DashboardRemoteDataSource {
   Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
   Future<RiskPrediction> evaluateRisk(int medicalRecordId);
+  Future<ConsultationResponse> createConsultation({
+    required int medicalRecordId,
+    String? notes,
+    String? objective,
+    String? plan,
+    required String reportedFacts,
+  });
 }
 
 class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
@@ -171,6 +178,51 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       final detail = errorJson['detail'];
       if (detail is String) {
         errorMsg = detail;
+      } else if (errorJson['message'] != null) {
+        errorMsg = errorJson['message'];
+      } else {
+        errorMsg = response.body;
+      }
+    } catch (_) {
+      errorMsg = response.body;
+    }
+    throw Exception(errorMsg);
+  }
+
+  @override
+  Future<ConsultationResponse> createConsultation({
+    required int medicalRecordId,
+    String? notes,
+    String? objective,
+    String? plan,
+    required String reportedFacts,
+  }) async {
+    final payload = {
+      'medical_record_id': medicalRecordId,
+      'notes': notes,
+      'objective': objective,
+      'plan': plan,
+      'reported_facts': reportedFacts,
+    };
+
+    final response = await _apiClient.post('/consultations/', payload);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return ConsultationResponse.fromJson(data as Map<String, dynamic>);
+    }
+
+    String errorMsg = 'Error al registrar la consulta (Status: ${response.statusCode})';
+    try {
+      final errorJson = jsonDecode(response.body);
+      final detail = errorJson['detail'];
+      if (detail is String) {
+        errorMsg = detail;
+      } else if (detail is List && detail.isNotEmpty) {
+        errorMsg = detail.map((e) {
+          final loc = e['loc'] is List ? e['loc'].join('.') : 'campo';
+          final msg = e['msg'] ?? 'inválido';
+          return "$loc: $msg";
+        }).join('\n');
       } else if (errorJson['message'] != null) {
         errorMsg = errorJson['message'];
       } else {

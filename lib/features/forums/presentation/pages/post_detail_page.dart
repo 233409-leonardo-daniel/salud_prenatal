@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/session/session_manager.dart';
+import '../../../../core/utils/relative_time.dart';
 import '../../domain/entities/forum_post.dart';
 import '../providers/forums_provider.dart';
 import 'forums_state.dart';
@@ -128,7 +129,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     ],
                                   ),
                                   Text(
-                                    'Hace un momento',
+                                    formatRelativeTime(widget.post.createdAt),
                                     style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                                   ),
                                 ],

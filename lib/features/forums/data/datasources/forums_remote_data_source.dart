@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../../../../core/network/api_client.dart';
 import '../models/social_profile_model.dart';
+import '../models/profile_timeline_model.dart';
 import '../models/community_group_model.dart';
 import '../models/forum_post_model.dart';
 import '../models/forum_comment_model.dart';
@@ -20,6 +21,8 @@ class ForumsUnauthorizedException implements Exception {
 abstract class ForumsRemoteDataSource {
   Future<SocialProfileModel> getSocialProfile(int userId);
   Future<SocialProfileModel> createOrUpdateSocialProfile(SocialProfileModel profile);
+  Future<SocialProfileModel> updateSocialProfile(SocialProfileModel profile);
+  Future<ProfileTimelineModel> getProfileTimeline(int userId, {int limit = 50, int offset = 0});
   Future<CommunityGroupModel> createGroup(CommunityGroupModel group);
   Future<List<CommunityGroupModel>> getGroups();
   Future<List<CommunityGroupModel>> getRecommendedGroups();
@@ -74,6 +77,24 @@ class ForumsRemoteDataSourceImpl implements ForumsRemoteDataSource {
       return SocialProfileModel.fromJson(jsonDecode(response.body));
     }
     _throwError(response, 'Error al crear o actualizar perfil social');
+  }
+
+  @override
+  Future<SocialProfileModel> updateSocialProfile(SocialProfileModel profile) async {
+    final response = await _apiClient.patch('/forums/profiles/me', profile.toJson());
+    if (response.statusCode == 200) {
+      return SocialProfileModel.fromJson(jsonDecode(response.body));
+    }
+    _throwError(response, 'Error al actualizar perfil social');
+  }
+
+  @override
+  Future<ProfileTimelineModel> getProfileTimeline(int userId, {int limit = 50, int offset = 0}) async {
+    final response = await _apiClient.get('/forums/profiles/$userId/timeline?limit=$limit&offset=$offset');
+    if (response.statusCode == 200) {
+      return ProfileTimelineModel.fromJson(jsonDecode(response.body));
+    }
+    _throwError(response, 'Error al obtener la línea de tiempo del perfil');
   }
 
   @override

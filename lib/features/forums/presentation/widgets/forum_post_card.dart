@@ -3,13 +3,15 @@ import '../../../../core/theme/theme.dart';
 import '../../../../core/utils/relative_time.dart';
 import '../../domain/entities/forum_post.dart';
 
-/// Tarjeta de publicación reutilizada en el feed "Para ti" y en el feed de
-/// un grupo. Si `post.isAd` es true (siempre que el autor sea doctor, se
-/// asigna automático al crear el post) se renderiza como tarjeta "De un
-/// doctor" (estilo distinto, sello), igual que un post patrocinado en
-/// Facebook: mismo layout, pero con acento ámbar y la etiqueta en vez de la
-/// fecha. No se usa la palabra "Publicidad": es contenido propio de un
-/// doctor, no un anuncio de terceros.
+/// Tarjeta de publicación reutilizada en el feed "Para ti", el feed de un
+/// grupo y el feed global. El estilo "De un doctor" (acento rosa, sello e
+/// icono de altavoz en vez de la fecha) se aplica a TODAS las publicaciones
+/// cuyo autor sea doctor, sin importar el valor guardado de `post.isAd`
+/// (ese campo se fija solo al crear el post — publicaciones antiguas
+/// creadas antes de esta regla podían quedar con `is_ad = false` aunque su
+/// autor sea doctor, lo que hacía que se vieran inconsistentes entre sí).
+/// Al derivar el estilo del rol del autor en vez de leer `is_ad`, todas las
+/// publicaciones de un mismo doctor se ven igual.
 class ForumPostCard extends StatelessWidget {
   final ForumPost post;
   final VoidCallback onTap;
@@ -18,17 +20,15 @@ class ForumPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAd = post.isAd;
-    final authorName = post.authorAlias ?? (isAd ? 'Consultorio' : 'Usuario');
     final isDoctor = post.authorRole?.toLowerCase().contains('doctor') ?? false;
+    final isAd = isDoctor;
+    final authorName = post.authorAlias ?? (isAd ? 'Consultorio' : 'Usuario');
     final displayName = isDoctor ? 'Dr. $authorName' : authorName;
     final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
 
-    final accentColor = isAd ? const Color(0xFFB07C1F) : AppColors.primary;
-    final cardColor = isAd
-        ? (AppColors.isDarkMode ? const Color(0xFF2A2410) : const Color(0xFFFFF8E8))
-        : AppColors.cardBackground;
-    final borderColor = isAd ? const Color(0xFFF0C36D).withOpacity(0.6) : Colors.transparent;
+    final accentColor = AppColors.primary;
+    final cardColor = isAd ? AppColors.primaryLight : AppColors.cardBackground;
+    final borderColor = isAd ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -56,7 +56,7 @@ class ForumPostCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: isAd ? const Color(0xFFF0C36D).withOpacity(0.3) : AppColors.primaryLight,
+                    backgroundColor: AppColors.primaryLight,
                     backgroundImage: post.authorAvatarUrl != null ? NetworkImage(post.authorAvatarUrl!) : null,
                     child: post.authorAvatarUrl == null
                         ? Text(initials, style: TextStyle(color: accentColor, fontWeight: FontWeight.bold))
@@ -76,20 +76,6 @@ class ForumPostCard extends StatelessWidget {
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                               ),
                             ),
-                            if (isDoctor && !isAd) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  'Doctor',
-                                  style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                         if (isAd)

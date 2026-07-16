@@ -12,6 +12,7 @@ import '../../domain/usecases/get_doctor_dashboard_usecase.dart';
 import '../../domain/usecases/get_receptionist_dashboard_usecase.dart';
 import '../../domain/usecases/create_medical_record_usecase.dart';
 import '../../domain/usecases/evaluate_risk_usecase.dart';
+import '../../domain/usecases/create_consultation_usecase.dart';
 import '../pages/dashboard_state.dart';
 
 class DashboardProvider with ChangeNotifier {
@@ -25,6 +26,7 @@ class DashboardProvider with ChangeNotifier {
   final GetReceptionistDashboardUseCase _getReceptionistDashboardUseCase;
   final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
   final EvaluateRiskUseCase _evaluateRiskUseCase;
+  final CreateConsultationUseCase _createConsultationUseCase;
 
   DashboardProvider({
     required GetAllUsersUseCase getAllUsersUseCase,
@@ -37,6 +39,7 @@ class DashboardProvider with ChangeNotifier {
     required GetReceptionistDashboardUseCase getReceptionistDashboardUseCase,
     required CreateMedicalRecordUseCase createMedicalRecordUseCase,
     required EvaluateRiskUseCase evaluateRiskUseCase,
+    required CreateConsultationUseCase createConsultationUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
         _getPatientsByDoctorUseCase = getPatientsByDoctorUseCase,
         _getMedicalRecordByPatientUseCase = getMedicalRecordByPatientUseCase,
@@ -46,7 +49,8 @@ class DashboardProvider with ChangeNotifier {
         _getDoctorDashboardUseCase = getDoctorDashboardUseCase,
         _getReceptionistDashboardUseCase = getReceptionistDashboardUseCase,
         _createMedicalRecordUseCase = createMedicalRecordUseCase,
-        _evaluateRiskUseCase = evaluateRiskUseCase;
+        _evaluateRiskUseCase = evaluateRiskUseCase,
+        _createConsultationUseCase = createConsultationUseCase;
 
   DashboardStatus _status = DashboardStatus.initial;
   DashboardDetailsStatus _detailsStatus = DashboardDetailsStatus.initial;
@@ -67,6 +71,9 @@ class DashboardProvider with ChangeNotifier {
 
   CriticalPatientsStatus _criticalPatientsStatus = CriticalPatientsStatus.initial;
   List<Map<String, dynamic>> _criticalPatients = [];
+
+  bool _isCreatingConsultation = false;
+  bool get isCreatingConsultation => _isCreatingConsultation;
 
   DashboardStatus get status => _status;
   DashboardDetailsStatus get detailsStatus => _detailsStatus;
@@ -247,7 +254,12 @@ class DashboardProvider with ChangeNotifier {
       }
       _activeMedicalRecord = await _getMedicalRecordByPatientUseCase.call(patientId, doctorId: doctorId);
       if (_activeMedicalRecord != null) {
-        _activeConsultations = await _getConsultationsFromPatientEndpointUseCase.call(patientId, doctorId: doctorId);
+        // GET /consultations/medical-record/{medical_record_id}: fuente de
+        // verdad para las consultas del expediente activo (en vez del array
+        // `consultations` embebido en /medical-records/patient/{id}).
+        _activeConsultations = await _getConsultationsByMedicalRecordUseCase.call(
+          _activeMedicalRecord!.medicalRecordId,
+        );
       }
       _detailsStatus = DashboardDetailsStatus.success;
     } catch (e) {
@@ -303,6 +315,46 @@ class DashboardProvider with ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Crea una nueva consulta (POST /consultations/) para el expediente
+  /// [medicalRecordId]. Si ese expediente es el que está activo en
+  /// `_activeMedicalRecord`/`_medicalRecord`, inserta la consulta creada al
+  /// inicio de la lista correspondiente para reflejarla de inmediato sin
+  /// tener que recargar todo el expediente.
+  Future<bool> createConsultation({
+    required int medicalRecordId,
+    String? notes,
+    String? objective,
+    String? plan,
+    required String reportedFacts,
+  }) async {
+    _isCreatingConsultation = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final created = await _createConsultationUseCase.call(
+        medicalRecordId: medicalRecordId,
+        notes: notes,
+        objective: objective,
+        plan: plan,
+        reportedFacts: reportedFacts,
+      );
+      if (_activeMedicalRecord != null && _activeMedicalRecord!.medicalRecordId == medicalRecordId) {
+        _activeConsultations = [created, ..._activeConsultations];
+      }
+      if (_medicalRecord != null && _medicalRecord!.medicalRecordId == medicalRecordId) {
+        _consultations = [created, ..._consultations];
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isCreatingConsultation = false;
+      notifyListeners();
     }
   }
 

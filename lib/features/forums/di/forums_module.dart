@@ -4,6 +4,8 @@ import '../data/repositories/forums_repository_impl.dart';
 import '../domain/repositories/forums_repository.dart';
 import '../domain/usecases/get_social_profile_use_case.dart';
 import '../domain/usecases/create_social_profile_use_case.dart';
+import '../domain/usecases/update_social_profile_use_case.dart';
+import '../domain/usecases/get_profile_timeline_use_case.dart';
 import '../domain/usecases/create_group_use_case.dart';
 import '../domain/usecases/get_groups_use_case.dart';
 import '../domain/usecases/create_post_use_case.dart';
@@ -19,6 +21,8 @@ class ForumsModule {
   late final ForumsRepository repository;
   late final GetSocialProfileUseCase getSocialProfileUseCase;
   late final CreateSocialProfileUseCase createSocialProfileUseCase;
+  late final UpdateSocialProfileUseCase updateSocialProfileUseCase;
+  late final GetProfileTimelineUseCase getProfileTimelineUseCase;
   late final CreateGroupUseCase createGroupUseCase;
   late final GetGroupsUseCase getGroupsUseCase;
   late final GetRecommendedGroupsUseCase getRecommendedGroupsUseCase;
@@ -40,6 +44,8 @@ class ForumsModule {
 
     getSocialProfileUseCase = GetSocialProfileUseCase(repository);
     createSocialProfileUseCase = CreateSocialProfileUseCase(repository);
+    updateSocialProfileUseCase = UpdateSocialProfileUseCase(repository);
+    getProfileTimelineUseCase = GetProfileTimelineUseCase(repository);
     createGroupUseCase = CreateGroupUseCase(repository);
     getGroupsUseCase = GetGroupsUseCase(repository);
     getRecommendedGroupsUseCase = GetRecommendedGroupsUseCase(repository);

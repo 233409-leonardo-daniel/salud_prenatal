@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../users/domain/entities/user_entity.dart';
 import '../../../users/presentation/providers/user_provider.dart';
 import '../../domain/entities/social_profile.dart';
+import '../../domain/entities/forum_post.dart';
 import '../providers/forums_provider.dart';
+import 'post_detail_page.dart';
 
 enum SocialProfileViewStatus { loading, success, error }
 
@@ -57,6 +60,10 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
           _status = SocialProfileViewStatus.success;
         });
       }
+
+      // Timeline público: todas las publicaciones del usuario (incluye
+      // grupo/anuncios). No bloquea la carga del perfil si falla.
+      unawaited(forumsProvider.loadProfileTimeline(widget.userId));
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -70,6 +77,7 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = AppColors.isDarkMode;
+    final forumsProvider = context.watch<ForumsProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -90,12 +98,12 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
         ),
       ),
       body: SafeArea(
-        child: _buildBody(isDark),
+        child: _buildBody(isDark, forumsProvider),
       ),
     );
   }
 
-  Widget _buildBody(bool isDark) {
+  Widget _buildBody(bool isDark, ForumsProvider forumsProvider) {
     return switch (_status) {
       SocialProfileViewStatus.loading => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
@@ -133,11 +141,11 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
             ),
           ),
         ),
-      SocialProfileViewStatus.success => _buildContent(isDark),
+      SocialProfileViewStatus.success => _buildContent(isDark, forumsProvider),
     };
   }
 
-  Widget _buildContent(bool isDark) {
+  Widget _buildContent(bool isDark, ForumsProvider forumsProvider) {
     if (_user == null) {
       return Center(
         child: Text(
@@ -370,7 +378,118 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
               ),
             ),
           ],
+
+          // Publicaciones del usuario (GET /forums/profiles/{user_id}/timeline).
+          const SizedBox(height: 20),
+          _buildPostsSection(isDark, forumsProvider, isDoctor),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPostsSection(bool isDark, ForumsProvider forumsProvider, bool isDoctor) {
+    final posts = forumsProvider.timeline?.posts ?? [];
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.forum_outlined, color: AppColors.primary, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Publicaciones',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (forumsProvider.isTimelineLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          else if (posts.isEmpty)
+            Text(
+              'Este usuario aún no tiene publicaciones.',
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+            )
+          else
+            ...posts.map((post) => _buildPostRow(post, isDoctor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostRow(ForumPost post, bool isDoctor) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PostDetailPage(post: post)),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    post.title,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isDoctor)
+                  Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      'Anuncio',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              post.content,
+              style: TextStyle(fontSize: 12.5, color: AppColors.textMuted, height: 1.4),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Divider(height: 20),
+          ],
+        ),
       ),
     );
   }

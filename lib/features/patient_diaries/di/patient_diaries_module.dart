@@ -5,6 +5,8 @@ import '../domain/usecases/create_patient_diary_usecase.dart';
 import '../domain/usecases/delete_patient_diary_usecase.dart';
 import '../domain/usecases/get_patient_diaries_usecase.dart';
 import '../domain/usecases/update_patient_diary_usecase.dart';
+import '../domain/usecases/get_diary_symptoms_usecase.dart';
+import '../domain/usecases/get_medical_record_symptom_history_usecase.dart';
 import '../../../../core/network/api_client.dart';
 
 class PatientDiariesModule {
@@ -14,6 +16,8 @@ class PatientDiariesModule {
   late final CreatePatientDiaryUseCase createDiaryUseCase;
   late final UpdatePatientDiaryUseCase updateDiaryUseCase;
   late final DeletePatientDiaryUseCase deleteDiaryUseCase;
+  late final GetDiarySymptomsUseCase getDiarySymptomsUseCase;
+  late final GetMedicalRecordSymptomHistoryUseCase getSymptomHistoryUseCase;
 
   PatientDiariesModule(ApiClient apiClient) {
     remoteDataSource = PatientDiaryRemoteDataSourceImpl(apiClient: apiClient);
@@ -22,5 +26,7 @@ class PatientDiariesModule {
     createDiaryUseCase = CreatePatientDiaryUseCase(repository);
     updateDiaryUseCase = UpdatePatientDiaryUseCase(repository);
     deleteDiaryUseCase = DeletePatientDiaryUseCase(repository);
+    getDiarySymptomsUseCase = GetDiarySymptomsUseCase(repository);
+    getSymptomHistoryUseCase = GetMedicalRecordSymptomHistoryUseCase(repository);
   }
 }

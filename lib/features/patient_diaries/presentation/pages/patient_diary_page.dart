@@ -5,6 +5,7 @@ import '../../../../core/session/session_manager.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../providers/patient_diaries_provider.dart';
 import '../../domain/entities/patient_diary.dart';
+import '../../domain/entities/extracted_symptom.dart';
 import '../../../../core/widgets/latest_diary_record_card.dart';
 
 class PatientDiaryPage extends StatefulWidget {
@@ -16,6 +17,8 @@ class PatientDiaryPage extends StatefulWidget {
 
 class _PatientDiaryPageState extends State<PatientDiaryPage> {
   bool _isInitialized = false;
+  // Bitácoras con la sección "síntomas detectados (NLP)" expandida.
+  final Set<int> _expandedSymptomIds = {};
 
   @override
   void didChangeDependencies() {
@@ -42,6 +45,11 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
     final medicalRecordId = session.medicalRecordId ?? dashboardProvider.medicalRecord?.medicalRecordId;
     if (medicalRecordId != null && medicalRecordId > 0) {
       diariesProvider.loadDiaries(medicalRecordId);
+      // Se carga en silencio (sin mostrar el detalle técnico NLP al
+      // paciente, eso es solo para el doctor) únicamente para saber si hay
+      // algún síntoma con alarma y así decidir si mostrar la leyenda de
+      // "ve con tu doctor".
+      diariesProvider.loadSymptomHistory(medicalRecordId);
     }
   }
 
@@ -541,6 +549,13 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
 
     // Header showing the summary of the last reading
     final latest = provider.diaries.first;
+    final latestRisk = _evaluatePressureRisk(latest.systolic, latest.diastolic);
+    // El detalle técnico de síntomas (NLP) es solo para el doctor (lo ve en
+    // el expediente); a la paciente, si hay riesgo alto —ya sea por presión
+    // o por algún síntoma con alarma detectado en su bitácora— se le muestra
+    // solo una leyenda simple en vez de la lista técnica.
+    final hasAlarmSymptom = provider.symptomHistory.any((s) => s.alarm);
+    final showHighRiskBanner = latestRisk['label'] == 'Riesgo Alto' || hasAlarmSymptom;
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -554,6 +569,10 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
             diastolic: latest.diastolic,
             weightKg: latest.weightKg,
           ),
+          if (showHighRiskBanner) ...[
+            SizedBox(height: 12),
+            _buildHighRiskBanner(),
+          ],
           SizedBox(height: 24),
           Text(
             'HISTORIAL DE MEDICIONES',
@@ -710,6 +729,8 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                         ),
                         SizedBox(height: 12),
                       ],
+                      _buildDetectedSymptomsSection(item, provider),
+                      SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -733,6 +754,148 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
             },
           ),
           SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
+  String _formatShortDate(DateTime d) {
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  }
+
+  /// Botón expandible "Ver síntomas detectados (NLP)" dentro de una tarjeta
+  /// de bitácora — trae GET /patient-diaries/{id}/symptoms de forma perezosa
+  /// (solo al expandir). Marca alarma con color/ícono y separa los síntomas
+  /// negados ("la persona lo niega") de los presentes.
+  Widget _buildDetectedSymptomsSection(PatientDiary item, PatientDiariesProvider provider) {
+    final isExpanded = _expandedSymptomIds.contains(item.patientDiaryId);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedSymptomIds.remove(item.patientDiaryId);
+              } else {
+                _expandedSymptomIds.add(item.patientDiaryId);
+              }
+            });
+            if (!isExpanded) {
+              provider.loadDiarySymptoms(item.patientDiaryId);
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+              SizedBox(width: 4),
+              Text(
+                isExpanded ? 'Ocultar síntomas detectados (NLP)' : 'Ver síntomas detectados (NLP)',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+              Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: AppColors.primary),
+            ],
+          ),
+        ),
+        if (isExpanded) ...[
+          SizedBox(height: 8),
+          if (provider.isLoadingSymptomsFor(item.patientDiaryId))
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+              ),
+            )
+          else
+            _buildSymptomsContent(provider.symptomsForDiary(item.patientDiaryId) ?? []),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSymptomsContent(List<ExtractedSymptom> symptoms) {
+    if (symptoms.isEmpty) {
+      return Text(
+        'No se detectaron síntomas en el texto de esta entrada.',
+        style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+      );
+    }
+    final visible = symptoms.where((s) => !s.negated).toList();
+    final negated = symptoms.where((s) => s.negated).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (visible.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: visible.map(_buildSymptomChip).toList(),
+          ),
+        if (negated.isNotEmpty) ...[
+          SizedBox(height: 6),
+          Text(
+            'Descartados (la paciente los niega): ${negated.map((s) => s.label).join(', ')}',
+            style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontStyle: FontStyle.italic),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSymptomChip(ExtractedSymptom s) {
+    final zonesLabel = s.zones.isNotEmpty ? ' — ${s.zones.map((z) => z.label).join(', ')}' : '';
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: s.alarm ? AppColors.riskHighBg : AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(100),
+        border: s.alarm ? Border.all(color: AppColors.riskHighText.withOpacity(0.4)) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (s.alarm) ...[
+            Icon(Icons.warning_amber_rounded, size: 12, color: AppColors.riskHighText),
+            SizedBox(width: 4),
+          ],
+          Text(
+            '${s.label}$zonesLabel',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: s.alarm ? AppColors.riskHighText : AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Leyenda simple para la paciente cuando hay riesgo alto (presión alta o
+  /// algún síntoma con alarma detectado en su bitácora). El detalle técnico
+  /// de qué síntoma exactamente y con qué frecuencia es clínico y solo se le
+  /// muestra al doctor en el expediente (`patient_record_page.dart`).
+  Widget _buildHighRiskBanner() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.riskHighBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.riskHighText.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.local_hospital_outlined, color: AppColors.riskHighText),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Ve con tu doctor o agenda una cita',
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.riskHighText, fontSize: 14),
+            ),
+          ),
         ],
       ),
     );

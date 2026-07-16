@@ -145,6 +145,7 @@ class MyApp extends StatelessWidget {
             getReceptionistDashboardUseCase: dashboardModule.getReceptionistDashboardUseCase,
             createMedicalRecordUseCase: dashboardModule.createMedicalRecordUseCase,
             evaluateRiskUseCase: dashboardModule.evaluateRiskUseCase,
+            createConsultationUseCase: dashboardModule.createConsultationUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -169,6 +170,8 @@ class MyApp extends StatelessWidget {
             createDiaryUseCase: patientDiariesModule.createDiaryUseCase,
             updateDiaryUseCase: patientDiariesModule.updateDiaryUseCase,
             deleteDiaryUseCase: patientDiariesModule.deleteDiaryUseCase,
+            getDiarySymptomsUseCase: patientDiariesModule.getDiarySymptomsUseCase,
+            getSymptomHistoryUseCase: patientDiariesModule.getSymptomHistoryUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -208,6 +211,8 @@ class MyApp extends StatelessWidget {
           create: (_) => ForumsProvider(
             getSocialProfileUseCase: forumsModule.getSocialProfileUseCase,
             createSocialProfileUseCase: forumsModule.createSocialProfileUseCase,
+            updateSocialProfileUseCase: forumsModule.updateSocialProfileUseCase,
+            getProfileTimelineUseCase: forumsModule.getProfileTimelineUseCase,
             createGroupUseCase: forumsModule.createGroupUseCase,
             getGroupsUseCase: forumsModule.getGroupsUseCase,
             getRecommendedGroupsUseCase: forumsModule.getRecommendedGroupsUseCase,
@@ -218,6 +223,7 @@ class MyApp extends StatelessWidget {
             createCommentUseCase: forumsModule.createCommentUseCase,
             getCommentsUseCase: forumsModule.getCommentsUseCase,
             createReportUseCase: forumsModule.createReportUseCase,
+            getUserByIdUseCase: userModule.getUserByIdUseCase,
           ),
         ),
       ],

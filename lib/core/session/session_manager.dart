@@ -32,13 +32,14 @@ class SessionManager extends ChangeNotifier {
   final FlutterSecureStorage _secureStorage;
 
   SessionManager({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-              iOptions: IOSOptions(
-                accessibility: KeychainAccessibility.first_unlock,
-              ),
-            );
+    : _secureStorage =
+          secureStorage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(encryptedSharedPreferences: true),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+          );
 
   // ---- Estado en memoria (fuente única de verdad) ----
   String? _token;
@@ -71,8 +72,7 @@ class SessionManager extends ChangeNotifier {
 
   /// True cuando un doctor autenticado no tiene una suscripción activa y debe
   /// pasar por la pantalla de pago antes de usar el sistema.
-  bool get needsSubscriptionGate =>
-      isDoctor && _subscriptionStatus != null && _subscriptionStatus != 'active';
+  bool get needsSubscriptionGate => isDoctor && _subscriptionStatus != 'active';
 
   String get name => _userProfile?.name ?? '';
   String get lastName => _userProfile?.lastName ?? '';
@@ -95,7 +95,8 @@ class SessionManager extends ChangeNotifier {
   /// `/doctors/1..50` uno por uno para descubrir el `doctor_id`; pasándolo
   /// (viene en la respuesta del login) esa ráfaga se salta por completo.
   void attachProfileLoader(
-      Future<UserProfile?> Function(int userId, {int? doctorId}) loader) {
+    Future<UserProfile?> Function(int userId, {int? doctorId}) loader,
+  ) {
     _profileLoader = loader;
   }
 
@@ -134,10 +135,10 @@ class SessionManager extends ChangeNotifier {
     }
 
     await _persist();
-    
+
     // Registrar el dispositivo para notificaciones push tras iniciar sesión
     NotificationService.registerDevice();
-    
+
     notifyListeners();
   }
 
@@ -174,7 +175,11 @@ class SessionManager extends ChangeNotifier {
     await _secureStorage.write(key: _kToken, value: _token);
     if (subscriptionStatus != null) {
       final prefs = await SharedPreferences.getInstance();
-      await _setOrRemoveString(prefs, _kSubscriptionStatus, _subscriptionStatus);
+      await _setOrRemoveString(
+        prefs,
+        _kSubscriptionStatus,
+        _subscriptionStatus,
+      );
     }
   }
 
@@ -203,7 +208,10 @@ class SessionManager extends ChangeNotifier {
     // `_doctorId` restaurado de prefs evita reescanear `/doctors/1..50`.
     if (_userId != null && _profileLoader != null) {
       try {
-        _userProfile = await _profileLoader!.call(_userId!, doctorId: _doctorId);
+        _userProfile = await _profileLoader!.call(
+          _userId!,
+          doctorId: _doctorId,
+        );
       } catch (e) {
         debugPrint('SessionManager: sonda de liveness falló en restore: $e');
         await clear();
@@ -212,10 +220,10 @@ class SessionManager extends ChangeNotifier {
     }
 
     notifyListeners();
-    
+
     // Registrar/actualizar dispositivo en segundo plano al restaurar sesión
     NotificationService.registerDevice();
-    
+
     return true;
   }
 
@@ -271,13 +279,11 @@ class SessionManager extends ChangeNotifier {
     SharedPreferences prefs,
     String key,
     int? value,
-  ) =>
-      value == null ? prefs.remove(key) : prefs.setInt(key, value);
+  ) => value == null ? prefs.remove(key) : prefs.setInt(key, value);
 
   Future<void> _setOrRemoveString(
     SharedPreferences prefs,
     String key,
     String? value,
-  ) =>
-      value == null ? prefs.remove(key) : prefs.setString(key, value);
+  ) => value == null ? prefs.remove(key) : prefs.setString(key, value);
 }

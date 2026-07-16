@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "178111809023",
+    "project_id": "salud-prenatal",
+    "storage_bucket": "salud-prenatal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178111809023:android:2c2a88b857ef2bc88cd3ca",
+        "android_client_info": {
+          "package_name": "com.vego.salud_prenatal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBP4PQ72IfULC3FdIt4z45fVYgGxEtOZc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

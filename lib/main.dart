@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'app.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   final originalDebugPrint = debugPrint;
   debugPrint = (String? message, {int? wrapWidth}) {
     if (message != null && message.contains('Using AnnounceSemanticsEvent for accessibility is deprecated on Android')) {
@@ -12,3 +14,4 @@ void main() {
 
   runApp(const MyApp());
 }
+

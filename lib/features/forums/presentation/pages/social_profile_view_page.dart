@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../users/domain/entities/user_entity.dart';
 import '../../../users/presentation/providers/user_provider.dart';
 import '../../domain/entities/social_profile.dart';
@@ -41,9 +42,17 @@ class _SocialProfileViewPageState extends State<SocialProfileViewPage> {
     try {
       final forumsProvider = context.read<ForumsProvider>();
       final userProvider = context.read<UserProvider>();
+      final session = context.read<SessionManager>();
+
+      // Si es el perfil del propio usuario logueado, pasamos su doctorId de
+      // sesión para evitar el escaneo secuencial de `/doctors/1..50`. Para
+      // otros usuarios no conocemos su doctorId (el escaneo persiste hasta que
+      // el backend devuelva doctor_id en `/users/{id}`).
+      final ownDoctorId =
+          widget.userId == session.userId ? session.doctorId : null;
 
       // Fetch general user profile (required)
-      final user = await userProvider.fetchUserById(widget.userId);
+      final user = await userProvider.fetchUserById(widget.userId, doctorId: ownDoctorId);
 
       // Fetch forums social profile (optional, might not exist yet)
       SocialProfile? profile;

@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
     // Fase 2 del wiring: adjunta el cargador de perfil al SessionManager para
     // romper el ciclo (se hace tras construir loginModule).
     coreModule.sessionManager.attachProfileLoader(
-      (id) => loginModule.getProfileUseCase.execute(id),
+      (id, {doctorId}) => loginModule.getProfileUseCase.execute(id, doctorId: doctorId),
     );
 
     return MultiProvider(
@@ -205,6 +205,8 @@ class MyApp extends StatelessWidget {
           create: (_) => SubscriptionsProvider(
             getSubscriptionStatusUseCase: subscriptionsModule.getSubscriptionStatusUseCase,
             createCheckoutSessionUseCase: subscriptionsModule.createCheckoutSessionUseCase,
+            refreshTokenUseCase: subscriptionsModule.refreshTokenUseCase,
+            session: coreModule.sessionManager,
           ),
         ),
         ChangeNotifierProvider(

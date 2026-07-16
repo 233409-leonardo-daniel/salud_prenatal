@@ -5,7 +5,7 @@ class CreateCheckoutSessionUseCase {
 
   CreateCheckoutSessionUseCase(this.repository);
 
-  Future<String> call(String planType) {
-    return repository.createCheckoutSession(planType);
+  Future<String> call(String planType, String paymentMode) {
+    return repository.createCheckoutSession(planType, paymentMode);
   }
 }

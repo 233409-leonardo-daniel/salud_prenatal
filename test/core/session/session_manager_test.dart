@@ -130,7 +130,7 @@ void main() {
   group('saveFromLogin', () {
     test('puebla token, ids de paciente y perfil vía loader', () async {
       final session = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
 
       var notified = 0;
       session.addListener(() => notified++);
@@ -183,7 +183,7 @@ void main() {
     test('perfil null cuando el loader falla, pero la sesión sigue válida',
         () async {
       final session = SessionManager()
-        ..attachProfileLoader((_) async => throw Exception('red caída'));
+        ..attachProfileLoader((_, {doctorId}) async => throw Exception('red caída'));
 
       await session.saveFromLogin(_response(role: 'paciente'));
 
@@ -195,7 +195,7 @@ void main() {
   group('clear', () {
     test('anula todo el estado y marca no autenticado', () async {
       final session = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
       await session.saveFromLogin(
         _response(role: 'paciente', patientId: 42),
       );
@@ -230,14 +230,14 @@ void main() {
     test('restaura escalares y perfil desde disco', () async {
       // Persistir con una primera instancia.
       final first = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
       await first.saveFromLogin(
         _response(role: 'paciente', userId: 7, patientId: 42),
       );
 
       // Nueva instancia arranca en frío y restaura.
       final second = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
       final ok = await second.restore();
 
       expect(ok, isTrue);
@@ -252,7 +252,7 @@ void main() {
         'la inactividad ya no descarta la sesión (se quitó el logout automático)',
         () async {
       final first = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
       await first.saveFromLogin(_response(role: 'paciente', userId: 7));
 
       // Ya no existe una guarda de inactividad en restore(): un timestamp
@@ -265,7 +265,7 @@ void main() {
       await prefs.setInt('last_activity_timestamp', stale);
 
       final second = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
       final ok = await second.restore();
 
       expect(ok, isTrue);
@@ -274,11 +274,11 @@ void main() {
 
     test('sonda de liveness fallida descarta la sesión', () async {
       final first = SessionManager()
-        ..attachProfileLoader((_) async => _profile());
+        ..attachProfileLoader((_, {doctorId}) async => _profile());
       await first.saveFromLogin(_response(role: 'paciente', userId: 7));
 
       final second = SessionManager()
-        ..attachProfileLoader((_) async => throw Exception('401'));
+        ..attachProfileLoader((_, {doctorId}) async => throw Exception('401'));
       final ok = await second.restore();
 
       expect(ok, isFalse);

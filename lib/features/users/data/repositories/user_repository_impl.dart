@@ -21,8 +21,8 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<UserEntity> getUserById(int id) async {
-    final dto = await _remoteDataSource.getUserById(id);
+  Future<UserEntity> getUserById(int id, {int? doctorId}) async {
+    final dto = await _remoteDataSource.getUserById(id, doctorId: doctorId);
     return UserMapper.dtoToEntity(dto);
   }
 }

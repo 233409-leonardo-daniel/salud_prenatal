@@ -11,6 +11,8 @@ import 'social_profile_page.dart';
 import 'create_post_page.dart';
 import 'post_detail_page.dart';
 import 'forums_groups_page.dart';
+import '../../../subscriptions/presentation/providers/subscriptions_provider.dart';
+import '../../../subscriptions/presentation/pages/subscription_plan_page.dart';
 
 class ForumsHubPage extends StatefulWidget {
   const ForumsHubPage({super.key});
@@ -56,11 +58,11 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
     super.dispose();
   }
 
-  void _refreshFeed() {
-    if (!_isDoctor) {
-      context.read<ForumsProvider>().loadRecommendedFeed(page: 0);
-    }
-    context.read<ForumsProvider>().loadGlobalFeed(page: 0);
+  Future<void> _refreshFeed() async {
+    final provider = context.read<ForumsProvider>();
+    final futures = <Future>[provider.loadGlobalFeed(page: 0)];
+    if (!_isDoctor) futures.add(provider.loadRecommendedFeed(page: 0));
+    await Future.wait(futures);
   }
 
   void _refreshGroups() {
@@ -96,12 +98,6 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
               icon: Icon(Icons.add_box_outlined, color: AppColors.primary),
               tooltip: 'Nueva publicación',
               onPressed: _showCreatePost,
-            ),
-            IconButton(
-              icon: Icon(Icons.refresh, color: AppColors.textMuted),
-              onPressed: () {
-                _refreshFeed();
-              },
             ),
           ],
         ],
@@ -274,21 +270,26 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
               ? Center(
                   child: Text('No hay más publicaciones.', style: TextStyle(color: AppColors.textMuted)),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return ForumPostCard(
-                      post: post,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
-                        );
-                      },
-                    );
-                  },
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _refreshFeed,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      final post = posts[index];
+                      return ForumPostCard(
+                        post: post,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
         ),
         _buildFeedPaginator(
@@ -350,6 +351,21 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
   }
 
   void _showCreatePost() async {
+    // Solo los doctores con plan Premium pueden publicar en la comunidad.
+    final session = context.read<SessionManager>();
+    if (session.isDoctor) {
+      final subs = context.read<SubscriptionsProvider>();
+      if (subs.subscription == null) {
+        await subs.loadStatus();
+        if (!mounted) return;
+      }
+      final plan = subs.subscription?.planType?.toLowerCase();
+      if (plan != 'premium') {
+        _showPremiumRequiredDialog();
+        return;
+      }
+    }
+
     final created = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreatePostPage()),
@@ -357,6 +373,35 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
     if (created == true && mounted) {
       _refreshFeed();
     }
+  }
+
+  void _showPremiumRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Publicaciones — Plan Premium'),
+        content: const Text(
+          'Para hacer publicaciones en la comunidad necesitas el plan Premium. '
+          'Con tu plan actual (Básico) no puedes publicar. ¿Quieres ver los planes?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Ahora no'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SubscriptionPlanPage()),
+              );
+            },
+            child: const Text('Ver planes'),
+          ),
+        ],
+      ),
+    );
   }
 
   // Editar el perfil social ya existente (tanto doctor como paciente): antes
@@ -419,21 +464,26 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
               ? Center(
                   child: Text('No hay más publicaciones.', style: TextStyle(color: AppColors.textMuted)),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return ForumPostCard(
-                      post: post,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
-                        );
-                      },
-                    );
-                  },
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _refreshFeed,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      final post = posts[index];
+                      return ForumPostCard(
+                        post: post,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
         ),
         _buildFeedPaginator(

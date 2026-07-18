@@ -44,6 +44,7 @@ import 'features/subscriptions/presentation/providers/subscriptions_provider.dar
 import 'features/subscriptions/presentation/pages/subscription_plan_page.dart';
 
 import 'core/widgets/subscription_gate_listener.dart';
+import 'features/profile/presentation/providers/receptionist_provider.dart';
 
 class MyApp extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -120,6 +121,9 @@ class _MyAppState extends State<MyApp> {
         // eso se registra con .value (sin auto-dispose ni doble instancia).
         ChangeNotifierProvider<SessionManager>.value(
           value: coreModule.sessionManager,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ReceptionistProvider(apiClient),
         ),
         ChangeNotifierProvider(
           create: (_) => AppointmentsProvider(

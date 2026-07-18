@@ -18,6 +18,16 @@ class ForumsUnauthorizedException implements Exception {
   String toString() => message;
 }
 
+/// Recurso inexistente (HTTP 404). Se usa para distinguir "el perfil aún no
+/// existe" y así crearlo en vez de actualizarlo.
+class ForumsNotFoundException implements Exception {
+  final String message;
+  ForumsNotFoundException([this.message = 'Recurso no encontrado.']);
+
+  @override
+  String toString() => message;
+}
+
 abstract class ForumsRemoteDataSource {
   Future<SocialProfileModel> getSocialProfile(int userId);
   Future<SocialProfileModel> createOrUpdateSocialProfile(SocialProfileModel profile);

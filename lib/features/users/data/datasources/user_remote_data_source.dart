@@ -61,37 +61,10 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
       final isDoc = user.role.toLowerCase() == 'doctor' || user.role.toLowerCase() == 'doctor(a)';
       if (isDoc) {
-        // `doctorId` explícito (cuando el llamador lo conoce) tiene prioridad y
-        // evita el escaneo secuencial de `/doctors/1..50` de más abajo.
-        int? docId = doctorId ?? _userToDoctorMap[id] ?? data['doctor_id'] ?? data['doctorId'];
-        
-        if (docId == null) {
-          // Scan doctors sequentially to map user_id -> doctor_id (up to 50, stopping on 5 consecutive failures)
-          int consecutiveFailures = 0;
-          for (int testId = 1; testId <= 50; testId++) {
-            try {
-              final docResponse = await _apiClient.get('/doctors/$testId');
-              if (docResponse.statusCode == 200) {
-                consecutiveFailures = 0;
-                final docData = jsonDecode(docResponse.body);
-                final int docUserId = docData['user_id'] ?? 0;
-                final int foundDocId = docData['doctor_id'] ?? testId;
-                if (docUserId > 0) {
-                  _userToDoctorMap[docUserId] = foundDocId;
-                  if (docUserId == id) {
-                    docId = foundDocId;
-                  }
-                }
-              } else {
-                consecutiveFailures++;
-              }
-            } catch (_) {
-              consecutiveFailures++;
-            }
-            if (consecutiveFailures >= 5) break;
-            if (docId != null) break;
-          }
-        }
+        // `doctorId` conocido (sesión), caché en memoria, o el propio
+        // /users/{id}. Ya NO se escanea /doctors/1..50 (era una ráfaga de
+        // hasta 50 peticiones); si no se conoce, se omite el detalle.
+        final int? docId = doctorId ?? _userToDoctorMap[id] ?? data['doctor_id'] ?? data['doctorId'];
 
         if (docId != null) {
           _userToDoctorMap[id] = docId;

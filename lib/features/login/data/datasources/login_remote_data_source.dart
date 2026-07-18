@@ -56,31 +56,11 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
       
       final isDoc = profile.role.toLowerCase() == 'doctor' || profile.role.toLowerCase() == 'doctor(a)';
       if (isDoc) {
-        int? docId = doctorId ?? data['doctor_id'] ?? data['doctorId'];
-        
-        if (docId == null) {
-          int consecutiveFailures = 0;
-          for (int testId = 1; testId <= 50; testId++) {
-            try {
-              final docResponse = await _apiClient.get('/doctors/$testId');
-              if (docResponse.statusCode == 200) {
-                consecutiveFailures = 0;
-                final docData = jsonDecode(docResponse.body);
-                final int docUserId = docData['user_id'] ?? 0;
-                final int foundDocId = docData['doctor_id'] ?? testId;
-                if (docUserId == userId) {
-                  docId = foundDocId;
-                  break;
-                }
-              } else {
-                consecutiveFailures++;
-              }
-            } catch (_) {
-              consecutiveFailures++;
-            }
-            if (consecutiveFailures >= 5) break;
-          }
-        }
+        // El `doctor_id` viene del login (session.doctorId) o del propio
+        // /users/{id}. Ya NO se escanea /doctors/1..50: era una ráfaga de
+        // hasta 50 peticiones. Si no se conoce el id, se devuelve el perfil
+        // base de /users/{id} (nombre/correo) sin el detalle del doctor.
+        final int? docId = doctorId ?? data['doctor_id'] ?? data['doctorId'];
 
         if (docId != null) {
           try {
@@ -126,31 +106,9 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
       
       final isDoc = updated.role.toLowerCase() == 'doctor' || updated.role.toLowerCase() == 'doctor(a)';
       if (isDoc) {
-        int? docId = doctorId ?? data['doctor_id'] ?? data['doctorId'];
-        
-        if (docId == null) {
-          int consecutiveFailures = 0;
-          for (int testId = 1; testId <= 50; testId++) {
-            try {
-              final docResponse = await _apiClient.get('/doctors/$testId');
-              if (docResponse.statusCode == 200) {
-                consecutiveFailures = 0;
-                final docData = jsonDecode(docResponse.body);
-                final int docUserId = docData['user_id'] ?? 0;
-                final int foundDocId = docData['doctor_id'] ?? testId;
-                if (docUserId == userId) {
-                  docId = foundDocId;
-                  break;
-                }
-              } else {
-                consecutiveFailures++;
-              }
-            } catch (_) {
-              consecutiveFailures++;
-            }
-            if (consecutiveFailures >= 5) break;
-          }
-        }
+        // Sin escaneo /doctors/1..50: se usa el doctor_id conocido (sesión o
+        // respuesta). Si no está, se omite el detalle del doctor.
+        final int? docId = doctorId ?? data['doctor_id'] ?? data['doctorId'];
 
         if (docId != null) {
           try {

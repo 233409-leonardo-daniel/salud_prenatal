@@ -47,8 +47,21 @@ class _DashboardPageState extends State<DashboardPage> {
     if (!_isInitialized) {
       final session = context.read<SessionManager>();
       final args = ModalRoute.of(context)?.settings.arguments;
+      // El rol puede llegar como String (uso histórico) o dentro de un Map
+      // (p. ej. la navegación desde una notificación de chat, que además pide
+      // abrir la pestaña de Mensajes con `openChat`).
+      String? explicitRole;
+      bool openChat = false;
       if (args is String) {
-        _userRole = args;
+        explicitRole = args;
+      } else if (args is Map) {
+        final r = args['role'];
+        if (r is String) explicitRole = r;
+        openChat = args['openChat'] == true;
+      }
+
+      if (explicitRole != null) {
+        _userRole = explicitRole;
       } else {
         final providerRole = session.role;
         if (providerRole != null) {
@@ -62,6 +75,14 @@ class _DashboardPageState extends State<DashboardPage> {
           }
         }
       }
+
+      // La pestaña de Mensajes vive en un índice distinto según el rol
+      // (paciente 3, doctor 4, recepcionista 2). Si nos pidieron abrirla,
+      // seleccionamos el índice correcto para el rol ya resuelto.
+      if (openChat) {
+        _currentTab = _chatTabIndex();
+      }
+
       _isInitialized = true;
       _loadDashboardData();
     }
@@ -120,6 +141,20 @@ class _DashboardPageState extends State<DashboardPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Índice de la pestaña "Mensajes" en el footer según el rol. Debe seguir
+  /// coincidiendo con el orden de los ítems en `_buildBottomNavBar` y con los
+  /// `case` de `_buildBody`.
+  int _chatTabIndex() {
+    switch (_userRole) {
+      case 'doctor':
+        return 4;
+      case 'receptionist':
+        return 2;
+      default: // patient
+        return 3;
+    }
   }
 
   // --- WIDGET BUILDERS ---

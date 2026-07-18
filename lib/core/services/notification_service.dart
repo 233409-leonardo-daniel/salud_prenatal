@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../network/api_client.dart';
 import '../../app.dart';
-import '../../features/chat/presentation/pages/chat_list_page.dart';
 
 /// Corre en un isolate propio: los `static` de [NotificationService] NO se
 /// comparten con el isolate principal, por eso hay que re-inicializar Firebase
@@ -265,9 +264,16 @@ class NotificationService {
 
       final data = jsonDecode(payload) as Map<String, dynamic>;
       if (data['type'] == 'chat_message') {
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ChatListPage()),
+        // Antes se hacía pushNamedAndRemoveUntil('/home') + push(ChatListPage):
+        // eso dejaba la bandeja de chat como una ruta suelta ENCIMA del /home,
+        // sin la barra de navegación inferior (el footer vive dentro del
+        // Scaffold de DashboardPage). Ahora entramos a /home pidiéndole que abra
+        // la pestaña de Mensajes, así el footer se conserva y el DashboardPage
+        // resuelve el índice correcto según el rol.
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/home',
+          (route) => false,
+          arguments: {'openChat': true},
         );
       } else {
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);

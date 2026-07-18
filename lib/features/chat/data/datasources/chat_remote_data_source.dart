@@ -16,7 +16,12 @@ abstract class ChatRemoteDataSource {
   Stream<ChatMessageModel> get messageStream;
   Stream<bool> get connectionStatusStream;
   Future<void> connect(int currentUserId);
-  void sendMessage(int receiverId, String content);
+
+  /// Envía un mensaje por el WebSocket. Devuelve `true` si se escribió sobre un
+  /// socket abierto (el servidor debería confirmarlo con su eco), o `false` si
+  /// no había conexión: en ese caso la capa superior marca el mensaje como
+  /// fallido en vez de dejarlo colgado "enviando".
+  bool sendMessage(int receiverId, String content);
   void disconnect();
 }
 
@@ -167,7 +172,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   @override
-  void sendMessage(int receiverId, String content) {
+  bool sendMessage(int receiverId, String content) {
     try {
       if (_webSocket != null && _webSocket!.readyState == WebSocket.open) {
         final messageJson = {
@@ -176,13 +181,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         };
         _webSocket!.add(jsonEncode(messageJson));
         debugPrint('Mensaje enviado vía WebSocket: $messageJson');
+        return true;
       } else {
         debugPrint('Error: El WebSocket no está listo. Intentando reconectar...');
         _handleDisconnect();
+        return false;
       }
     } catch (e) {
       debugPrint('Error enviando mensaje por WebSocket: $e');
       _handleDisconnect();
+      return false;
     }
   }
 

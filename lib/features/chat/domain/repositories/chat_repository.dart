@@ -13,6 +13,9 @@ abstract class ChatRepository {
   Stream<ChatMessage> get messageStream;
   Stream<bool> get connectionStatusStream;
   Future<void> connect(int currentUserId);
-  void sendMessage(int receiverId, String content);
+
+  /// Envía un mensaje por el WebSocket. Devuelve `true` si se pudo escribir
+  /// sobre un socket abierto, `false` si no había conexión.
+  bool sendMessage(int receiverId, String content);
   void disconnect();
 }

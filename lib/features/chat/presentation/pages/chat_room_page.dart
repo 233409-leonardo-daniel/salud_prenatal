@@ -373,8 +373,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   // --- MESSAGE BUBBLE BUILDER ---
   Widget _buildMessageBubble(ChatMessage message, bool isMe) {
     final timeStr = '${message.createdAt.toLocal().hour.toString().padLeft(2, '0')}:${message.createdAt.toLocal().minute.toString().padLeft(2, '0')}';
+    final isFailed = isMe && message.status == MessageStatus.failed;
 
-    return Align(
+    final bubble = Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(bottom: 8),
@@ -421,19 +422,19 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  timeStr,
+                  isFailed ? 'No enviado · Toca para reintentar' : timeStr,
                   style: TextStyle(
-                    color: isMe ? Colors.white70 : AppColors.textMuted,
+                    color: isFailed
+                        ? Colors.white
+                        : (isMe ? Colors.white70 : AppColors.textMuted),
                     fontSize: 9.5,
+                    fontWeight: isFailed ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 if (isMe) ...[
                   SizedBox(width: 4),
-                  Icon(
-                    message.isRead ? Icons.done_all : Icons.done,
-                    color: Colors.white70,
-                    size: 11,
-                  ),
+                  // Icono de estado de entrega del mensaje propio.
+                  _buildStatusIcon(message),
                 ]
               ],
             ),
@@ -441,6 +442,32 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         ),
       ),
     );
+
+    // Los mensajes fallidos se pueden tocar para reintentar el envío.
+    if (isFailed) {
+      return GestureDetector(
+        onTap: () => _chatProvider.retryMessage(message),
+        child: bubble,
+      );
+    }
+    return bubble;
+  }
+
+  /// Icono de estado para un mensaje propio: reloj mientras se envía, aspa si
+  /// falló, y palomita(s) según lectura una vez confirmado por el servidor.
+  Widget _buildStatusIcon(ChatMessage message) {
+    switch (message.status) {
+      case MessageStatus.sending:
+        return const Icon(Icons.schedule, color: Colors.white70, size: 11);
+      case MessageStatus.failed:
+        return const Icon(Icons.error_outline, color: Colors.white, size: 12);
+      case MessageStatus.sent:
+        return Icon(
+          message.isRead ? Icons.done_all : Icons.done,
+          color: Colors.white70,
+          size: 11,
+        );
+    }
   }
 
   // --- INPUT CONTROL BAR BUILDER ---

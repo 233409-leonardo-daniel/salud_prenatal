@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
@@ -50,56 +51,50 @@ class ApiClient {
     return Uri.parse('$base$endpoint');
   }
 
-  Future<http.Response> get(String endpoint) async {
-    final url = _buildUrl(endpoint);
-    final response = await _client.get(url, headers: _headers);
-    _notifyIfPaymentRequired(response);
-    return response;
-  }
-
-  Future<http.Response> getById(String endpoint) async {
-    return get(endpoint);
-  }
-
-  Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
-    final url = _buildUrl(endpoint);
-    final response = await _client.post(
-      url,
-      headers: _headers,
-      body: jsonEncode(body),
+  /// Falla de pinning / verificación TLS: la lanzamos como un `Exception` con
+  /// mensaje claro para que los providers lo muestren como error controlado en
+  /// la UI (no un crash). Se dispara cuando el certificado del servidor no
+  /// coincide con el pineado, p. ej. bajo un ataque Man-in-the-Middle.
+  Never _throwInsecureConnection() {
+    throw Exception(
+      'Conexión no segura: no se pudo verificar la identidad del servidor. '
+      'Posible interceptación de la red. Intenta desde una red de confianza.',
     );
-    _notifyIfPaymentRequired(response);
-    return response;
   }
 
-  Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
-    final url = _buildUrl(endpoint);
-    final response = await _client.put(
-      url,
-      headers: _headers,
-      body: jsonEncode(body),
-    );
-    _notifyIfPaymentRequired(response);
-    return response;
+  /// Envuelve cada petición para capturar los fallos de handshake/TLS del
+  /// cliente pineado y traducirlos a un error legible.
+  Future<http.Response> _run(Future<http.Response> Function() action) async {
+    try {
+      final response = await action();
+      _notifyIfPaymentRequired(response);
+      return response;
+    } on HandshakeException {
+      _throwInsecureConnection();
+    } on TlsException {
+      _throwInsecureConnection();
+    }
   }
 
-  Future<http.Response> patch(String endpoint, Map<String, dynamic> body) async {
-    final url = _buildUrl(endpoint);
-    final response = await _client.patch(
-      url,
-      headers: _headers,
-      body: jsonEncode(body),
-    );
-    _notifyIfPaymentRequired(response);
-    return response;
-  }
+  Future<http.Response> get(String endpoint) =>
+      _run(() => _client.get(_buildUrl(endpoint), headers: _headers));
 
-  Future<http.Response> delete(String endpoint) async {
-    final url = _buildUrl(endpoint);
-    final response = await _client.delete(url, headers: _headers);
-    _notifyIfPaymentRequired(response);
-    return response;
-  }
+  Future<http.Response> getById(String endpoint) => get(endpoint);
+
+  Future<http.Response> post(String endpoint, Map<String, dynamic> body) =>
+      _run(() => _client.post(_buildUrl(endpoint),
+          headers: _headers, body: jsonEncode(body)));
+
+  Future<http.Response> put(String endpoint, Map<String, dynamic> body) =>
+      _run(() => _client.put(_buildUrl(endpoint),
+          headers: _headers, body: jsonEncode(body)));
+
+  Future<http.Response> patch(String endpoint, Map<String, dynamic> body) =>
+      _run(() => _client.patch(_buildUrl(endpoint),
+          headers: _headers, body: jsonEncode(body)));
+
+  Future<http.Response> delete(String endpoint) =>
+      _run(() => _client.delete(_buildUrl(endpoint), headers: _headers));
 
   void dispose() {
     _client.close();

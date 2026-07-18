@@ -1,5 +1,6 @@
 import '../services/qr_service.dart';
 import '../network/api_client.dart';
+import '../network/certificate_pinning.dart';
 import '../session/session_manager.dart';
 
 class CoreModule {
@@ -10,7 +11,12 @@ class CoreModule {
   CoreModule() {
     // Orden de creación: SessionManager primero; ApiClient lo jala vía closure.
     sessionManager = SessionManager();
-    apiClient = ApiClient(tokenProvider: () => sessionManager.token);
+    // Cliente HTTP con SSL/TLS pinning: solo confía en el certificado del
+    // servidor de Salud Prenatal (ver certificate_pinning.dart).
+    apiClient = ApiClient(
+      client: createPinnedClient(),
+      tokenProvider: () => sessionManager.token,
+    );
     qrService = QrServiceImpl();
   }
 }

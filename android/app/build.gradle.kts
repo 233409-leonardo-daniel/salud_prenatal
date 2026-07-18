@@ -34,6 +34,18 @@ android {
 
     buildTypes {
         release {
+            // Ofuscación / minificación con R8 (reemplazo moderno de ProGuard).
+            // Se controla con la propiedad `enableObfuscation` (ver android/gradle.properties):
+            //   - true  -> R8 renombra clases/métodos y elimina código no usado (APK ofuscado)
+            //   - false -> build sin ofuscar, para la comparación de la práctica
+            val enableObfuscation =
+                (project.findProperty("enableObfuscation") as String? ?: "true").toBoolean()
+            isMinifyEnabled = enableObfuscation
+            isShrinkResources = enableObfuscation
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")

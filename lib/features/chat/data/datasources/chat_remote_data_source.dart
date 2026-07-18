@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/certificate_pinning.dart';
 import '../../../../core/config/api_config.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../models/chat_message_model.dart';
@@ -106,7 +107,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     debugPrint('Intentando conectar WebSocket a: ${socketUri.replace(queryParameters: {'token': '***'})}');
 
     try {
-      _webSocket = await WebSocket.connect(socketUri.toString()).timeout(const Duration(seconds: 5));
+      // customClient aplica el mismo SSL/TLS pinning que el resto de la app:
+      // si un proxy intercepta el handshake wss, la conexión falla.
+      _webSocket = await WebSocket.connect(
+        socketUri.toString(),
+        customClient: createPinnedHttpClient(),
+      ).timeout(const Duration(seconds: 5));
       _isConnected = true;
       _connectionController.add(true);
       debugPrint('WebSocket conectado exitosamente.');

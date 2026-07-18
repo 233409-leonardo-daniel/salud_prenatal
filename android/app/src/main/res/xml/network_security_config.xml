@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuración de seguridad de red de Salud Prenatal.
+
+  En PRODUCCIÓN (release) la app solo confía en las CAs del sistema: NO se
+  confía en certificados instalados por el usuario. Esto, sumado al SSL pinning
+  a nivel de app (certificate_pinning.dart), bloquea la intercepción MitM.
+
+  El bloque <debug-overrides> SOLO aplica a builds debuggables. Sirve para la
+  Prueba de Concepto: permite que el proxy (HTTP Toolkit / ZAP / Charles)
+  instale su CA de usuario y así demostrar el escenario "SIN pinning".
+  Aun con esta override activa, el pinning de la app (SecurityContext restringido)
+  sigue rechazando el certificado del proxy -> ese es el escenario "CON pinning".
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

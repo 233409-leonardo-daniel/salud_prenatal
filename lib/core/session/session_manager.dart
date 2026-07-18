@@ -105,6 +105,11 @@ class SessionManager extends ChangeNotifier {
   /// de campos ANTES de resolver: `login_page`/`register_page` leen
   /// `role`/`needsSubscriptionGate` inmediatamente después.
   Future<void> saveFromLogin(LoginResponse response) async {
+    // Diagnóstico: qué ids llegaron realmente en la respuesta del login.
+    debugPrint('SessionManager.saveFromLogin -> userId=${response.userId} '
+        'role=${response.role} patientId=${response.patientId} '
+        'doctorId=${response.doctorId} medicalRecordId=${response.medicalRecordId} '
+        'tokenLen=${response.accessToken.length}');
     _token = response.accessToken;
     _role = response.role;
     _userId = response.userId;
@@ -128,7 +133,16 @@ class SessionManager extends ChangeNotifier {
     // Se pasa `_doctorId` (que ya viene del login) para evitar el escaneo
     // secuencial de `/doctors/1..50` al construir el perfil del doctor.
     try {
-      _userProfile = await _profileLoader?.call(_userId!, doctorId: _doctorId);
+      // Sin userId no hay perfil que pedir: antes `_userId!` lanzaba aquí y el
+      // error se tragaba silenciosamente, dejando el perfil en null.
+      final uid = _userId;
+      if (uid == null || uid == 0) {
+        debugPrint('SessionManager: el login no devolvió user_id válido ($uid); '
+            'no se puede cargar el perfil.');
+        _userProfile = null;
+      } else {
+        _userProfile = await _profileLoader?.call(uid, doctorId: _doctorId);
+      }
     } catch (e) {
       debugPrint('SessionManager: no se pudo obtener el perfil tras login: $e');
       _userProfile = null;

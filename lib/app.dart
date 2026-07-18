@@ -45,44 +45,73 @@ import 'features/subscriptions/presentation/pages/subscription_plan_page.dart';
 
 import 'core/widgets/subscription_gate_listener.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final coreModule = CoreModule();
-    final apiClient = coreModule.apiClient;
-    
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  // IMPORTANTE: los módulos —y con ellos el SessionManager, dueño del token y
+  // de los ids de sesión— se crean UNA SOLA VEZ aquí. Antes se instanciaban
+  // dentro de `build()`, así que cada rebuild de MyApp creaba un
+  // SessionManager NUEVO y VACÍO: tras iniciar sesión se perdían el token, el
+  // userId y el perfil (dashboard "sin identificador de usuario").
+  late final CoreModule coreModule;
+  late final ApiClient apiClient;
+  late final AppointmentModule appointmentModule;
+  late final LoginModule loginModule;
+  late final RegisterModule registerModule;
+  late final PatientsModule patientsModule;
+  late final PatientDiariesModule patientDiariesModule;
+  late final PrivacyPolicyModule privacyPolicyModule;
+  late final UserModule userModule;
+  late final ChatModule chatModule;
+  late final DashboardModule dashboardModule;
+  late final ForumsModule forumsModule;
+  late final SubscriptionsModule subscriptionsModule;
+
+  @override
+  void initState() {
+    super.initState();
+    coreModule = CoreModule();
+    apiClient = coreModule.apiClient;
+
     // Inicializar notificaciones push y registrar el token a nivel de
     // dispositivo desde el arranque, haya o no sesión iniciada: así los
     // recordatorios diarios llegan aunque el usuario no esté logueado.
     NotificationService.initialize(apiClient);
     NotificationService.registerDevice();
 
-    final appointmentModule = AppointmentModule(apiClient);
-    final loginModule = LoginModule(apiClient);
-    final registerModule = RegisterModule(apiClient);
-    final patientsModule = PatientsModule(apiClient);
-    final patientDiariesModule = PatientDiariesModule(apiClient);
-    final privacyPolicyModule = PrivacyPolicyModule();
-    final userModule = UserModule(apiClient);
-    final chatModule = ChatModule(
+    appointmentModule = AppointmentModule(apiClient);
+    loginModule = LoginModule(apiClient);
+    registerModule = RegisterModule(apiClient);
+    patientsModule = PatientsModule(apiClient);
+    patientDiariesModule = PatientDiariesModule(apiClient);
+    privacyPolicyModule = PrivacyPolicyModule();
+    userModule = UserModule(apiClient);
+    chatModule = ChatModule(
       apiClient,
       tokenProvider: () => coreModule.sessionManager.token,
     );
-    final dashboardModule = DashboardModule(apiClient);
-    final forumsModule = ForumsModule(apiClient);
-    final subscriptionsModule = SubscriptionsModule(apiClient);
+    dashboardModule = DashboardModule(apiClient);
+    forumsModule = ForumsModule(apiClient);
+    subscriptionsModule = SubscriptionsModule(apiClient);
 
     // Fase 2 del wiring: adjunta el cargador de perfil al SessionManager para
     // romper el ciclo (se hace tras construir loginModule).
     coreModule.sessionManager.attachProfileLoader(
-      (id, {doctorId}) => loginModule.getProfileUseCase.execute(id, doctorId: doctorId),
+      (id, {doctorId}) =>
+          loginModule.getProfileUseCase.execute(id, doctorId: doctorId),
     );
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         Provider<ApiClient>(create: (_) => apiClient),
@@ -230,7 +259,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        navigatorKey: navigatorKey,
+        navigatorKey: MyApp.navigatorKey,
         title: 'Salud Prenatal',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,

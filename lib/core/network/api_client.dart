@@ -30,12 +30,24 @@ class ApiClient {
     }
   }
 
-  Map<String, String> get _headers {
+  /// Endpoints de autenticación: NO deben llevar `Authorization`. El gateway
+  /// valida cualquier token que reciba, así que mandar uno viejo/expirado en el
+  /// login hace que responda 401 ("Invalid or expired token") y el inicio de
+  /// sesión falle sin razón aparente.
+  static const List<String> _noAuthEndpoints = [
+    '/users/login',
+    '/users/refresh',
+    '/patients/register',
+    '/doctors/register',
+  ];
+
+  Map<String, String> _headersFor(String endpoint) {
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
+    final isAuthRoute = _noAuthEndpoints.any(endpoint.startsWith);
     final token = _tokenProvider?.call();
-    if (token != null) {
+    if (token != null && !isAuthRoute) {
       headers['Authorization'] = 'Bearer $token';
     }
     return headers;
@@ -66,9 +78,15 @@ class ApiClient {
   /// cliente pineado y traducirlos a un error legible.
   Future<http.Response> _run(Future<http.Response> Function() action) async {
     try {
-      final response = await action();
+      // Timeout global: si el servidor no responde a tiempo, la petición
+      // falla con un error legible en vez de dejar la UI cargando para siempre.
+      final response = await action().timeout(ApiConfig.timeout);
       _notifyIfPaymentRequired(response);
       return response;
+    } on TimeoutException {
+      throw Exception(
+        'El servidor tardó demasiado en responder. Revisa tu conexión e intenta de nuevo.',
+      );
     } on HandshakeException {
       _throwInsecureConnection();
     } on TlsException {
@@ -77,24 +95,24 @@ class ApiClient {
   }
 
   Future<http.Response> get(String endpoint) =>
-      _run(() => _client.get(_buildUrl(endpoint), headers: _headers));
+      _run(() => _client.get(_buildUrl(endpoint), headers: _headersFor(endpoint)));
 
   Future<http.Response> getById(String endpoint) => get(endpoint);
 
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) =>
       _run(() => _client.post(_buildUrl(endpoint),
-          headers: _headers, body: jsonEncode(body)));
+          headers: _headersFor(endpoint), body: jsonEncode(body)));
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) =>
       _run(() => _client.put(_buildUrl(endpoint),
-          headers: _headers, body: jsonEncode(body)));
+          headers: _headersFor(endpoint), body: jsonEncode(body)));
 
   Future<http.Response> patch(String endpoint, Map<String, dynamic> body) =>
       _run(() => _client.patch(_buildUrl(endpoint),
-          headers: _headers, body: jsonEncode(body)));
+          headers: _headersFor(endpoint), body: jsonEncode(body)));
 
   Future<http.Response> delete(String endpoint) =>
-      _run(() => _client.delete(_buildUrl(endpoint), headers: _headers));
+      _run(() => _client.delete(_buildUrl(endpoint), headers: _headersFor(endpoint)));
 
   void dispose() {
     _client.close();

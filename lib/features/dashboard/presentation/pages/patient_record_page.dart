@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../data/models/medical_record_response.dart';
 import '../../../patient_diaries/domain/entities/aggregated_symptom.dart';
+import '../../../patient_diaries/domain/entities/patient_diary.dart';
+import '../../../patient_diaries/presentation/providers/patient_diaries_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../../core/session/session_manager.dart';
@@ -126,12 +128,6 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
     // opcionales de factores determinantes / pacientes similares / caso
     // límitrofe — solo se muestran si hay datos).
     final riskPrediction = record?.riskPrediction;
-    final factoresDeterminantes = (riskPrediction != null && riskPrediction.isOk)
-        ? riskPrediction.factoresDeterminantes
-        : <Map<String, dynamic>>[];
-    final pacientesSimilares = (riskPrediction != null && riskPrediction.isOk)
-        ? riskPrediction.pacientesSimilares
-        : <Map<String, dynamic>>[];
     final explicacionRiesgo = (riskPrediction != null && riskPrediction.isOk) ? riskPrediction.explicacion : null;
     final esCasoLimitrofe = riskPrediction != null && riskPrediction.isOk && riskPrediction.casoLimitrofe;
 
@@ -236,7 +232,7 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               SizedBox(height: 16),
             ] else ...[
               if (record.symptomAlert.isNotEmpty) ...[
-                _buildSymptomAlertBanner(record.symptomAlert),
+                _buildSymptomAlertBanner(record.symptomAlert, record.medicalRecordId),
                 SizedBox(height: 16),
               ],
               _buildResumenIA(context, record, isDoctor),
@@ -322,93 +318,19 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
             // Los siguientes 3 desplegables solo aparecen si la última
             // evaluación de riesgo trae ese dato — si no, no se muestran
             // (nada de acordeones vacíos).
-            if (factoresDeterminantes.isNotEmpty) ...[
+            // Factores Determinantes: solo se muestra la explicación en texto
+            // del perfil asignado (sin el desglose de variables ni pacientes
+            // similares).
+            if (explicacionRiesgo != null && explicacionRiesgo.isNotEmpty) ...[
               SizedBox(height: 12),
               _buildExpansionSection(
                 title: 'Factores Determinantes',
                 icon: Icons.insights_outlined,
                 content: Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...factoresDeterminantes.map((f) {
-                        final label = f['etiqueta']?.toString() ?? f['variable']?.toString() ?? '';
-                        final valorPaciente = f['valor_paciente'];
-                        final promedioPerfil = f['promedio_perfil'];
-                        final score = f['score'];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.circle, size: 5, color: AppColors.primary),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark)),
-                                    if (valorPaciente != null || promedioPerfil != null)
-                                      Text(
-                                        'Paciente: $valorPaciente · Promedio del perfil: $promedioPerfil${score != null ? ' · Score: $score' : ''}',
-                                        style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                      if (explicacionRiesgo != null && explicacionRiesgo.isNotEmpty) ...[
-                        const Divider(height: 24),
-                        Text(
-                          explicacionRiesgo,
-                          style: TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.4, fontStyle: FontStyle.italic),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            if (pacientesSimilares.isNotEmpty) ...[
-              SizedBox(height: 12),
-              _buildExpansionSection(
-                title: 'Pacientes Similares',
-                icon: Icons.groups_outlined,
-                content: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: pacientesSimilares.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final p = entry.value;
-                      final edad = p['age_years'];
-                      final sys = p['systolic'];
-                      final dia = p['diastolic'];
-                      final bmi = p['bmi_initial'];
-                      final perfil = p['perfil']?.toString();
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Paciente similar ${i + 1}${perfil != null ? ' · $perfil' : ''}',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Edad: ${edad ?? 'N/D'} · Presión: ${sys ?? 'N/D'}/${dia ?? 'N/D'} · IMC inicial: ${bmi ?? 'N/D'}',
-                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                            ),
-                            if (i < pacientesSimilares.length - 1) const Divider(height: 16),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                  child: Text(
+                    explicacionRiesgo,
+                    style: TextStyle(color: AppColors.textDark, fontSize: 13, height: 1.4),
                   ),
                 ),
               ),
@@ -829,55 +751,192 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
   /// desde la última consulta (symptom_alert dentro de GET
   /// /medical-records/patient/{id}). Si el expediente no tiene ninguna
   /// consulta todavía, el backend manda TODO el historial aquí.
-  Widget _buildSymptomAlertBanner(List<AggregatedSymptom> alerts) {
+  Widget _buildSymptomAlertBanner(List<AggregatedSymptom> alerts, int medicalRecordId) {
     final hasAlarm = alerts.any((a) => a.alarm);
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: hasAlarm ? AppColors.riskHighBg : AppColors.primaryLight,
+    final accent = hasAlarm ? AppColors.riskHighText : AppColors.primary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: hasAlarm ? AppColors.riskHighText.withOpacity(0.35) : AppColors.primary.withOpacity(0.2),
+        // Al tocar la tarjeta se abre la bitácora de la paciente (mediciones).
+        onTap: () => _showBitacoraSheet(medicalRecordId),
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: hasAlarm ? AppColors.riskHighBg : AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasAlarm ? AppColors.riskHighText.withOpacity(0.35) : AppColors.primary.withOpacity(0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.notifications_active_outlined, color: accent, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Síntomas registrados desde tu última consulta',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: accent),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: accent, size: 20),
+                ],
+              ),
+              SizedBox(height: 10),
+              ...alerts.map(
+                (a) => Padding(
+                  padding: EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    '• ${a.label} (${a.occurrences} registro${a.occurrences == 1 ? '' : 's'})'
+                    '${a.zones.isNotEmpty ? ' — ${a.zones.join(', ')}' : ''}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textDark,
+                      fontWeight: a.alarm ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.menu_book_outlined, color: accent, size: 14),
+                  SizedBox(width: 4),
+                  Text(
+                    'Ver bitácora de mediciones',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: accent),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Abre una hoja inferior con la bitácora de la paciente (mediciones de
+  /// presión y peso registradas). Se muestra la hoja de inmediato y se cargan
+  /// las mediciones con un estado de carga interno (convención UI del proyecto).
+  void _showBitacoraSheet(int medicalRecordId) {
+    final diariesProvider = context.read<PatientDiariesProvider>();
+    diariesProvider.loadDiaries(medicalRecordId);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.92,
+        minChildSize: 0.4,
+        builder: (context, scrollController) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                children: [
+                  Icon(Icons.menu_book_outlined, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Bitácora de mediciones',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: Consumer<PatientDiariesProvider>(
+                builder: (context, provider, _) {
+                  if (provider.status == PatientDiariesStatus.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (provider.status == PatientDiariesStatus.error) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          provider.errorMessage ?? 'No se pudieron cargar las mediciones.',
+                          style: TextStyle(color: AppColors.textMuted),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                  final diaries = provider.diaries;
+                  if (diaries.isEmpty) {
+                    return Center(
+                      child: Text('La paciente aún no tiene mediciones registradas.',
+                          style: TextStyle(color: AppColors.textMuted)),
+                    );
+                  }
+                  return ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: diaries.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) => _buildBitacoraTile(diaries[i]),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBitacoraTile(PatientDiary d) {
+    final highBp = d.systolic >= 140 || d.diastolic >= 90;
+    final date = '${d.createdAt.day.toString().padLeft(2, '0')}/'
+        '${d.createdAt.month.toString().padLeft(2, '0')}/${d.createdAt.year}';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.isDarkMode ? Colors.white.withOpacity(0.06) : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+          const SizedBox(height: 8),
           Row(
             children: [
-              Icon(
-                Icons.notifications_active_outlined,
-                color: hasAlarm ? AppColors.riskHighText : AppColors.primary,
-                size: 18,
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Síntomas registrados desde tu última consulta',
+              Icon(Icons.favorite, size: 16, color: highBp ? AppColors.riskHighText : AppColors.primary),
+              const SizedBox(width: 6),
+              Text('Presión: ', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+              Text('${d.systolic}/${d.diastolic} mmHg',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: hasAlarm ? AppColors.riskHighText : AppColors.primary,
-                  ),
-                ),
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: highBp ? AppColors.riskHighText : AppColors.textDark,
+                  )),
+              const SizedBox(width: 16),
+              Icon(Icons.monitor_weight, size: 16, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text('Peso: ', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+              Text('${d.weightKg} kg',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
             ],
           ),
-          SizedBox(height: 10),
-          ...alerts.map(
-            (a) => Padding(
-              padding: EdgeInsets.only(bottom: 6),
-              child: Text(
-                '• ${a.label} (${a.occurrences} registro${a.occurrences == 1 ? '' : 's'})'
-                '${a.zones.isNotEmpty ? ' — ${a.zones.join(', ')}' : ''}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textDark,
-                  fontWeight: a.alarm ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
+          if (d.symptoms.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Síntomas: ${d.symptoms}', style: TextStyle(fontSize: 12.5, color: AppColors.textDark)),
+          ],
+          if (d.notes.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('Notas: ${d.notes}', style: TextStyle(fontSize: 12.5, color: AppColors.textMuted)),
+          ],
         ],
       ),
     );

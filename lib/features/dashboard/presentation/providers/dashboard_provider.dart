@@ -168,7 +168,10 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _users = await _getAllUsersUseCase.call();
+      // La lista completa de usuarios solo se usa para resolver el nombre del
+      // doctor en el botón de chat; se carga en segundo plano para NO bloquear
+      // el render del dashboard de la paciente (ese endpoint es pesado).
+      _loadUsersInBackground();
 
       try {
         _dashboardData = await _getPatientDashboardUseCase.call(patientId);
@@ -212,6 +215,25 @@ class DashboardProvider with ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       notifyListeners();
+    }
+  }
+
+  /// Marca el dashboard en error (p. ej. sesión incompleta, sin userId o sin
+  /// doctorId). Evita que la pantalla se quede en el spinner para siempre.
+  void setSessionError(String message) {
+    _status = DashboardStatus.error;
+    _errorMessage = message;
+    notifyListeners();
+  }
+
+  /// Carga la lista de usuarios en segundo plano (no crítica para el render).
+  /// Si falla o tarda, el dashboard ya se mostró de todos modos.
+  Future<void> _loadUsersInBackground() async {
+    try {
+      _users = await _getAllUsersUseCase.call();
+      notifyListeners();
+    } catch (e) {
+      print('Error cargando lista de usuarios (no crítico): $e');
     }
   }
 

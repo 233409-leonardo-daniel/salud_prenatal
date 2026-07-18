@@ -23,7 +23,6 @@ class _RegisterPageState extends State<RegisterPage> {
   
   // Patient fields
   final _birthdateController = TextEditingController();
-  final _patientDoctorIdController = TextEditingController();
 
   // Doctor fields
   final _licenseController = TextEditingController();
@@ -44,7 +43,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _phoneController.dispose();
     _passwordController.dispose();
     _birthdateController.dispose();
-    _patientDoctorIdController.dispose();
     _licenseController.dispose();
     _specialtyController.dispose();
     _officeController.dispose();
@@ -120,7 +118,6 @@ class _RegisterPageState extends State<RegisterPage> {
           phone: _phoneController.text.trim(),
           password: _passwordController.text,
           birthdate: _birthdateController.text,
-          doctorId: int.tryParse(_patientDoctorIdController.text.trim()),
         );
       } else if (role == 'doctor') {
         success = await registerProvider.registerDoctor(
@@ -453,19 +450,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               onTap: () => _selectDate(context, _birthdateController),
                               validator: (value) => value == null || value.isEmpty ? 'Selecciona tu fecha de nacimiento' : null,
-                            ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: _patientDoctorIdController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'ID de tu médico (opcional)',
-                                prefixIcon: Icon(Icons.badge_outlined),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) return null;
-                                return int.tryParse(value.trim()) == null ? 'Ingresa un ID numérico válido' : null;
-                              },
                             ),
                             SizedBox(height: 8),
                             Text(

@@ -74,7 +74,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (_userRole == 'doctor') {
       final docId = session.doctorId;
-      if (docId == null) return; // Sesión sin doctorId: nada que cargar.
+      if (docId == null) {
+        // Antes se hacía `return` en seco y la pantalla quedaba cargando para
+        // siempre; ahora se muestra un error accionable.
+        dashboardProvider.setSessionError(
+          'Tu sesión no trae el identificador de doctor. Cierra sesión y vuelve a iniciar.',
+        );
+        return;
+      }
       await dashboardProvider.loadDoctorDashboard(docId);
       if (!mounted) return;
       appointmentsProvider.loadAppointments(docId.toString(), isDoctor: true);
@@ -83,7 +90,15 @@ class _DashboardPageState extends State<DashboardPage> {
       dashboardProvider.loadCriticalPatients(docId);
     } else {
       final userId = session.userId;
-      if (userId == null) return; // Sesión sin userId: nada que cargar.
+      if (userId == null) {
+        // Antes se hacía `return` en seco y la pantalla quedaba cargando para
+        // siempre; ahora se muestra un error accionable.
+        dashboardProvider.setSessionError(
+          'Tu sesión no cargó correctamente (falta el identificador de usuario). '
+          'Cierra sesión y vuelve a iniciar.',
+        );
+        return;
+      }
       final patId = session.patientId ?? userId;
       await dashboardProvider.loadPatientDashboard(patId, userId, doctorId: session.doctorId);
       if (!mounted) return;

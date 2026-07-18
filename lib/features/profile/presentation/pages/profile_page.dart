@@ -80,8 +80,11 @@ class ProfilePage extends StatelessWidget {
                 _buildInfoRow(
                   icon: Icons.person_outline,
                   label: 'Nombre completo',
-                  value: '${session.userProfile?.name} ${session.userProfile?.lastName}'.trim().isNotEmpty
-                      ? '${session.userProfile?.name} ${session.userProfile?.lastName}'
+                  // Ojo: interpolar un perfil null producía literalmente
+                  // "null null" en pantalla. Se arma desde los getters de la
+                  // sesión, que ya devuelven '' cuando no hay perfil.
+                  value: session.fullName.trim().isNotEmpty
+                      ? session.fullName.trim()
                       : 'No especificado',
                 ),
                 Divider(height: 24, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0F0)),

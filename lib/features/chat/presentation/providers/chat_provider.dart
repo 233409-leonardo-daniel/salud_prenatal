@@ -69,6 +69,17 @@ class ChatProvider with ChangeNotifier {
             _messages.add(message);
             _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
             notifyListeners();
+
+            // Si el mensaje es recibido del otro usuario (estamos leyéndolo en vivo),
+            // hacemos un fetch de confirmación silencioso al endpoint de history.
+            // Esto marca los mensajes como leídos en la base de datos para que el
+            // unread_count del inbox quede en 0.
+            if (message.senderId == otherUserId) {
+              _repository.getChatHistory(otherUserId, currentUserId).catchError((e) {
+                debugPrint('Error al marcar mensajes como leídos en segundo plano: $e');
+                return <ChatMessage>[];
+              });
+            }
           }
         }
       });

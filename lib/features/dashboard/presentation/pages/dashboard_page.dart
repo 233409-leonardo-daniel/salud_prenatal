@@ -20,7 +20,8 @@ import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../chat/presentation/pages/chat_list_page.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../forums/presentation/pages/forums_hub_page.dart';
-import 'receptionist_dashboard_page.dart';
+import '../../../users/presentation/pages/user_search_page.dart';
+import '../../../appointments/presentation/pages/appointment_form_page.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import 'new_consultation_dialog.dart';
@@ -46,8 +47,21 @@ class _DashboardPageState extends State<DashboardPage> {
     if (!_isInitialized) {
       final session = context.read<SessionManager>();
       final args = ModalRoute.of(context)?.settings.arguments;
+      // El rol puede llegar como String (uso histórico) o dentro de un Map
+      // (p. ej. la navegación desde una notificación de chat, que además pide
+      // abrir la pestaña de Mensajes con `openChat`).
+      String? explicitRole;
+      bool openChat = false;
       if (args is String) {
-        _userRole = args;
+        explicitRole = args;
+      } else if (args is Map) {
+        final r = args['role'];
+        if (r is String) explicitRole = r;
+        openChat = args['openChat'] == true;
+      }
+
+      if (explicitRole != null) {
+        _userRole = explicitRole;
       } else {
         final providerRole = session.role;
         if (providerRole != null) {
@@ -61,6 +75,14 @@ class _DashboardPageState extends State<DashboardPage> {
           }
         }
       }
+
+      // La pestaña de Mensajes vive en un índice distinto según el rol
+      // (paciente 3, doctor 4, recepcionista 2). Si nos pidieron abrirla,
+      // seleccionamos el índice correcto para el rol ya resuelto.
+      if (openChat) {
+        _currentTab = _chatTabIndex();
+      }
+
       _isInitialized = true;
       _loadDashboardData();
     }
@@ -88,6 +110,10 @@ class _DashboardPageState extends State<DashboardPage> {
       // Se dispara sin await: la sección de Alertas Prioritarias se actualiza
       // sola (vía notifyListeners) en cuanto terminen las peticiones en paralelo.
       dashboardProvider.loadCriticalPatients(docId);
+    } else if (_userRole == 'receptionist') {
+      final recepId = session.receptionistId;
+      if (recepId == null) return; // Sesión sin receptionistId: nada que cargar.
+      await dashboardProvider.loadReceptionistDashboard(recepId);
     } else {
       final userId = session.userId;
       if (userId == null) {
@@ -117,14 +143,24 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
+  /// Índice de la pestaña "Mensajes" en el footer según el rol. Debe seguir
+  /// coincidiendo con el orden de los ítems en `_buildBottomNavBar` y con los
+  /// `case` de `_buildBody`.
+  int _chatTabIndex() {
+    switch (_userRole) {
+      case 'doctor':
+        return 4;
+      case 'receptionist':
+        return 2;
+      default: // patient
+        return 3;
+    }
+  }
+
   // --- WIDGET BUILDERS ---
 
   @override
   Widget build(BuildContext context) {
-    if (_userRole == 'receptionist') {
-      return const ReceptionistDashboardPage();
-    }
-
     final scaffold = Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
@@ -132,9 +168,9 @@ class _DashboardPageState extends State<DashboardPage> {
       bottomNavigationBar: _buildBottomNavBar(),
     );
 
-    if (_userRole == 'doctor') {
-      // El footer del doctor (_buildBottomNavBar) es reactivo al tema
-      // (AppColors.cardBackground). Igualamos aquí la barra de navegación
+    if (_userRole == 'doctor' || _userRole == 'receptionist') {
+      // El footer de doctor/recepcionista (_buildBottomNavBar) es reactivo al
+      // tema (AppColors.cardBackground). Igualamos aquí la barra de navegación
       // del sistema (Android, debajo del footer) a ese mismo color/tema
       // para que no haya un salto de color justo debajo del footer.
       return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -149,6 +185,61 @@ class _DashboardPageState extends State<DashboardPage> {
     return scaffold;
   }
 
+  /// Header de la pestaña de inicio, compartido por doctor y recepcionista:
+  /// avatar con inicial + saludo + nombre sobre el color primario.
+  PreferredSizeWidget _buildGreetingAppBar({
+    required String greeting,
+    required String name,
+    required String initial,
+  }) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      backgroundColor: AppColors.primary,
+      elevation: 0,
+      iconTheme: const IconThemeData(color: Colors.white),
+      title: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.white,
+            child: Text(
+              initial,
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ),
+          SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                greeting,
+                style: const TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.normal),
+              ),
+              Text(
+                name,
+                style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.notifications_none_outlined, size: 20, color: Colors.white),
+          ),
+          onPressed: () {},
+        ),
+        SizedBox(width: 12),
+      ],
+    );
+  }
+
   PreferredSizeWidget _buildAppBar() {
     final session = context.watch<SessionManager>();
     final String doctorName = session.name.isNotEmpty
@@ -158,54 +249,36 @@ class _DashboardPageState extends State<DashboardPage> {
         ? session.name[0].toUpperCase()
         : (session.email.isNotEmpty ? session.email[0].toUpperCase() : 'D');
 
+    if (_userRole == 'receptionist') {
+      if (_currentTab == 0) {
+        final String receptionistName = session.name.isNotEmpty
+            ? session.name
+            : 'Recepcionista';
+        final String receptionistInitial = session.name.isNotEmpty
+            ? session.name[0].toUpperCase()
+            : (session.email.isNotEmpty ? session.email[0].toUpperCase() : 'R');
+        return _buildGreetingAppBar(
+          greeting: 'Hola,',
+          name: receptionistName,
+          initial: receptionistInitial,
+        );
+      }
+      // El resto de pestañas (Citas, Mensajes, Directorio, Perfil) traen su
+      // propio AppBar, igual que en doctor/paciente.
+      return AppBar(
+        automaticallyImplyLeading: false,
+        toolbarHeight: 0,
+        elevation: 0,
+      );
+    }
+
     if (_userRole == 'doctor') {
       if (_currentTab == 0) {
         // Doctor main dashboard header
-        return AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: AppColors.primary,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
-          title: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white,
-                child: Text(
-                  doctorInitial,
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Buenos días,',
-                    style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.normal),
-                  ),
-                  Text(
-                    doctorName,
-                    style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.notifications_none_outlined, size: 20, color: Colors.white),
-              ),
-              onPressed: () {},
-            ),
-            SizedBox(width: 12),
-          ],
+        return _buildGreetingAppBar(
+          greeting: 'Buenos días,',
+          name: doctorName,
+          initial: doctorInitial,
         );
       } else if (_currentTab == 1) {
         // "Mis Pacientes" header
@@ -260,6 +333,23 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBody() {
+    if (_userRole == 'receptionist') {
+      switch (_currentTab) {
+        case 0:
+          return _buildReceptionistDashboard();
+        case 1:
+          return const AppointmentsPage();
+        case 2:
+          return const ChatListPage();
+        case 3:
+          return const UserSearchPage();
+        case 4:
+          return const ProfilePage();
+        default:
+          return _buildPlaceholderView('Módulo de recepción.');
+      }
+    }
+
     if (_userRole == 'doctor') {
       switch (_currentTab) {
         case 0:
@@ -314,6 +404,105 @@ class _DashboardPageState extends State<DashboardPage> {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- RECEPTIONIST VIEWS ---
+
+  /// Pestaña de inicio de la recepcionista. Vive dentro de [DashboardPage] y
+  /// reutiliza los mismos componentes que el doctor (`_buildDoctorStatCard`,
+  /// footer y header compartidos) en vez de una página aparte.
+  Widget _buildReceptionistDashboard() {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    switch (dashboardProvider.status) {
+      case DashboardStatus.initial:
+      case DashboardStatus.loading:
+        return Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      case DashboardStatus.error:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(dashboardProvider.errorMessage ?? 'Error al cargar el dashboard'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadDashboardData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        );
+      case DashboardStatus.success:
+        break;
+    }
+
+    final totalCitas = dashboardProvider.receptionistUpcomingAppointments.length;
+    final pending = dashboardProvider.receptionistPendingAppointments.length;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _buildDoctorStatCard('Citas Programadas', totalCitas.toString(), Icons.calendar_today_outlined, Colors.teal),
+              SizedBox(width: 12),
+              _buildDoctorStatCard('Citas Pendientes', pending.toString(), Icons.pending_actions_outlined, Colors.orange),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Acciones Rápidas',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildReceptionistActionCard('Nueva Cita', Icons.add_circle, Colors.green, () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AppointmentFormPage()),
+                  );
+                }),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildReceptionistActionCard('Directorio', Icons.people, AppColors.primary, () {
+                  setState(() => _currentTab = 3);
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceptionistActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            SizedBox(height: 12),
+            Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
           ],
         ),
       ),
@@ -1484,6 +1673,51 @@ class _DashboardPageState extends State<DashboardPage> {
     // constante entre variantes, por eso se deja como `AppColors.primary`.
     final theme = Theme.of(context);
     final colors = theme.extension<AppColorsExt>()!;
+    if (_userRole == 'receptionist') {
+      // Mismo componente y estilo que el footer del doctor; solo cambian los
+      // ítems (sin Pacientes ni Foros, con Directorio).
+      return BottomNavigationBar(
+        currentIndex: _currentTab,
+        onTap: (index) {
+          setState(() {
+            _currentTab = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: colors.textMuted,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        backgroundColor: theme.colorScheme.surface,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today_outlined),
+            activeIcon: Icon(Icons.calendar_today),
+            label: 'Citas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message_outlined),
+            activeIcon: Icon(Icons.message),
+            label: 'Mensajes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
+            label: 'Directorio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Perfil',
+          ),
+        ],
+      );
+    }
     if (_userRole == 'doctor') {
       // Bottom nav bar for Doctor role
       return BottomNavigationBar(

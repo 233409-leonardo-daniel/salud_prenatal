@@ -70,11 +70,12 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  void sendMessage(int receiverId, String content) {
+  bool sendMessage(int receiverId, String content) {
     try {
-      _remoteDataSource.sendMessage(receiverId, content);
+      return _remoteDataSource.sendMessage(receiverId, content);
     } catch (e) {
       debugPrint('Error en sendMessage: $e');
+      return false;
     }
   }
 

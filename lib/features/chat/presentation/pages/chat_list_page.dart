@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
+import '../../../dashboard/presentation/pages/dashboard_state.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../login/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
@@ -364,9 +365,19 @@ class _ChatListPageState extends State<ChatListPage> {
 
     final docName = dashboardProvider.dashboardData?['current_doctor'] as String?;
     final docSpecialty = dashboardProvider.dashboardData?['current_doctor_specialty'] as String? ?? 'Ginecología y Obstetricia';
-    
+
     // Check if patient is linked to a doctor
     final hasDoctor = docName != null && docName.isNotEmpty;
+
+    // Mientras el dashboard básico (que trae `current_doctor`) sigue cargando y
+    // aún no tenemos datos, mostramos el skeleton en vez del cartel de "no
+    // tienes médico": si no, al entrar desde una notificación de un doctor que
+    // SÍ existe, parpadea ese cartel erróneo antes de resolver.
+    if (!hasDoctor &&
+        dashboardProvider.dashboardData == null &&
+        dashboardProvider.status == DashboardStatus.loading) {
+      return const _ChatListSkeleton();
+    }
 
     if (!hasDoctor) {
       return SingleChildScrollView(

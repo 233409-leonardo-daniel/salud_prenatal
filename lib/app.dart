@@ -85,7 +85,12 @@ class _MyAppState extends State<MyApp> {
     // Inicializar notificaciones push y registrar el token a nivel de
     // dispositivo desde el arranque, haya o no sesión iniciada: así los
     // recordatorios diarios llegan aunque el usuario no esté logueado.
-    NotificationService.initialize(apiClient);
+    // `registerDevice()` espera internamente a que `initialize()` termine, así
+    // que el orden aquí no lo condiciona. El catchError solo evita un error
+    // async sin manejar si Firebase no arranca (p. ej. sin Google Play).
+    NotificationService.initialize(apiClient).catchError((Object e) {
+      debugPrint('Notificaciones no disponibles: $e');
+    });
     NotificationService.registerDevice();
 
     appointmentModule = AppointmentModule(apiClient);

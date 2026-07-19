@@ -1,8 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Requerido en Android 13+ para mostrar notificaciones (push de FCM y
          locales). FCM entrega los mensajes vía Google Play Services, sin
          necesidad de foreground service ni de mantener el proceso vivo. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Eliminar permisos de servicios en primer plano inyectados por dependencias -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" tools:node="remove" />
 
     <application
         android:label="Salud Prenatal"

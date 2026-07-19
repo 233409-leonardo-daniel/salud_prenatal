@@ -10,6 +10,10 @@ class ForumPost {
   final String? authorRole;
   final bool isAd;
 
+  /// URL opcional de una imagen adjunta a la publicación/aviso. Cuando no es
+  /// null (ni vacía) el feed y el detalle la muestran bajo el contenido.
+  final String? imageUrl;
+
   ForumPost({
     required this.postId,
     required this.authorId,
@@ -21,6 +25,7 @@ class ForumPost {
     this.authorAvatarUrl,
     this.authorRole,
     this.isAd = false,
+    this.imageUrl,
   });
 
   /// El backend no incluye alias/avatar/rol del autor en `PostResponse` (solo
@@ -42,6 +47,7 @@ class ForumPost {
       authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
       authorRole: authorRole ?? this.authorRole,
       isAd: isAd,
+      imageUrl: imageUrl,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import '../../../../core/network/api_client.dart';
 import '../models/social_profile_model.dart';
 import '../models/profile_timeline_model.dart';
@@ -36,6 +37,7 @@ abstract class ForumsRemoteDataSource {
   Future<CommunityGroupModel> createGroup(CommunityGroupModel group);
   Future<List<CommunityGroupModel>> getGroups();
   Future<List<CommunityGroupModel>> getRecommendedGroups();
+  Future<String> uploadPostImage(File file);
   Future<ForumPostModel> createPost(ForumPostModel post);
   Future<List<ForumPostModel>> getGlobalFeed(int limit, int offset);
   Future<List<ForumPostModel>> getRecommendedFeed(int limit, int offset);
@@ -134,6 +136,21 @@ class ForumsRemoteDataSourceImpl implements ForumsRemoteDataSource {
       return data.map((e) => CommunityGroupModel.fromJson(e)).toList();
     }
     _throwError(response, 'Error al obtener grupos recomendados');
+  }
+
+  @override
+  Future<String> uploadPostImage(File file) async {
+    final response = await _apiClient.postMultipartFile(
+      '/forums/posts/upload-image',
+      file,
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      final url = data['image_url'];
+      if (url is String && url.isNotEmpty) return url;
+      throw Exception('El servidor no devolvió la URL de la imagen.');
+    }
+    _throwError(response, 'Error al subir la imagen');
   }
 
   @override

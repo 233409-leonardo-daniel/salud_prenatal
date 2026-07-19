@@ -7,6 +7,7 @@ import '../../../../core/session/session_manager.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/delete_appointment_provider.dart';
 import '../providers/update_appointment_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../widgets/appointment_status_chip.dart';
 import 'appointment_state.dart';
 
@@ -36,6 +37,22 @@ class AppointmentDetailPage extends StatelessWidget {
       (a) => a.id == appointment.id,
       orElse: () => appointment,
     );
+
+    // Nombre del médico a mostrar. Para la paciente el backend no incluye el
+    // nombre en la cita (solo IDs), así que se toma el doctor asignado
+    // (current_doctor) del DashboardProvider en vivo: si se carga después de
+    // abrir esta pantalla, el watch la reconstruye y el nombre aparece.
+    final isPatient = !isDoctor && !isReceptionist;
+    String doctorDisplay = currentAppointment.doctorName;
+    if (isPatient && doctorDisplay.trim().isEmpty) {
+      final currentDoctor = context.watch<DashboardProvider>().dashboardData?['current_doctor'];
+      if (currentDoctor is String && currentDoctor.trim().isNotEmpty) {
+        doctorDisplay = currentDoctor.trim();
+      }
+    }
+    if (doctorDisplay.trim().isEmpty) {
+      doctorDisplay = 'No disponible';
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -89,12 +106,18 @@ class AppointmentDetailPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16),
+            // Nombre de la paciente: se usa el del `appointment` recibido (ya
+            // resuelto vía _resolveAppointmentNames antes de navegar), no el de
+            // `currentAppointment` (que viene crudo del provider, solo con IDs).
             if (isDoctor || isReceptionist) ...[
-              _buildInfoCard('Paciente', currentAppointment.patientName, Icons.person_outline),
+              _buildInfoCard('Paciente', appointment.patientName, Icons.person_outline),
               SizedBox(height: 12),
             ],
-            _buildInfoCard('Médico', currentAppointment.doctorName, Icons.medical_services_outlined),
-            
+            // La tarjeta "Médico" solo tiene sentido para la paciente (ve a su
+            // doctor asignado). El doctor y la recepcionista no la ven.
+            if (isPatient)
+              _buildInfoCard('Médico', doctorDisplay, Icons.medical_services_outlined),
+
             SizedBox(height: 32),
             
             if (isReceptionist || isDoctor) ..._buildActionButtons(context, currentAppointment, provider),
@@ -334,10 +357,11 @@ class AppointmentDetailPage extends StatelessWidget {
   }
 }
 
-/// Botón blanco con sombra rosa suave alrededor y efecto de "levantamiento"
-/// (se eleva y la sombra crece) al pasar el cursor por encima. El color
-/// pasado (`color`) solo se usa para el texto, para conservar el
-/// significado semántico (azul=confirmar, naranja=cancelar, rojo=eliminar).
+/// Botón con fondo del tema (claro/oscuro) y sombra rosa suave alrededor, con
+/// efecto de "levantamiento" (se eleva y la sombra crece) al pasar el cursor
+/// por encima. El color pasado (`color`) solo se usa para el texto, para
+/// conservar el significado semántico (azul=confirmar, naranja=cancelar,
+/// rojo=eliminar).
 class _LiftButton extends StatefulWidget {
   final String label;
   final Color color;
@@ -363,7 +387,9 @@ class _LiftButtonState extends State<_LiftButton> {
         curve: Curves.easeOut,
         transform: Matrix4.translationValues(0, _hovering ? -4 : 0, 0),
         decoration: BoxDecoration(
-          color: Colors.white,
+          // Fondo del botón adaptado al tema (blanco en claro, gris oscuro en
+          // oscuro). El color semántico (azul/naranja/rojo/rosa) va en el texto.
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(

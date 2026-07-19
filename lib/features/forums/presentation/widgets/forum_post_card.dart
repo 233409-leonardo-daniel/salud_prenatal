@@ -4,14 +4,13 @@ import '../../../../core/utils/relative_time.dart';
 import '../../domain/entities/forum_post.dart';
 
 /// Tarjeta de publicación reutilizada en el feed "Para ti", el feed de un
-/// grupo y el feed global. El estilo "De un doctor" (acento rosa, sello e
-/// icono de altavoz en vez de la fecha) se aplica a TODAS las publicaciones
-/// cuyo autor sea doctor, sin importar el valor guardado de `post.isAd`
-/// (ese campo se fija solo al crear el post — publicaciones antiguas
-/// creadas antes de esta regla podían quedar con `is_ad = false` aunque su
-/// autor sea doctor, lo que hacía que se vieran inconsistentes entre sí).
-/// Al derivar el estilo del rol del autor en vez de leer `is_ad`, todas las
-/// publicaciones de un mismo doctor se ven igual.
+/// grupo y el feed global. El estilo de aviso (acento rosa, sello "De un
+/// doctor" e icono de altavoz en vez de la fecha) se aplica SOLO a los posts
+/// marcados como aviso (`post.isAd == true`). Ese flag únicamente lo puede
+/// activar un médico con suscripción premium (validado en la UI de creación
+/// y por el backend vía token), así que el rosa siempre representa un anuncio
+/// de un médico premium — nunca el post normal de un usuario ni el de un
+/// médico sin premium.
 class ForumPostCard extends StatelessWidget {
   final ForumPost post;
   final VoidCallback onTap;
@@ -21,7 +20,9 @@ class ForumPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDoctor = post.authorRole?.toLowerCase().contains('doctor') ?? false;
-    final isAd = isDoctor;
+    // El estilo rosa de aviso depende del flag real is_ad (solo lo activan
+    // médicos premium), no de que el autor sea doctor.
+    final isAd = post.isAd;
     final authorName = post.authorAlias ?? (isAd ? 'Consultorio' : 'Usuario');
     final displayName = isDoctor ? 'Dr. $authorName' : authorName;
     final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
@@ -97,6 +98,29 @@ class ForumPostCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  // Etiqueta pequeña "Anuncio" para posts marcados como aviso
+                  // (is_ad real, no derivado del rol del autor).
+                  if (post.isAd) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.campaign, size: 11, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            'Anuncio',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 12),
@@ -111,6 +135,27 @@ class ForumPostCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.4),
               ),
+              if (post.imageUrl != null && post.imageUrl!.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    post.imageUrl!.trim(),
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    loadingBuilder: (context, child, progress) => progress == null
+                        ? child
+                        : Container(
+                            height: 180,
+                            alignment: Alignment.center,
+                            color: AppColors.primaryLight,
+                            child: const CircularProgressIndicator(),
+                          ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               if (isAd)
                 Row(

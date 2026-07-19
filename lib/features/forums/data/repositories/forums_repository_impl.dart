@@ -1,3 +1,4 @@
+import 'dart:io';
 import '../../domain/entities/social_profile.dart';
 import '../../domain/entities/profile_timeline.dart';
 import '../../domain/entities/community_group.dart';
@@ -50,6 +51,11 @@ class ForumsRepositoryImpl implements ForumsRepository {
   @override
   Future<List<CommunityGroup>> getRecommendedGroups() async {
     return await remoteDataSource.getRecommendedGroups();
+  }
+
+  @override
+  Future<String> uploadPostImage(File file) {
+    return remoteDataSource.uploadPostImage(file);
   }
 
   @override

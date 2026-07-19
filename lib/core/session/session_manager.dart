@@ -70,6 +70,11 @@ class SessionManager extends ChangeNotifier {
 
   bool get isDoctor => _role == 'doctor' || _role == 'doctor(a)';
 
+  /// True solo para un médico con suscripción premium activa. Es la única
+  /// condición que habilita crear avisos/publicidad (is_ad=true) en foros.
+  /// El backend valida lo mismo por token como segunda barrera.
+  bool get isPremiumDoctor => isDoctor && _subscriptionStatus == 'active';
+
   /// True cuando un doctor autenticado no tiene una suscripción activa y debe
   /// pasar por la pantalla de pago antes de usar el sistema.
   bool get needsSubscriptionGate => isDoctor && _subscriptionStatus != 'active';

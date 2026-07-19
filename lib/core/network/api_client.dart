@@ -114,6 +114,26 @@ class ApiClient {
   Future<http.Response> delete(String endpoint) =>
       _run(() => _client.delete(_buildUrl(endpoint), headers: _headersFor(endpoint)));
 
+  /// Sube un archivo como `multipart/form-data` (p. ej. imágenes de posts).
+  /// No fija `Content-Type` a JSON: `MultipartRequest` genera su propio
+  /// header con el boundary. Solo agrega el `Authorization` si hay token.
+  /// [field] es el nombre del campo del formulario (el backend espera `file`).
+  Future<http.Response> postMultipartFile(
+    String endpoint,
+    File file, {
+    String field = 'file',
+  }) =>
+      _run(() async {
+        final request = http.MultipartRequest('POST', _buildUrl(endpoint));
+        final token = _tokenProvider?.call();
+        if (token != null) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+        request.files.add(await http.MultipartFile.fromPath(field, file.path));
+        final streamed = await _client.send(request);
+        return http.Response.fromStream(streamed);
+      });
+
   void dispose() {
     _client.close();
   }

@@ -12,6 +12,7 @@ class ForumPostModel extends ForumPost {
     super.authorAvatarUrl,
     super.authorRole,
     super.isAd,
+    super.imageUrl,
   });
 
   factory ForumPostModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +29,7 @@ class ForumPostModel extends ForumPost {
       authorAvatarUrl: json['author_avatar_url'] ?? json['avatar_url'],
       authorRole: json['author_role'] ?? json['role'],
       isAd: json['is_ad'] == true,
+      imageUrl: json['image_url'],
     );
   }
 
@@ -38,6 +40,10 @@ class ForumPostModel extends ForumPost {
       'title': title,
       'content': content,
       'is_ad': isAd,
+      // Solo se envía image_url cuando hay una URL real, para no mandar
+      // null/"" y que el backend guarde una imagen vacía.
+      if (imageUrl != null && imageUrl!.trim().isNotEmpty)
+        'image_url': imageUrl!.trim(),
     };
   }
 
@@ -53,6 +59,7 @@ class ForumPostModel extends ForumPost {
       authorAvatarUrl: entity.authorAvatarUrl,
       authorRole: entity.authorRole,
       isAd: entity.isAd,
+      imageUrl: entity.imageUrl,
     );
   }
 }

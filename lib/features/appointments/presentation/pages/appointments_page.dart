@@ -30,7 +30,21 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAppointmentsData();
       _loadPatientsIfNeeded();
+      _loadPatientDoctorNameIfNeeded();
     });
+  }
+
+  // Para una paciente: asegura que esté cargado el nombre de su doctor
+  // asignado (`current_doctor` del dashboard) para poder mostrarlo en el
+  // detalle de la cita. Usa la carga liviana (sin expediente ni consultas).
+  Future<void> _loadPatientDoctorNameIfNeeded() async {
+    final session = context.read<SessionManager>();
+    if (!session.isPatient) return;
+    final dashboardProvider = context.read<DashboardProvider>();
+    if (dashboardProvider.dashboardData?['current_doctor'] != null) return;
+    final patientId = session.patientId;
+    if (patientId == null) return;
+    await dashboardProvider.loadPatientBasicInfo(patientId);
   }
 
   // Carga la lista real de pacientes del doctor (y el listado de usuarios
@@ -51,9 +65,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final isReceptionist = loginProvider.role == 'receptionist' || loginProvider.role == 'recepcionista';
 
     final isDoctorOrReceptionist = isDoctor || isReceptionist;
+    // El endpoint de paciente es /appointments/patient/{patient_id}: las citas
+    // se asocian al patientId, NO al userId. Usar userId aquí devolvía vacío
+    // (la paciente nunca veía sus citas).
     final idStr = isDoctorOrReceptionist
         ? loginProvider.doctorId?.toString()
-        : loginProvider.userId?.toString();
+        : loginProvider.patientId?.toString();
 
     context.read<AppointmentsProvider>().loadAppointments(idStr, isDoctor: isDoctorOrReceptionist);
   }
@@ -208,6 +225,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       if (loginProvider.role == 'doctor' && loginProvider.doctorId == app.doctorId) {
         final fullName = '${loginProvider.name} ${loginProvider.lastName}'.trim();
         if (fullName.isNotEmpty) resolvedDoctor = fullName;
+      } else if (loginProvider.isPatient) {
+        // La paciente ve el nombre de su doctor asignado (current_doctor del
+        // dashboard). Si aún no cargó, queda vacío y el detalle usa su propio
+        // fallback en vivo sobre el DashboardProvider.
+        final currentDoctor = dashboardProvider.dashboardData?['current_doctor'];
+        resolvedDoctor = (currentDoctor is String && currentDoctor.trim().isNotEmpty)
+            ? currentDoctor.trim()
+            : '';
       } else {
         resolvedDoctor = '';
       }

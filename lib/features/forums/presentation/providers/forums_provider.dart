@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../domain/entities/social_profile.dart';
 import '../../domain/entities/profile_timeline.dart';
@@ -13,6 +14,7 @@ import '../../domain/usecases/create_group_use_case.dart';
 import '../../domain/usecases/get_groups_use_case.dart';
 import '../../domain/usecases/get_recommended_groups_use_case.dart';
 import '../../domain/usecases/create_post_use_case.dart';
+import '../../domain/usecases/upload_post_image_use_case.dart';
 import '../../domain/usecases/get_global_feed_use_case.dart';
 import '../../domain/usecases/get_recommended_feed_use_case.dart';
 import '../../domain/usecases/get_group_feed_use_case.dart';
@@ -33,6 +35,7 @@ class ForumsProvider with ChangeNotifier {
   final GetGroupsUseCase _getGroupsUseCase;
   final GetRecommendedGroupsUseCase _getRecommendedGroupsUseCase;
   final CreatePostUseCase _createPostUseCase;
+  final UploadPostImageUseCase _uploadPostImageUseCase;
   final GetGlobalFeedUseCase _getGlobalFeedUseCase;
   final GetRecommendedFeedUseCase _getRecommendedFeedUseCase;
   final GetGroupFeedUseCase _getGroupFeedUseCase;
@@ -50,6 +53,7 @@ class ForumsProvider with ChangeNotifier {
     required GetGroupsUseCase getGroupsUseCase,
     required GetRecommendedGroupsUseCase getRecommendedGroupsUseCase,
     required CreatePostUseCase createPostUseCase,
+    required UploadPostImageUseCase uploadPostImageUseCase,
     required GetGlobalFeedUseCase getGlobalFeedUseCase,
     required GetRecommendedFeedUseCase getRecommendedFeedUseCase,
     required GetGroupFeedUseCase getGroupFeedUseCase,
@@ -65,6 +69,7 @@ class ForumsProvider with ChangeNotifier {
         _getGroupsUseCase = getGroupsUseCase,
         _getRecommendedGroupsUseCase = getRecommendedGroupsUseCase,
         _createPostUseCase = createPostUseCase,
+        _uploadPostImageUseCase = uploadPostImageUseCase,
         _getGlobalFeedUseCase = getGlobalFeedUseCase,
         _getRecommendedFeedUseCase = getRecommendedFeedUseCase,
         _getGroupFeedUseCase = getGroupFeedUseCase,
@@ -453,7 +458,29 @@ class ForumsProvider with ChangeNotifier {
   }
 
   // Create post
-  Future<bool> createPost(int authorId, int? groupId, String title, String content, {bool isAd = false}) async {
+  // true mientras se sube una imagen al servidor antes de crear el post.
+  bool _isUploadingImage = false;
+  bool get isUploadingImage => _isUploadingImage;
+
+  /// Sube [file] al backend (multipart) y devuelve la URL pública, o null si
+  /// falla. Deja el mensaje en [saveError] para que la UI lo muestre. Un 402
+  /// (sin suscripción premium) lo maneja globalmente `SubscriptionGateListener`.
+  Future<String?> uploadPostImage(File file) async {
+    _isUploadingImage = true;
+    _saveError = null;
+    notifyListeners();
+    try {
+      return await _uploadPostImageUseCase.call(file);
+    } catch (e) {
+      _saveError = _resolveError(e);
+      return null;
+    } finally {
+      _isUploadingImage = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createPost(int authorId, int? groupId, String title, String content, {bool isAd = false, String? imageUrl}) async {
     _saveStatus = SaveStatus.loading;
     _saveError = null;
     notifyListeners();
@@ -467,6 +494,7 @@ class ForumsProvider with ChangeNotifier {
         content: content,
         createdAt: DateTime.now(),
         isAd: isAd,
+        imageUrl: imageUrl,
       );
       final created = await _createPostUseCase.call(newPost);
       final enrichedCreated = (await _enrichPostsWithAuthorInfo([created])).first;

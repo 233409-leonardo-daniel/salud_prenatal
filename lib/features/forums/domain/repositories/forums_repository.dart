@@ -2,6 +2,7 @@ import '../entities/social_profile.dart';
 import '../entities/profile_timeline.dart';
 import '../entities/community_group.dart';
 import '../entities/forum_post.dart';
+import 'dart:io';
 import '../entities/forum_comment.dart';
 import '../entities/forum_report.dart';
 
@@ -13,6 +14,7 @@ abstract class ForumsRepository {
   Future<CommunityGroup> createGroup(CommunityGroup group);
   Future<List<CommunityGroup>> getGroups();
   Future<List<CommunityGroup>> getRecommendedGroups();
+  Future<String> uploadPostImage(File file);
   Future<ForumPost> createPost(ForumPost post);
   Future<List<ForumPost>> getGlobalFeed(int limit, int offset);
   Future<List<ForumPost>> getRecommendedFeed(int limit, int offset);

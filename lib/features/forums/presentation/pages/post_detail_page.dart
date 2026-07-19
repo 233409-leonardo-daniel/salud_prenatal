@@ -139,6 +139,27 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         ),
                       ),
                       const Divider(height: 32),
+                        if (widget.post.isAd) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.campaign, size: 12, color: Colors.white),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Anuncio',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         Text(
                           widget.post.title,
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textDark),
@@ -148,6 +169,26 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           widget.post.content,
                           style: TextStyle(fontSize: 14, color: AppColors.textMuted, height: 1.5),
                         ),
+                        if (widget.post.imageUrl != null && widget.post.imageUrl!.trim().isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              widget.post.imageUrl!.trim(),
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                              loadingBuilder: (context, child, progress) => progress == null
+                                  ? child
+                                  : Container(
+                                      height: 200,
+                                      alignment: Alignment.center,
+                                      color: AppColors.primaryLight,
+                                      child: const CircularProgressIndicator(),
+                                    ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

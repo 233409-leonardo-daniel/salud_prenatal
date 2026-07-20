@@ -38,6 +38,7 @@ abstract class ForumsRemoteDataSource {
   Future<List<CommunityGroupModel>> getGroups();
   Future<List<CommunityGroupModel>> getRecommendedGroups();
   Future<String> uploadPostImage(File file);
+  Future<String> uploadAvatar(File file);
   Future<ForumPostModel> createPost(ForumPostModel post);
   Future<List<ForumPostModel>> getGlobalFeed(int limit, int offset);
   Future<List<ForumPostModel>> getRecommendedFeed(int limit, int offset);
@@ -151,6 +152,21 @@ class ForumsRemoteDataSourceImpl implements ForumsRemoteDataSource {
       throw Exception('El servidor no devolvió la URL de la imagen.');
     }
     _throwError(response, 'Error al subir la imagen');
+  }
+
+  @override
+  Future<String> uploadAvatar(File file) async {
+    final response = await _apiClient.postMultipartFile(
+      '/forums/profiles/upload-avatar',
+      file,
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      final url = data['image_url'];
+      if (url is String && url.isNotEmpty) return url;
+      throw Exception('El servidor no devolvió la URL del avatar.');
+    }
+    _throwError(response, 'Error al subir el avatar');
   }
 
   @override

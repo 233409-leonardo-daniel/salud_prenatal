@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/session/session_manager.dart';
@@ -18,6 +20,7 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
   final _aliasController = TextEditingController();
   final _bioController = TextEditingController();
   final _officeAddressController = TextEditingController();
+  final _picker = ImagePicker();
   String _selectedAvatar = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
   // true si ya existía un perfil social al cargar la página: determina si al
   // guardar se llama PATCH /forums/profiles/me (actualizar) o POST
@@ -67,6 +70,64 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
     super.dispose();
   }
 
+  /// Elige una foto del dispositivo (galería/cámara), la sube al bucket
+  /// (POST /forums/profiles/upload-avatar) y usa la URL devuelta como avatar.
+  /// Se persiste al pulsar "Guardar Perfil" (PATCH /forums/profiles/me).
+  Future<void> _pickAndUploadAvatar() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library_outlined, color: AppColors.primary),
+              title: Text('Galería', style: TextStyle(color: AppColors.textDark)),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+              title: Text('Cámara', style: TextStyle(color: AppColors.textDark)),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    XFile? picked;
+    try {
+      picked = await _picker.pickImage(source: source, imageQuality: 90);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir la imagen.')),
+      );
+      return;
+    }
+    if (picked == null) return;
+
+    final forumsProvider = context.read<ForumsProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final url = await forumsProvider.uploadAvatar(File(picked.path));
+    if (!mounted) return;
+    if (url != null) {
+      setState(() => _selectedAvatar = url);
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(forumsProvider.saveError ?? 'No se pudo subir la foto'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
@@ -96,28 +157,50 @@ class _SocialProfilePageState extends State<SocialProfilePage> {
                 padding: const EdgeInsets.all(24.0),
                 children: [
                   Center(
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 55,
-                          backgroundColor: AppColors.primaryLight,
-                          backgroundImage: NetworkImage(_selectedAvatar),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundColor: AppColors.primary,
-                            child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                    child: GestureDetector(
+                      onTap: forumsProvider.isUploadingAvatar ? null : _pickAndUploadAvatar,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 55,
+                            backgroundColor: AppColors.primaryLight,
+                            backgroundImage: NetworkImage(_selectedAvatar),
                           ),
-                        ),
-                      ],
+                          if (forumsProvider.isUploadingAvatar)
+                            Positioned.fill(
+                              child: CircleAvatar(
+                                radius: 55,
+                                backgroundColor: Colors.black.withOpacity(0.45),
+                                child: const CircularProgressIndicator(color: Colors.white),
+                              ),
+                            ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: AppColors.primary,
+                              child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: forumsProvider.isUploadingAvatar ? null : _pickAndUploadAvatar,
+                      icon: Icon(Icons.add_a_photo_outlined, size: 18, color: AppColors.primary),
+                      label: Text(
+                        'Subir foto desde el dispositivo',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    'Elige tu Avatar de la Comunidad:',
+                    'O elige un avatar de la Comunidad:',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                   ),
                   const SizedBox(height: 12),

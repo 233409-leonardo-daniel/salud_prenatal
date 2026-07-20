@@ -10,6 +10,7 @@ import '../domain/usecases/create_group_use_case.dart';
 import '../domain/usecases/get_groups_use_case.dart';
 import '../domain/usecases/create_post_use_case.dart';
 import '../domain/usecases/upload_post_image_use_case.dart';
+import '../domain/usecases/upload_avatar_use_case.dart';
 import '../domain/usecases/get_global_feed_use_case.dart';
 import '../domain/usecases/get_recommended_feed_use_case.dart';
 import '../domain/usecases/get_recommended_groups_use_case.dart';
@@ -29,6 +30,7 @@ class ForumsModule {
   late final GetRecommendedGroupsUseCase getRecommendedGroupsUseCase;
   late final CreatePostUseCase createPostUseCase;
   late final UploadPostImageUseCase uploadPostImageUseCase;
+  late final UploadAvatarUseCase uploadAvatarUseCase;
   late final GetGlobalFeedUseCase getGlobalFeedUseCase;
   late final GetRecommendedFeedUseCase getRecommendedFeedUseCase;
   late final GetGroupFeedUseCase getGroupFeedUseCase;
@@ -53,6 +55,7 @@ class ForumsModule {
     getRecommendedGroupsUseCase = GetRecommendedGroupsUseCase(repository);
     createPostUseCase = CreatePostUseCase(repository);
     uploadPostImageUseCase = UploadPostImageUseCase(repository);
+    uploadAvatarUseCase = UploadAvatarUseCase(repository);
     getGlobalFeedUseCase = GetGlobalFeedUseCase(repository);
     getRecommendedFeedUseCase = GetRecommendedFeedUseCase(repository);
     getGroupFeedUseCase = GetGroupFeedUseCase(repository);

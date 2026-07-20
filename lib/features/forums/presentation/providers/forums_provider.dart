@@ -15,6 +15,7 @@ import '../../domain/usecases/get_groups_use_case.dart';
 import '../../domain/usecases/get_recommended_groups_use_case.dart';
 import '../../domain/usecases/create_post_use_case.dart';
 import '../../domain/usecases/upload_post_image_use_case.dart';
+import '../../domain/usecases/upload_avatar_use_case.dart';
 import '../../domain/usecases/get_global_feed_use_case.dart';
 import '../../domain/usecases/get_recommended_feed_use_case.dart';
 import '../../domain/usecases/get_group_feed_use_case.dart';
@@ -36,6 +37,7 @@ class ForumsProvider with ChangeNotifier {
   final GetRecommendedGroupsUseCase _getRecommendedGroupsUseCase;
   final CreatePostUseCase _createPostUseCase;
   final UploadPostImageUseCase _uploadPostImageUseCase;
+  final UploadAvatarUseCase _uploadAvatarUseCase;
   final GetGlobalFeedUseCase _getGlobalFeedUseCase;
   final GetRecommendedFeedUseCase _getRecommendedFeedUseCase;
   final GetGroupFeedUseCase _getGroupFeedUseCase;
@@ -54,6 +56,7 @@ class ForumsProvider with ChangeNotifier {
     required GetRecommendedGroupsUseCase getRecommendedGroupsUseCase,
     required CreatePostUseCase createPostUseCase,
     required UploadPostImageUseCase uploadPostImageUseCase,
+    required UploadAvatarUseCase uploadAvatarUseCase,
     required GetGlobalFeedUseCase getGlobalFeedUseCase,
     required GetRecommendedFeedUseCase getRecommendedFeedUseCase,
     required GetGroupFeedUseCase getGroupFeedUseCase,
@@ -70,6 +73,7 @@ class ForumsProvider with ChangeNotifier {
         _getRecommendedGroupsUseCase = getRecommendedGroupsUseCase,
         _createPostUseCase = createPostUseCase,
         _uploadPostImageUseCase = uploadPostImageUseCase,
+        _uploadAvatarUseCase = uploadAvatarUseCase,
         _getGlobalFeedUseCase = getGlobalFeedUseCase,
         _getRecommendedFeedUseCase = getRecommendedFeedUseCase,
         _getGroupFeedUseCase = getGroupFeedUseCase,
@@ -476,6 +480,27 @@ class ForumsProvider with ChangeNotifier {
       return null;
     } finally {
       _isUploadingImage = false;
+      notifyListeners();
+    }
+  }
+
+  // true mientras se sube una foto de perfil (avatar) al servidor.
+  bool _isUploadingAvatar = false;
+  bool get isUploadingAvatar => _isUploadingAvatar;
+
+  /// Sube [file] como avatar (multipart) a /forums/profiles/upload-avatar y
+  /// devuelve la URL pública, o null si falla. Deja el mensaje en [saveError].
+  Future<String?> uploadAvatar(File file) async {
+    _isUploadingAvatar = true;
+    _saveError = null;
+    notifyListeners();
+    try {
+      return await _uploadAvatarUseCase.call(file);
+    } catch (e) {
+      _saveError = _resolveError(e);
+      return null;
+    } finally {
+      _isUploadingAvatar = false;
       notifyListeners();
     }
   }

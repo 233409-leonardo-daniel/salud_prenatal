@@ -59,6 +59,11 @@ class ForumsRepositoryImpl implements ForumsRepository {
   }
 
   @override
+  Future<String> uploadAvatar(File file) {
+    return remoteDataSource.uploadAvatar(file);
+  }
+
+  @override
   Future<ForumPost> createPost(ForumPost post) {
     return remoteDataSource.createPost(ForumPostModel.fromEntity(post));
   }

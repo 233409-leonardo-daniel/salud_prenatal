@@ -15,6 +15,7 @@ abstract class ForumsRepository {
   Future<List<CommunityGroup>> getGroups();
   Future<List<CommunityGroup>> getRecommendedGroups();
   Future<String> uploadPostImage(File file);
+  Future<String> uploadAvatar(File file);
   Future<ForumPost> createPost(ForumPost post);
   Future<List<ForumPost>> getGlobalFeed(int limit, int offset);
   Future<List<ForumPost>> getRecommendedFeed(int limit, int offset);

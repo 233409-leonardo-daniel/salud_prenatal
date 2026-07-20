@@ -258,6 +258,7 @@ class _MyAppState extends State<MyApp> {
             getRecommendedGroupsUseCase: forumsModule.getRecommendedGroupsUseCase,
             createPostUseCase: forumsModule.createPostUseCase,
             uploadPostImageUseCase: forumsModule.uploadPostImageUseCase,
+            uploadAvatarUseCase: forumsModule.uploadAvatarUseCase,
             getGlobalFeedUseCase: forumsModule.getGlobalFeedUseCase,
             getRecommendedFeedUseCase: forumsModule.getRecommendedFeedUseCase,
             getGroupFeedUseCase: forumsModule.getGroupFeedUseCase,

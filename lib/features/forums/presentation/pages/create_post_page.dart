@@ -99,6 +99,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
     // Solo un médico con suscripción premium activa puede elegir publicar
     // como aviso. El resto solo crea publicaciones normales.
     final canPostAd = session.isPremiumDoctor;
+    // Solo los doctores pueden adjuntar fotos; las pacientes no.
+    final isDoctor = session.isDoctor;
     final busy = forumsProvider.isSaving || forumsProvider.isUploadingImage;
 
     return Scaffold(
@@ -154,10 +156,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
-              // Selector de imagen. La imagen se sube al backend al publicar
+              // Selector de imagen: solo para doctores (las pacientes no pueden
+              // adjuntar fotos). La imagen se sube al publicar
               // (POST /forums/posts/upload-image) y su URL se manda en image_url.
-              _buildImagePicker(),
+              if (isDoctor) ...[
+                const SizedBox(height: 24),
+                _buildImagePicker(),
+              ],
               // Selector de tipo de publicación: visible solo para médicos con
               // suscripción activa (premium). El backend valida por token que
               // solo ellos puedan enviar is_ad=true.

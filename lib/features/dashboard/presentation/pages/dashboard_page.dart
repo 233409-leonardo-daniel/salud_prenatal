@@ -279,12 +279,6 @@ class _DashboardPageState extends State<DashboardPage> {
           initial: receptionistInitial,
         );
       }
-<<<<<<< HEAD
-      // El resto de pestañas (Citas, Mensajes, Directorio, Perfil) traen su
-      // propio AppBar, igual que en doctor/paciente. Para las que tienen
-      // Scaffold propio, no ponemos AppBar externo (null) para que su header
-      // llegue hasta el status bar; Perfil conserva el AppBar vacío como
-      // espaciador.
       return _bodyHasOwnAppBar()
           ? null
           : AppBar(
@@ -292,15 +286,6 @@ class _DashboardPageState extends State<DashboardPage> {
               toolbarHeight: 0,
               elevation: 0,
             );
-=======
-      // El resto de pestañas (Citas, Mensajes, Perfil) traen su
-      // propio AppBar, igual que en doctor/paciente.
-      return AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 0,
-        elevation: 0,
-      );
->>>>>>> 35be42c62b0f90083a9191aa7a61d85a48b22b5d
     }
 
     if (_userRole == 'doctor') {

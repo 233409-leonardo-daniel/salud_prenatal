@@ -111,9 +111,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
         'id': patientCode,
         'userId': userId,
         'patientEntity': patient,
-        'gestationAge': patient.currentGestationalWeeks != null
-            ? '${patient.currentGestationalWeeks} sem'
-            : 'No reg.',
         'initials': initials.toUpperCase(),
       });
     }
@@ -140,7 +137,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
           id: item['id'] as String,
           userId: item['userId'] as int,
           patientEntity: item['patientEntity'] as PatientEntity,
-          gestationAge: item['gestationAge'] as String,
           avatarInitials: item['initials'] as String,
         ),
       );
@@ -306,12 +302,63 @@ class _PatientsListPageState extends State<PatientsListPage> {
     await showNewConsultationDialog(context, medicalRecordId: record.medicalRecordId, patientName: patientName);
   }
 
+  /// Confirma y ejecuta la desvinculación de la paciente del doctor de la
+  /// sesión. Es destructiva desde el punto de vista del doctor (deja de ver a
+  /// la paciente), por eso se pide confirmación explícita. El provider quita
+  /// la paciente de la lista, así que la tarjeta desaparece sola al terminar.
+  Future<void> _confirmUnlinkPatient(PatientEntity patient, String patientName) async {
+    final doctorId = context.read<SessionManager>().doctorId;
+    if (doctorId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Desvincular paciente'),
+        content: Text(
+          '¿Seguro que deseas desvincular a $patientName de tu lista de pacientes? '
+          'Dejarás de ver su expediente. Esta acción no elimina a la paciente ni su información.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Desvincular', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final patientsProvider = context.read<PatientsListProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    final success = await patientsProvider.unlinkPatient(doctorId.toString(), patient.patientId);
+    if (!mounted) return;
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(success
+            ? '$patientName fue desvinculada de tus pacientes.'
+            : patientsProvider.error ?? 'Error al desvincular al paciente'),
+        backgroundColor: success ? null : Colors.red,
+      ),
+    );
+  }
+
   Widget _buildPatientListCard({
     required String name,
     required String id,
     required int userId,
     required PatientEntity patientEntity,
-    required String gestationAge,
     required String avatarInitials,
   }) {
     // El filtrado por búsqueda ya se aplica antes de paginar en build().
@@ -359,38 +406,45 @@ class _PatientsListPageState extends State<PatientsListPage> {
                   ],
                 ),
               ),
-              ElevatedButton(
-                onPressed: () => _handleNewConsultation(patientEntity, name),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _handleNewConsultation(patientEntity, name),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Nueva consulta',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
                 ),
-                child: Text(
-                  'Nueva consulta',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _confirmUnlinkPatient(patientEntity, name),
+                  icon: Icon(Icons.link_off, size: 16, color: Colors.red),
+                  label: Text(
+                    'Desvincular',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side: BorderSide(color: Colors.red.withOpacity(0.5)),
+                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Edad Gestacional', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                SizedBox(height: 2),
-                Text(gestationAge, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-              ],
-            ),
-          ),
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           Row(
             children: [
               Expanded(

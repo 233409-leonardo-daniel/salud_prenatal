@@ -20,7 +20,6 @@ import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../chat/presentation/pages/chat_list_page.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../../forums/presentation/pages/forums_hub_page.dart';
-import '../../../users/presentation/pages/user_search_page.dart';
 import '../../../appointments/presentation/pages/appointment_form_page.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../../../appointments/domain/entities/appointment.dart';
@@ -263,7 +262,7 @@ class _DashboardPageState extends State<DashboardPage> {
           initial: receptionistInitial,
         );
       }
-      // El resto de pestañas (Citas, Mensajes, Directorio, Perfil) traen su
+      // El resto de pestañas (Citas, Mensajes, Perfil) traen su
       // propio AppBar, igual que en doctor/paciente.
       return AppBar(
         automaticallyImplyLeading: false,
@@ -342,8 +341,6 @@ class _DashboardPageState extends State<DashboardPage> {
         case 2:
           return const ChatListPage();
         case 3:
-          return const UserSearchPage();
-        case 4:
           return const ProfilePage();
         default:
           return _buildPlaceholderView('Módulo de recepción.');
@@ -464,24 +461,12 @@ class _DashboardPageState extends State<DashboardPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildReceptionistActionCard('Nueva Cita', Icons.add_circle, Colors.green, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AppointmentFormPage()),
-                  );
-                }),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildReceptionistActionCard('Directorio', Icons.people, AppColors.primary, () {
-                  setState(() => _currentTab = 3);
-                }),
-              ),
-            ],
-          ),
+          _buildReceptionistActionCard('Nueva Cita', Icons.add_circle, Colors.green, () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AppointmentFormPage()),
+            );
+          }),
           const SizedBox(height: 20),
         ],
       ),
@@ -1675,7 +1660,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final colors = theme.extension<AppColorsExt>()!;
     if (_userRole == 'receptionist') {
       // Mismo componente y estilo que el footer del doctor; solo cambian los
-      // ítems (sin Pacientes ni Foros, con Directorio).
+      // ítems (sin Pacientes ni Foros).
       return BottomNavigationBar(
         currentIndex: _currentTab,
         onTap: (index) {
@@ -1704,11 +1689,6 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: Icon(Icons.message_outlined),
             activeIcon: Icon(Icons.message),
             label: 'Mensajes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: 'Directorio',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

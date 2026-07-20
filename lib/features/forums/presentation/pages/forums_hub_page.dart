@@ -40,6 +40,9 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
       final currentUserId = session.userId;
       if (currentUserId != null) {
         final forumsProvider = context.read<ForumsProvider>();
+        // Verifica si la cuenta fue baneada (is_active == false). Si lo está,
+        // la UI mostrará una advertencia en vez del feed.
+        forumsProvider.checkBanStatus(currentUserId, doctorId: session.doctorId);
         await forumsProvider.loadSocialProfile(currentUserId);
         if (forumsProvider.socialProfile != null) {
           if (!_isDoctor) {
@@ -77,6 +80,7 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
   Widget build(BuildContext context) {
     final forumsProvider = context.watch<ForumsProvider>();
     final hasProfile = forumsProvider.socialProfile != null;
+    final isBanned = forumsProvider.isBanned;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -88,7 +92,7 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
         elevation: 0,
         backgroundColor: AppColors.background,
         actions: [
-          if (hasProfile) ...[
+          if (hasProfile && !isBanned) ...[
             IconButton(
               icon: Icon(Icons.edit_outlined, color: AppColors.textMuted),
               tooltip: 'Editar mi perfil',
@@ -101,7 +105,7 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
             ),
           ],
         ],
-        bottom: (hasProfile && !_isDoctor)
+        bottom: (hasProfile && !_isDoctor && !isBanned)
             ? TabBar(
                 controller: _tabController,
                 labelColor: AppColors.primary,
@@ -116,22 +120,24 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
             : null,
       ),
       body: SafeArea(
-        child: switch (forumsProvider.profileStatus) {
-          ProfileStatus.loading => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          _ => !hasProfile
-              ? _buildProfileOnboarding()
-              : _isDoctor
-                  ? _buildGlobalFeedTab()
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildFeedTab(),
-                        _buildGlobalFeedTab(),
-                      ],
-                    ),
-        },
+        child: isBanned
+            ? _buildBannedWarning()
+            : switch (forumsProvider.profileStatus) {
+                ProfileStatus.loading => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                _ => !hasProfile
+                    ? _buildProfileOnboarding()
+                    : _isDoctor
+                        ? _buildGlobalFeedTab()
+                        : TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildFeedTab(),
+                              _buildGlobalFeedTab(),
+                            ],
+                          ),
+              },
       ),
-      floatingActionButton: hasProfile
+      floatingActionButton: (hasProfile && !isBanned)
           ? FloatingActionButton.extended(
               onPressed: () {
                 Navigator.push(
@@ -147,6 +153,64 @@ class _ForumsHubPageState extends State<ForumsHubPage> with SingleTickerProvider
               ),
             )
           : null,
+    );
+  }
+
+  /// Se muestra en lugar del feed cuando la cuenta del usuario fue baneada
+  /// (is_active == false). Bloquea todo acceso a la comunidad.
+  Widget _buildBannedWarning() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              color: AppColors.riskHighBg,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: AppColors.riskHighText.withOpacity(0.3), width: 1.5),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.block, color: AppColors.riskHighText, size: 48),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Tu cuenta ha sido suspendida',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.riskHighText),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No puedes acceder a la comunidad porque tu cuenta fue baneada por incumplir las normas de convivencia. '
+                  'Si crees que se trata de un error, contacta al soporte para revisar tu caso.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 14, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.email_outlined, size: 16, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    Text(
+                      'fitnesspro.soporte@gmail.com',
+                      style: TextStyle(fontSize: 13, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

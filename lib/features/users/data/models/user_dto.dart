@@ -9,6 +9,7 @@ class UserDto {
   final String? specialty;
   final String? professionalLicense;
   final String? office;
+  final bool isActive;
 
   UserDto({
     required this.id,
@@ -21,6 +22,7 @@ class UserDto {
     this.specialty,
     this.professionalLicense,
     this.office,
+    this.isActive = true,
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,8 @@ class UserDto {
       specialty: json['specialty'],
       professionalLicense: json['professional_license'] ?? json['professionalLicense'],
       office: json['office'],
+      // Solo se considera baneado cuando el backend manda is_active == false.
+      isActive: json['is_active'] is bool ? json['is_active'] as bool : true,
     );
   }
 

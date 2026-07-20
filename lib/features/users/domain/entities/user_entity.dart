@@ -10,6 +10,11 @@ class UserEntity {
   final String? professionalLicense;
   final String? office;
 
+  /// `false` cuando la cuenta fue suspendida/baneada por un administrador
+  /// (campo `is_active` del backend). Por defecto true: si el dato no viene,
+  /// no se asume baneo.
+  final bool isActive;
+
   UserEntity({
     required this.id,
     required this.email,
@@ -21,5 +26,6 @@ class UserEntity {
     this.specialty,
     this.professionalLicense,
     this.office,
+    this.isActive = true,
   });
 }

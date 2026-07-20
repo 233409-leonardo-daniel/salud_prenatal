@@ -240,7 +240,24 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  /// True cuando el cuerpo de la pestaña actual es una página con su PROPIO
+  /// Scaffold+AppBar (Citas, Foros, Mensajes, Directorio). En esos casos el
+  /// scaffold externo NO debe poner un AppBar (devuelve null) para que el
+  /// AppBar de la página hija se extienda hasta la barra de notificaciones,
+  /// en vez de quedar debajo de una franja del status bar. Perfil (sin
+  /// Scaffold propio) y los dashboards conservan el espaciado del AppBar.
+  bool _bodyHasOwnAppBar() {
+    if (_userRole == 'receptionist') {
+      return _currentTab == 1 || _currentTab == 2 || _currentTab == 3;
+    }
+    if (_userRole == 'doctor') {
+      return _currentTab == 2 || _currentTab == 3 || _currentTab == 4;
+    }
+    // paciente
+    return _currentTab == 1 || _currentTab == 2 || _currentTab == 3;
+  }
+
+  PreferredSizeWidget? _buildAppBar() {
     final session = context.watch<SessionManager>();
     final String doctorName = session.name.isNotEmpty
         ? 'Dr(a). ${session.name}'
@@ -264,12 +281,17 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       }
       // El resto de pestañas (Citas, Mensajes, Directorio, Perfil) traen su
-      // propio AppBar, igual que en doctor/paciente.
-      return AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 0,
-        elevation: 0,
-      );
+      // propio AppBar, igual que en doctor/paciente. Para las que tienen
+      // Scaffold propio, no ponemos AppBar externo (null) para que su header
+      // llegue hasta el status bar; Perfil conserva el AppBar vacío como
+      // espaciador.
+      return _bodyHasOwnAppBar()
+          ? null
+          : AppBar(
+              automaticallyImplyLeading: false,
+              toolbarHeight: 0,
+              elevation: 0,
+            );
     }
 
     if (_userRole == 'doctor') {
@@ -325,11 +347,16 @@ class _DashboardPageState extends State<DashboardPage> {
     } else {
       // Patient dashboard header (renders directly in screen body to match styling)
     }
-    return AppBar(
-      automaticallyImplyLeading: false,
-      toolbarHeight: 0,
-      elevation: 0,
-    );
+    // Pestañas con página de Scaffold propio (Citas, Foros, Mensajes): sin
+    // AppBar externo para que su header se extienda hasta el status bar. El
+    // resto (Perfil, dashboard del paciente) mantiene el AppBar espaciador.
+    return _bodyHasOwnAppBar()
+        ? null
+        : AppBar(
+            automaticallyImplyLeading: false,
+            toolbarHeight: 0,
+            elevation: 0,
+          );
   }
 
   Widget _buildBody() {
@@ -420,9 +447,7 @@ class _DashboardPageState extends State<DashboardPage> {
     switch (dashboardProvider.status) {
       case DashboardStatus.initial:
       case DashboardStatus.loading:
-        return Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        );
+        return const _DashboardSkeleton();
       case DashboardStatus.error:
         return Center(
           child: Column(
@@ -446,7 +471,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final totalCitas = dashboardProvider.receptionistUpcomingAppointments.length;
     final pending = dashboardProvider.receptionistPendingAppointments.length;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -485,6 +514,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 20),
         ],
       ),
+      ),
     );
   }
 
@@ -516,9 +546,7 @@ class _DashboardPageState extends State<DashboardPage> {
     switch (dashboardProvider.status) {
       case DashboardStatus.initial:
       case DashboardStatus.loading:
-        return Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        );
+        return const _DashboardSkeleton();
       case DashboardStatus.error:
         return Center(
           child: Column(
@@ -539,19 +567,23 @@ class _DashboardPageState extends State<DashboardPage> {
         break;
     }
     final docDb = dashboardProvider.doctorDashboardData;
-    final receptionistsCount = (docDb?['receptionists'] as List?)?.length.toString() ?? '0';
+    final List<dynamic> receptionists = (docDb?['receptionists'] as List?) ?? const [];
     final citasHoyStr = docDb?['today_appointments_count']?.toString() ?? '0';
     final List<dynamic> todayAppointmentsRaw = docDb?['today_appointments'] ?? [];
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _buildReceptionistInfoCard(receptionists),
+          const SizedBox(height: 12),
           Row(
             children: [
-              _buildDoctorStatCard('Recepcionistas', receptionistsCount, Icons.support_agent_outlined, Colors.pink),
-              SizedBox(width: 12),
               _buildDoctorStatCard('Citas Hoy', citasHoyStr, Icons.calendar_today_outlined, Colors.teal),
             ],
           ),
@@ -586,65 +618,76 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           SizedBox(height: 12),
 
-          if (todayAppointmentsRaw.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 24.0),
-              child: Center(
-                child: Text(
-                  'No hay citas programadas para hoy.',
-                  style: TextStyle(color: AppColors.textMuted),
-                ),
-              ),
-            )
-          else
-            ...todayAppointmentsRaw.map((app) {
-              final String patientName = app['patient_name'] ?? 'Paciente';
-              final String reason = app['reason'] ?? 'Consulta general';
-              final String status = app['status'] ?? 'pending';
-              final String timeRaw = app['appointment_time'] ?? '';
-              final int? appointmentId = app['appointment_id'] as int?;
-              final int? patientId = app['patient_id'] as int?;
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: todayAppointmentsRaw.isEmpty
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24.0),
+                    child: Center(
+                      child: Text(
+                        'No hay citas programadas para hoy.',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: List.generate(todayAppointmentsRaw.length, (index) {
+                      final app = todayAppointmentsRaw[index];
+                      final String patientName = app['patient_name'] ?? 'Paciente';
+                      final String reason = app['reason'] ?? 'Consulta general';
+                      final String status = app['status'] ?? 'pending';
+                      final String timeRaw = app['appointment_time'] ?? '';
+                      final int? appointmentId = app['appointment_id'] as int?;
+                      final int? patientId = app['patient_id'] as int?;
 
-              DateTime parsedDateTime = DateTime.now();
-              String timeStr = 'Hora no esp.';
-              if (timeRaw.isNotEmpty) {
-                try {
-                  final dt = DateTime.parse(timeRaw).toLocal();
-                  parsedDateTime = dt;
-                  final isPm = dt.hour >= 12;
-                  final hour = dt.hour == 0
-                      ? 12
-                      : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
-                  timeStr = '${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
-                } catch (_) {}
-              }
+                      DateTime parsedDateTime = DateTime.now();
+                      String timeStr = 'Hora no esp.';
+                      if (timeRaw.isNotEmpty) {
+                        try {
+                          final dt = DateTime.parse(timeRaw).toLocal();
+                          parsedDateTime = dt;
+                          final isPm = dt.hour >= 12;
+                          final hour = dt.hour == 0
+                              ? 12
+                              : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+                          timeStr = '${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${isPm ? 'PM' : 'AM'}';
+                        } catch (_) {}
+                      }
 
-              return Column(
-                children: [
-                  _buildDoctorAppointmentItem(
-                    timeStr,
-                    patientName,
-                    reason,
-                    reason.toLowerCase().contains('urgente') || status == 'cancelled',
-                    onTap: (appointmentId == null || patientId == null)
-                        ? null
-                        : () => _openDoctorAppointmentDetail(
-                              appointmentId: appointmentId,
-                              patientId: patientId,
-                              patientName: patientName,
-                              reason: reason,
-                              status: status,
-                              dateTime: parsedDateTime,
-                            ),
+                      return Column(
+                        children: [
+                          _buildDoctorAppointmentItem(
+                            timeStr,
+                            patientName,
+                            reason,
+                            reason.toLowerCase().contains('urgente') || status == 'cancelled',
+                            onTap: (appointmentId == null || patientId == null)
+                                ? null
+                                : () => _openDoctorAppointmentDetail(
+                                      appointmentId: appointmentId,
+                                      patientId: patientId,
+                                      patientName: patientName,
+                                      reason: reason,
+                                      status: status,
+                                      dateTime: parsedDateTime,
+                                    ),
+                          ),
+                          if (index != todayAppointmentsRaw.length - 1)
+                            Divider(height: 1, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)),
+                        ],
+                      );
+                    }),
                   ),
-                  Divider(height: 1, color: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)),
-                ],
-              );
-            }),
+          ),
           const SizedBox(height: 20),
           _buildNewConsultationCard(),
           const SizedBox(height: 20),
         ],
+      ),
       ),
     );
   }
@@ -796,6 +839,93 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     if (!mounted) return;
     await showNewConsultationDialog(context, medicalRecordId: record.medicalRecordId, patientName: patientName);
+  }
+
+  /// Tarjeta con los datos de la recepcionista asignada al doctor (nombre y
+  /// correo), en lugar de un simple conteo. Muestra la primera; si hay más de
+  /// una, lo indica con "(+N más)". Si no hay ninguna, invita a crear una.
+  Widget _buildReceptionistInfoCard(List<dynamic> receptionists) {
+    final bool has = receptionists.isNotEmpty;
+    final Map<String, dynamic>? r =
+        has ? Map<String, dynamic>.from(receptionists.first as Map) : null;
+    final String name = r == null
+        ? ''
+        : '${r['name'] ?? ''} ${r['last_name'] ?? ''}'.trim();
+    final String email = r?['email']?.toString() ?? '';
+    final String initials = name.isNotEmpty ? name[0].toUpperCase() : 'R';
+    final String extra =
+        receptionists.length > 1 ? ' (+${receptionists.length - 1} más)' : '';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: AppColors.primaryLight,
+            child: has
+                ? Text(
+                    initials,
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                  )
+                : Icon(Icons.support_agent_outlined, color: AppColors.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.support_agent_outlined, size: 14, color: AppColors.textMuted),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Mi Recepcionista$extra',
+                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  has ? name : 'Aún no tienes recepcionista asignada',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (has && email.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.email_outlined, size: 13, color: AppColors.textMuted),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          email,
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDoctorStatCard(String title, String count, IconData icon, Color color) {
@@ -967,7 +1097,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         color: AppColors.cardBackground,
         child: Row(
           children: [
@@ -1029,9 +1159,7 @@ class _DashboardPageState extends State<DashboardPage> {
     switch (dashboardProvider.status) {
       case DashboardStatus.initial:
       case DashboardStatus.loading:
-        return Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        );
+        return const _DashboardSkeleton();
       case DashboardStatus.error:
         return Center(
           child: Column(
@@ -1199,7 +1327,11 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1640,6 +1772,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 40),
         ],
       ),
+      ),
     );
   }
 
@@ -1934,6 +2067,96 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Skeleton de carga de los dashboards (doctor/recepcionista/paciente): imita
+/// el layout general (dos tarjetas superiores, un título y varias filas) con
+/// un pulso suave, en vez de un spinner. Se muestra tanto en la carga inicial
+/// como al hacer pull-to-refresh.
+class _DashboardSkeleton extends StatefulWidget {
+  const _DashboardSkeleton();
+
+  @override
+  State<_DashboardSkeleton> createState() => _DashboardSkeletonState();
+}
+
+class _DashboardSkeletonState extends State<_DashboardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _block({double? width, double height = 16, double radius = 8}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.skeletonBase,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+    );
+  }
+
+  Widget _card(double height) {
+    return Expanded(
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: AppColors.skeletonBase,
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.4, end: 1.0).animate(_controller),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                _card(88),
+                const SizedBox(width: 12),
+                _card(88),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _block(width: 160, height: 18),
+            const SizedBox(height: 16),
+            for (var i = 0; i < 3; i++) ...[
+              Container(
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.skeletonBase,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ),
       ),
     );
   }

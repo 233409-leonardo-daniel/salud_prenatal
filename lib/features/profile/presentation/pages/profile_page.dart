@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../login/presentation/providers/login_provider.dart';
@@ -426,6 +427,12 @@ class _AcceptedPoliciesTileState extends State<_AcceptedPoliciesTile> {
                 },
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: _VerMasButton(
+                url: 'https://gist.github.com/mdz48/9c203d9efaa8c303baaaaed8abe54cea',
+              ),
+            ),
           ],
         ),
       ),
@@ -664,6 +671,10 @@ class _AccountDeletionTile extends StatelessWidget {
                       ),
                     ],
                   ),
+                  SizedBox(height: 16),
+                  _VerMasButton(
+                    url: 'https://gist.github.com/mdz48/aace2bde29f4c6b1809db34209337079',
+                  ),
                 ],
               ),
             ),
@@ -758,6 +769,47 @@ class _AccountDeletionTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Botón "Ver más" que abre una URL externa (p. ej. la página completa de
+/// políticas o del proceso de eliminación de cuenta) en el navegador.
+class _VerMasButton extends StatelessWidget {
+  final String url;
+
+  const _VerMasButton({required this.url});
+
+  Future<void> _open(BuildContext context) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir el enlace'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _open(context),
+        icon: Icon(Icons.open_in_new, size: 16, color: AppColors.primary),
+        label: Text(
+          'Ver más',
+          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppColors.primary, width: 1.3),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
       ),
     );
   }

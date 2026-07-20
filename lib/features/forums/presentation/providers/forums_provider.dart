@@ -105,6 +105,11 @@ class ForumsProvider with ChangeNotifier {
   // mensaje.
   bool _sessionExpired = false;
 
+  // Estado de baneo del usuario actual (is_active == false en /users/{id}).
+  // Cuando es true, la UI de foros muestra una advertencia en vez del feed.
+  bool _isBanned = false;
+  bool get isBanned => _isBanned;
+
   SocialProfile? _socialProfile;
   List<CommunityGroup> _groups = [];
   List<CommunityGroup> _recommendedGroups = [];
@@ -255,6 +260,21 @@ class ForumsProvider with ChangeNotifier {
   }
 
   // Fetch social profile
+  /// Consulta GET /users/{id} y marca al usuario como baneado si su cuenta
+  /// está inactiva (`is_active == false`). Ante un fallo de red NO se bloquea
+  /// (no se asume baneo), para no dejar a nadie fuera de los foros por un
+  /// error transitorio.
+  Future<void> checkBanStatus(int userId, {int? doctorId}) async {
+    try {
+      final user = await _getUserByIdUseCase.call(userId, doctorId: doctorId);
+      _isBanned = !user.isActive;
+    } catch (_) {
+      _isBanned = false;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   Future<void> loadSocialProfile(int userId) async {
     _profileStatus = ProfileStatus.loading;
     _profileError = null;

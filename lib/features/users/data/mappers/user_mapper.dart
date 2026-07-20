@@ -14,6 +14,7 @@ class UserMapper {
       specialty: dto.specialty,
       professionalLicense: dto.professionalLicense,
       office: dto.office,
+      isActive: dto.isActive,
     );
   }
 

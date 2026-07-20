@@ -85,6 +85,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
                 specialty: docData['specialty'],
                 professionalLicense: docData['professional_license'],
                 office: docData['office'],
+                // Se conserva el is_active de /users/{id}: el detalle del
+                // doctor (/doctors/{id}) no trae ese campo.
+                isActive: user.isActive,
               );
             }
           } catch (e) {

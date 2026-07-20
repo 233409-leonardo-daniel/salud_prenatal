@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
+import '../../../login/domain/entities/user_profile.dart';
+import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../providers/patient_diaries_provider.dart';
 import '../../domain/entities/patient_diary.dart';
 import '../../domain/entities/extracted_symptom.dart';
@@ -51,6 +53,67 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
       // "ve con tu doctor".
       diariesProvider.loadSymptomHistory(medicalRecordId);
     }
+  }
+
+  /// Resuelve el user_id del doctor asignado emparejando su nombre
+  /// (`current_doctor`) contra la lista de usuarios ya cargada. Mismo
+  /// mecanismo que usa la bandeja de chat: el backend no expone ese ID
+  /// directamente y nunca se inventa uno.
+  UserProfile? _matchAssignedDoctor(DashboardProvider dashboardProvider) {
+    final docName = dashboardProvider.dashboardData?['current_doctor'] as String?;
+    if (docName == null || docName.isEmpty) return null;
+    final normalized = docName.trim().toLowerCase();
+    final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor'));
+    for (final doc in doctors) {
+      final fullName = '${doc.name} ${doc.lastName}'.trim().toLowerCase();
+      if (fullName.isNotEmpty && fullName == normalized) return doc;
+    }
+    for (final doc in doctors) {
+      if (doc.name.isNotEmpty && normalized.contains(doc.name.toLowerCase())) return doc;
+    }
+    return null;
+  }
+
+  /// Lleva a la paciente al chat con su doctor asignado. Si aún no está
+  /// cargado el doctor, hace una carga liviana; si no se puede resolver,
+  /// avisa que lo abra desde la pestaña Mensajes (nunca abre un chat inventado).
+  Future<void> _goToDoctorChat() async {
+    final session = context.read<SessionManager>();
+    final dashboard = context.read<DashboardProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    if (dashboard.dashboardData?['current_doctor'] == null || dashboard.users.isEmpty) {
+      final patId = session.patientId ?? session.userId;
+      if (patId != null) {
+        await dashboard.loadPatientBasicInfo(patId);
+      }
+    }
+    if (!mounted) return;
+
+    final docName = dashboard.dashboardData?['current_doctor'] as String?;
+    if (docName == null || docName.isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Aún no tienes un médico asignado. Vincúlate con tu doctor en la pestaña Mensajes.'),
+      ));
+      return;
+    }
+
+    final doctor = _matchAssignedDoctor(dashboard);
+    if (doctor == null || doctor.userId == null) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('No se pudo abrir el chat automáticamente. Ábrelo desde la pestaña Mensajes.'),
+      ));
+      return;
+    }
+
+    navigator.push(MaterialPageRoute(
+      builder: (_) => ChatRoomPage(
+        otherUserId: doctor.userId!,
+        otherUserName: 'Dra. ${doctor.name} ${doctor.lastName}'.trim(),
+        otherUserRole: 'doctor',
+      ),
+    ));
   }
 
   String _formatDateTime(DateTime dateTime) {
@@ -917,6 +980,20 @@ class _PatientDiaryPageState extends State<PatientDiaryPage> {
                 Text(
                   reason,
                   style: TextStyle(color: AppColors.riskHighText, fontSize: 12),
+                ),
+                SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ElevatedButton.icon(
+                    onPressed: _goToDoctorChat,
+                    icon: Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
+                    label: Text('Ir', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.riskHighText,
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
                 ),
               ],
             ),

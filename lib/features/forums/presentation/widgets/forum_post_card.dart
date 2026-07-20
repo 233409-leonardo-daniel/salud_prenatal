@@ -4,13 +4,10 @@ import '../../../../core/utils/relative_time.dart';
 import '../../domain/entities/forum_post.dart';
 
 /// Tarjeta de publicación reutilizada en el feed "Para ti", el feed de un
-/// grupo y el feed global. El estilo de aviso (acento rosa, sello "De un
-/// doctor" e icono de altavoz en vez de la fecha) se aplica SOLO a los posts
-/// marcados como aviso (`post.isAd == true`). Ese flag únicamente lo puede
-/// activar un médico con suscripción premium (validado en la UI de creación
-/// y por el backend vía token), así que el rosa siempre representa un anuncio
-/// de un médico premium — nunca el post normal de un usuario ni el de un
-/// médico sin premium.
+/// grupo y el feed global. TODA publicación cuyo autor sea médico se muestra
+/// con el estilo rosa y el sello "De un doctor" (según el rol del autor). Las
+/// que además son anuncios (`post.isAd == true`, solo activable por un médico
+/// premium) llevan encima la etiqueta "Anuncio" y el pie "Ver más".
 class ForumPostCard extends StatelessWidget {
   final ForumPost post;
   final VoidCallback onTap;
@@ -20,16 +17,18 @@ class ForumPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDoctor = post.authorRole?.toLowerCase().contains('doctor') ?? false;
-    // El estilo rosa de aviso depende del flag real is_ad (solo lo activan
-    // médicos premium), no de que el autor sea doctor.
-    final isAd = post.isAd;
-    final authorName = post.authorAlias ?? (isAd ? 'Consultorio' : 'Usuario');
+    // TODA publicación de un médico se muestra en rosa con el sello "De un
+    // doctor". Las que además son anuncios (is_ad) llevan la etiqueta
+    // "Anuncio" y el pie "Ver más".
+    final isDoctorPost = isDoctor;
+    final isAdPost = post.isAd;
+    final authorName = post.authorAlias ?? (isDoctorPost ? 'Consultorio' : 'Usuario');
     final displayName = isDoctor ? 'Dr. $authorName' : authorName;
     final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
 
     final accentColor = AppColors.primary;
-    final cardColor = isAd ? AppColors.primaryLight : AppColors.cardBackground;
-    final borderColor = isAd ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
+    final cardColor = isDoctorPost ? AppColors.primaryLight : AppColors.cardBackground;
+    final borderColor = isDoctorPost ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -79,7 +78,7 @@ class ForumPostCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (isAd)
+                        if (isDoctorPost)
                           Row(
                             children: [
                               Icon(Icons.campaign_outlined, size: 12, color: accentColor),
@@ -157,7 +156,7 @@ class ForumPostCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 12),
-              if (isAd)
+              if (isAdPost)
                 Row(
                   children: [
                     Icon(Icons.open_in_new, size: 14, color: accentColor),

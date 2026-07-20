@@ -121,13 +121,17 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
       }
     }
 
-    if (pressureSpotsSystolic.isEmpty) {
-      pressureSpotsSystolic.addAll([const FlSpot(1, 120), const FlSpot(2, 122), const FlSpot(3, 118)]);
-      pressureSpotsDiastolic.addAll([const FlSpot(1, 80), const FlSpot(2, 82), const FlSpot(3, 78)]);
-    }
-    if (weightSpots.isEmpty) {
-      weightSpots.addAll([const FlSpot(1, 60.0), const FlSpot(2, 60.5), const FlSpot(3, 61.2)]);
-    }
+    // Nota: NO se inyectan datos de ejemplo. En un contexto clínico mostrar
+    // presiones/pesos falsos sería engañoso, así que si no hay lecturas reales
+    // se muestra un estado vacío honesto en cada gráfica.
+    final hasPressure = pressureSpotsSystolic.isNotEmpty;
+    final hasWeight = weightSpots.isNotEmpty;
+    // Etiquetas del eje horizontal: la FECHA de cada consulta (dd/mm), en el
+    // orden en que ocurrieron. El eje X es el número de consulta (1,2,3...) y
+    // cada punto se ubica en la fecha en que se registró.
+    final xLabels = consultations
+        .map((c) => '${c.createdAt.day}/${c.createdAt.month}')
+        .toList();
     if (symptomsWidgets.isEmpty) {
       symptomsWidgets.add(Text('Sin síntomas reportados recientemente.', style: TextStyle(color: AppColors.textMuted)));
     }
@@ -154,12 +158,25 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
             SizedBox(height: 16),
             _buildChartCard(
               title: 'Presión Arterial (Sistólica/Diastólica)',
-              chart: _buildPressureChart(pressureSpotsSystolic, pressureSpotsDiastolic),
+              legend: hasPressure
+                  ? Row(
+                      children: [
+                        _legendDot(Colors.redAccent, 'Sistólica'),
+                        SizedBox(width: 16),
+                        _legendDot(Colors.blueAccent, 'Diastólica'),
+                      ],
+                    )
+                  : null,
+              chart: hasPressure
+                  ? _buildPressureChart(pressureSpotsSystolic, pressureSpotsDiastolic, xLabels)
+                  : _buildEmptyChart('Aún no hay lecturas de presión registradas en las consultas.'),
             ),
             SizedBox(height: 16),
             _buildChartCard(
               title: 'Evolución de Peso (kg)',
-              chart: _buildWeightChart(weightSpots),
+              chart: hasWeight
+                  ? _buildWeightChart(weightSpots, xLabels)
+                  : _buildEmptyChart('Aún no hay registros de peso en las consultas.'),
             ),
             SizedBox(height: 24),
             Text(
@@ -178,7 +195,7 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
     );
   }
 
-  Widget _buildChartCard({required String title, required Widget chart}) {
+  Widget _buildChartCard({required String title, required Widget chart, Widget? legend}) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -199,6 +216,10 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
             title,
             style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
           ),
+          if (legend != null) ...[
+            SizedBox(height: 8),
+            legend,
+          ],
           SizedBox(height: 24),
           SizedBox(
             height: 200,
@@ -209,17 +230,81 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
     );
   }
 
-  Widget _buildPressureChart(List<FlSpot> systolic, List<FlSpot> diastolic) {
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+      ],
+    );
+  }
+
+  Widget _buildEmptyChart(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.show_chart, size: 36, color: AppColors.textMuted),
+          SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Eje horizontal etiquetado con la FECHA (dd/mm) de cada consulta, más el
+  /// rótulo "Fecha de consulta". Cada valor entero del eje X (1,2,3...) es una
+  /// consulta y se traduce a su fecha vía [xLabels].
+  FlTitlesData _dateTitlesData(List<String> xLabels) {
+    return FlTitlesData(
+      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      leftTitles: const AxisTitles(
+        sideTitles: SideTitles(showTitles: true, reservedSize: 36),
+      ),
+      bottomTitles: AxisTitles(
+        axisNameWidget: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            'Fecha de consulta',
+            style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+          ),
+        ),
+        axisNameSize: 20,
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 26,
+          interval: 1,
+          getTitlesWidget: (value, meta) {
+            // Solo etiquetamos valores enteros (cada consulta), no los
+            // intermedios que fl_chart consulta para la cuadrícula.
+            if (value != value.roundToDouble()) return const SizedBox.shrink();
+            final idx = value.round() - 1;
+            if (idx < 0 || idx >= xLabels.length) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                xLabels[idx],
+                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPressureChart(List<FlSpot> systolic, List<FlSpot> diastolic, List<String> xLabels) {
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
-        titlesData: const FlTitlesData(
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: true, reservedSize: 22, interval: 1),
-          ),
-        ),
+        titlesData: _dateTitlesData(xLabels),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
@@ -241,17 +326,11 @@ class _PatientProgressPageState extends State<PatientProgressPage> {
     );
   }
 
-  Widget _buildWeightChart(List<FlSpot> spots) {
+  Widget _buildWeightChart(List<FlSpot> spots, List<String> xLabels) {
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
-        titlesData: const FlTitlesData(
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: true, reservedSize: 22, interval: 1),
-          ),
-        ),
+        titlesData: _dateTitlesData(xLabels),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(

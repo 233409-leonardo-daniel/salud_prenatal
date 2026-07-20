@@ -419,28 +419,34 @@ class _PatientsListPageState extends State<PatientsListPage> {
               SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: null,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientProgressPage(
+                          patientName: name,
+                          patientId: id,
+                        ),
+                      ),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    side: BorderSide(
-                      color: AppColors.isDarkMode ? Colors.transparent : Colors.grey.shade300,
-                      width: 1,
-                    ),
-                    backgroundColor: AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade100,
-                    disabledForegroundColor: AppColors.isDarkMode ? AppColors.textMuted : Colors.grey,
+                    side: BorderSide(color: AppColors.primary, width: 1.4),
+                    backgroundColor: AppColors.primaryLight,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.trending_up, size: 16, color: AppColors.isDarkMode ? AppColors.textMuted : Colors.grey),
+                      Icon(Icons.trending_up, size: 16, color: AppColors.primary),
                       SizedBox(width: 6),
                       Text(
                         'Progreso',
                         style: TextStyle(
-                          color: AppColors.isDarkMode ? AppColors.textMuted : Colors.grey,
+                          color: AppColors.primary,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),

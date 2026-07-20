@@ -188,7 +188,10 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) =>
-              PatientsListProvider(patientsModule.getDoctorPatientsUseCase),
+              PatientsListProvider(
+            patientsModule.getDoctorPatientsUseCase,
+            patientsModule.unlinkPatientUseCase,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => PatientDetailProvider(

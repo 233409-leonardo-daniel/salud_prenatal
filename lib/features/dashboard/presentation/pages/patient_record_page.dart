@@ -629,11 +629,14 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                     children: [
                       Text(
                         'Nivel de riesgo',
-                        style: TextStyle(fontSize: 11, color: level.color.withOpacity(0.85), fontWeight: FontWeight.w600),
+                        style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
                       ),
                       Text(
                         level.label,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: level.color),
+                        // Texto neutro segun el tema (negro en claro / blanco en
+                        // oscuro); el color de riesgo queda solo en el icono y el
+                        // borde para no saturar de rojo.
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
                       ),
                     ],
                   ),
@@ -654,7 +657,9 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               'Diagnóstico: $clusterName',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppColors.isDarkMode ? Colors.purple.shade100 : Colors.purple.shade900,
+                // Neutro segun el tema; el matiz morado se conserva solo en el
+                // fondo y el borde del recuadro.
+                color: AppColors.textDark,
                 fontSize: 13,
                 height: 1.4,
               ),
@@ -983,7 +988,10 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
               decoration: BoxDecoration(color: AppColors.riskHighBg, borderRadius: BorderRadius.circular(10)),
               child: Text(
                 descargo,
-                style: TextStyle(fontSize: 11, color: AppColors.riskHighText, fontWeight: FontWeight.w600, height: 1.4),
+                // Antes usaba riskHighText (rojo), que en modo oscuro quedaba
+                // ilegible. Ahora es texto neutro del tema (negro/blanco) sobre
+                // el fondo tenue de aviso.
+                style: TextStyle(fontSize: 11, color: AppColors.textDark, fontWeight: FontWeight.w600, height: 1.4),
               ),
             ),
           SizedBox(height: 12),

@@ -6,7 +6,6 @@ import '../../../login/domain/entities/user_profile.dart';
 abstract class PatientsRemoteDataSource {
   Future<List<PatientModel>> getPatientsByDoctor(String doctorId);
   Future<UserProfile> getPatientDetails(String userId);
-  Future<void> unlinkPatient(String doctorId, String patientId);
 }
 
 class PatientsRemoteDataSourceImpl implements PatientsRemoteDataSource {
@@ -37,14 +36,5 @@ class PatientsRemoteDataSourceImpl implements PatientsRemoteDataSource {
     }
     
     throw Exception('Error al obtener detalles del usuario (Status: ${response.statusCode})');
-  }
-
-  @override
-  Future<void> unlinkPatient(String doctorId, String patientId) async {
-    final response = await _apiClient.delete('/doctors/$doctorId/patients/$patientId');
-
-    if (response.statusCode == 200 || response.statusCode == 204) return;
-
-    throw Exception('Error al desvincular al paciente (Status: ${response.statusCode})');
   }
 }

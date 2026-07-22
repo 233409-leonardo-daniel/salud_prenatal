@@ -18,6 +18,11 @@ class SubscriptionsRepositoryImpl implements SubscriptionsRepository {
   }
 
   @override
+  Future<String> createPortalSession() {
+    return remoteDataSource.createPortalSession();
+  }
+
+  @override
   Future<String> refreshToken() {
     return remoteDataSource.refreshToken();
   }

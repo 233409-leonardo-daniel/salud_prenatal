@@ -6,7 +6,6 @@ import '../domain/repositories/patients_repository.dart';
 import '../domain/repositories/invitation_repository.dart';
 import '../domain/usecases/get_doctor_patients_usecase.dart';
 import '../domain/usecases/get_patient_details_usecase.dart';
-import '../domain/usecases/unlink_patient_usecase.dart';
 import '../domain/usecases/generate_invitation_code_usecase.dart';
 import '../domain/usecases/redeem_invitation_code_usecase.dart';
 import '../../../../core/network/api_client.dart';
@@ -16,7 +15,6 @@ class PatientsModule {
   late final PatientsRepository repository;
   late final GetDoctorPatientsUseCase getDoctorPatientsUseCase;
   late final GetPatientDetailsUseCase getPatientDetailsUseCase;
-  late final UnlinkPatientUseCase unlinkPatientUseCase;
   late final InvitationRemoteDataSource invitationRemoteDataSource;
   late final InvitationRepository invitationRepository;
   late final GenerateInvitationCodeUseCase generateInvitationCodeUseCase;
@@ -27,7 +25,6 @@ class PatientsModule {
     repository = PatientsRepositoryImpl(remoteDataSource: remoteDataSource);
     getDoctorPatientsUseCase = GetDoctorPatientsUseCase(repository);
     getPatientDetailsUseCase = GetPatientDetailsUseCase(repository);
-    unlinkPatientUseCase = UnlinkPatientUseCase(repository);
 
     invitationRemoteDataSource = InvitationRemoteDataSourceImpl(apiClient: apiClient);
     invitationRepository = InvitationRepositoryImpl(remoteDataSource: invitationRemoteDataSource);

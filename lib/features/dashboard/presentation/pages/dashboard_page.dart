@@ -24,6 +24,9 @@ import '../../../appointments/presentation/pages/appointment_form_page.dart';
 import '../../../../core/enums/appointment_status.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import 'new_consultation_dialog.dart';
+import '../../../unlink_requests/presentation/providers/doctor_unlink_provider.dart';
+import '../../../unlink_requests/presentation/providers/patient_unlink_provider.dart';
+import '../../../unlink_requests/presentation/widgets/doctor_unlink_requests_sheet.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -109,6 +112,8 @@ class _DashboardPageState extends State<DashboardPage> {
       // Se dispara sin await: la sección de Alertas Prioritarias se actualiza
       // sola (vía notifyListeners) en cuanto terminen las peticiones en paralelo.
       dashboardProvider.loadCriticalPatients(docId);
+      // Contador para el badge de la campana (solicitudes de desvinculación).
+      context.read<DoctorUnlinkProvider>().refreshCount(docId);
     } else if (_userRole == 'receptionist') {
       final recepId = session.receptionistId;
       if (recepId == null) return; // Sesión sin receptionistId: nada que cargar.
@@ -132,6 +137,12 @@ class _DashboardPageState extends State<DashboardPage> {
       final medicalRecordId = dashboardProvider.medicalRecord?.medicalRecordId;
       if (medicalRecordId != null) {
         diariesProvider.loadDiaries(medicalRecordId);
+      }
+
+      // Si la paciente tiene doctor, revisa si ya hay una solicitud de
+      // desvinculación pendiente para reflejarla en su tarjeta del dashboard.
+      if (session.doctorId != null) {
+        context.read<PatientUnlinkProvider>().loadPending(patId);
       }
     }
   }
@@ -184,12 +195,154 @@ class _DashboardPageState extends State<DashboardPage> {
     return scaffold;
   }
 
+  /// Envuelve el ícono de la campana con un badge rojo cuando hay [badge] > 0
+  /// (solicitudes de desvinculación pendientes para el doctor).
+  Widget _bellIcon({required Widget child, required int badge}) {
+    if (badge <= 0) return child;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+            child: Text(
+              badge > 9 ? '9+' : '$badge',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bloque en el dashboard de la paciente para solicitar la desvinculación de
+  /// su doctor. Si ya hay una solicitud pendiente, muestra el estado y permite
+  /// cancelarla; si no, ofrece el botón para enviarla.
+  Widget _buildUnlinkRequestSection(int patientId) {
+    return Consumer<PatientUnlinkProvider>(
+      builder: (context, provider, _) {
+        if (provider.hasPending) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.isDarkMode ? const Color(0xFF3A2E1E) : const Color(0xFFFFF4E5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.orange.withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.hourglass_top, color: Colors.orange, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Solicitud de desvinculación enviada. Tu médico debe aprobarla.',
+                    style: TextStyle(fontSize: 13, color: AppColors.textDark),
+                  ),
+                ),
+                provider.isSubmitting
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : TextButton(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final ok = await provider.cancelRequest(patientId);
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(ok
+                                  ? 'Solicitud cancelada.'
+                                  : provider.error ?? 'No se pudo cancelar.'),
+                              backgroundColor: ok ? null : Colors.red,
+                            ),
+                          );
+                        },
+                        child: Text('Cancelar', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      ),
+              ],
+            ),
+          );
+        }
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => _showUnlinkRequestDialog(patientId),
+            icon: Icon(Icons.link_off, size: 16, color: AppColors.textMuted),
+            label: Text(
+              'Solicitar cambio de médico',
+              style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showUnlinkRequestDialog(int patientId) async {
+    final reasonController = TextEditingController();
+    final provider = context.read<PatientUnlinkProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Solicitar desvinculación'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Se enviará una solicitud a tu médico. La desvinculación solo ocurre '
+              'si tu médico la aprueba.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              maxLength: 500,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Motivo (opcional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text('Enviar', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    final reason = reasonController.text.trim();
+    final ok = await provider.createRequest(patientId, reason.isEmpty ? null : reason);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? 'Solicitud enviada a tu médico.'
+            : provider.error ?? 'No se pudo enviar la solicitud.'),
+        backgroundColor: ok ? null : Colors.red,
+      ),
+    );
+  }
+
   /// Header de la pestaña de inicio, compartido por doctor y recepcionista:
   /// avatar con inicial + saludo + nombre sobre el color primario.
   PreferredSizeWidget _buildGreetingAppBar({
     required String greeting,
     required String name,
     required String initial,
+    VoidCallback? onNotifications,
+    int notificationBadge = 0,
   }) {
     return AppBar(
       automaticallyImplyLeading: false,
@@ -224,15 +377,18 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       actions: [
         IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              shape: BoxShape.circle,
+          icon: _bellIcon(
+            badge: notificationBadge,
+            child: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.notifications_none_outlined, size: 20, color: Colors.white),
             ),
-            child: const Icon(Icons.notifications_none_outlined, size: 20, color: Colors.white),
           ),
-          onPressed: () {},
+          onPressed: onNotifications ?? () {},
         ),
         SizedBox(width: 12),
       ],
@@ -289,12 +445,16 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     if (_userRole == 'doctor') {
+      final unlinkCount = context.watch<DoctorUnlinkProvider>().pendingCount;
+      final doctorId = session.doctorId;
       if (_currentTab == 0) {
         // Doctor main dashboard header
         return _buildGreetingAppBar(
           greeting: 'Buenos días,',
           name: doctorName,
           initial: doctorInitial,
+          notificationBadge: unlinkCount,
+          onNotifications: doctorId == null ? null : () => showDoctorUnlinkRequestsSheet(context, doctorId),
         );
       } else if (_currentTab == 1) {
         // "Mis Pacientes" header
@@ -331,8 +491,11 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.notifications_none_outlined, color: Colors.white),
-              onPressed: () {},
+              icon: _bellIcon(
+                badge: unlinkCount,
+                child: const Icon(Icons.notifications_none_outlined, color: Colors.white),
+              ),
+              onPressed: doctorId == null ? () {} : () => showDoctorUnlinkRequestsSheet(context, doctorId),
             ),
             SizedBox(width: 8),
           ],
@@ -1695,6 +1858,12 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
+          SizedBox(height: 12),
+
+          // Solicitar desvinculación (solo si tiene doctor asignado).
+          if (dashboardProvider.dashboardData?['current_doctor'] != null)
+            _buildUnlinkRequestSection(session.patientId ?? session.userId ?? 0),
+
           SizedBox(height: 28),
 
           // SEGUIMIENTO SEMANAL Section

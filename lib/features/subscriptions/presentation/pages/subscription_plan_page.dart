@@ -35,6 +35,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
   String? _awaitingPaymentMode;
   bool _awaitingConfirmation = false;
   bool _confirmationTimedOut = false;
+  // El doctor salió al Portal de Stripe (cambiar plan / tarjeta / cancelar);
+  // al volver a la app hay que recargar el estado para reflejar el cambio.
+  bool _awaitingPortalReturn = false;
   Timer? _pollTimer;
   DateTime? _pollStartedAt;
   final AppLinks _appLinks = AppLinks();
@@ -60,7 +63,8 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _awaitingConfirmation) {
+    if (state == AppLifecycleState.resumed && (_awaitingConfirmation || _awaitingPortalReturn)) {
+      _awaitingPortalReturn = false;
       context.read<SubscriptionsProvider>().loadStatus();
     }
   }
@@ -73,6 +77,14 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
   void _handleIncomingLink(Uri uri) {
     if (uri.scheme != 'saludprenatal' || uri.host != 'payment-callback') return;
     if (!mounted) return;
+
+    // Regreso del Portal de Stripe (gestión de suscripción): no es un checkout,
+    // solo recargamos el estado para reflejar el plan/tarjeta actualizados.
+    if (_awaitingPortalReturn) {
+      _awaitingPortalReturn = false;
+      context.read<SubscriptionsProvider>().loadStatus();
+      return;
+    }
 
     if (uri.path.toLowerCase().contains('cancel')) {
       _pollTimer?.cancel();
@@ -119,6 +131,41 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
     }
 
     _startPolling();
+  }
+
+  /// Abre el Portal de Cliente de Stripe (cambiar de plan, actualizar tarjeta,
+  /// cancelar). Mismo patrón que [_pay]: pide la URL al backend y la abre en el
+  /// navegador in-app. Al volver, [didChangeAppLifecycleState] recarga el estado.
+  Future<void> _openPortal() async {
+    final provider = context.read<SubscriptionsProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    final portalUrl = await provider.openPortal();
+    if (!mounted) return;
+
+    if (portalUrl == null || portalUrl.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(provider.portalError ?? 'No se pudo abrir la gestión de la suscripción'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final uri = Uri.tryParse(portalUrl);
+    if (uri == null || !await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir la página de gestión'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    _awaitingPortalReturn = true;
   }
 
   void _startPolling() {
@@ -328,6 +375,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
   Widget _buildActiveState(ThemeData theme, SubscriptionStatus subscription) {
     final planLabel = subscription.planType == 'premium' ? 'Premium' : 'Básico';
     final periodEnd = subscription.currentPeriodEnd;
+    final isOpeningPortal = context.watch<SubscriptionsProvider>().portalStatus == PortalStatus.loading;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -369,6 +417,31 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> with Widget
                 'Después de esa fecha perderás el acceso.',
           ),
         const SizedBox(height: 32),
+        // Gestión de la suscripción vía el Portal de Cliente de Stripe: cambiar
+        // de plan, actualizar tarjeta o cancelar. Solo aplica al plan recurrente
+        // (el pago único no se "gestiona": se vuelve a pagar para renovar).
+        if (subscription.autoRenewal) ...[
+          OutlinedButton.icon(
+            onPressed: isOpeningPortal ? null : _openPortal,
+            icon: isOpeningPortal
+                ? SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  )
+                : Icon(Icons.settings_outlined, color: AppColors.primary),
+            label: Text(
+              'Cambiar plan o gestionar suscripción',
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: AppColors.primary),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         ElevatedButton(
           onPressed: () {
             if (Navigator.of(context).canPop()) {

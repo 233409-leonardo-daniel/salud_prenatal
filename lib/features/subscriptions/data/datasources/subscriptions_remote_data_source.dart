@@ -9,6 +9,11 @@ abstract class SubscriptionsRemoteDataSource {
   /// `"one_time"` (habilita OXXO/SPEI, pago de un solo mes).
   Future<String> createCheckoutSession(String planType, String paymentMode);
 
+  /// Abre el Portal de Cliente de Stripe (cambiar de plan, actualizar tarjeta,
+  /// cancelar). Devuelve la `portal_url` a la que redirigir. Solo aplica a un
+  /// doctor con `stripe_customer_id` (suscripción ya iniciada).
+  Future<String> createPortalSession();
+
   /// Reobtiene un JWT fresco tras confirmarse el pago. El gating lee
   /// `subscription_status` desde el token, así que hay que reemplazarlo.
   /// Devuelve el nuevo `access_token`.
@@ -52,6 +57,16 @@ class SubscriptionsRemoteDataSourceImpl implements SubscriptionsRemoteDataSource
       return data['checkout_url'] ?? '';
     }
     throw Exception(_extractDetail(response.body, response.statusCode, 'Error al iniciar el proceso de pago'));
+  }
+
+  @override
+  Future<String> createPortalSession() async {
+    final response = await _apiClient.post('/subscriptions/portal-session', {});
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data['portal_url'] ?? '';
+    }
+    throw Exception(_extractDetail(response.body, response.statusCode, 'Error al abrir la gestión de la suscripción'));
   }
 
   @override

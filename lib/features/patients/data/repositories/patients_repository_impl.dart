@@ -17,9 +17,4 @@ class PatientsRepositoryImpl implements PatientsRepository {
   Future<UserProfile> getPatientDetails(String userId) async {
     return await remoteDataSource.getPatientDetails(userId);
   }
-
-  @override
-  Future<void> unlinkPatient(String doctorId, String patientId) async {
-    return await remoteDataSource.unlinkPatient(doctorId, patientId);
-  }
 }

@@ -302,58 +302,6 @@ class _PatientsListPageState extends State<PatientsListPage> {
     await showNewConsultationDialog(context, medicalRecordId: record.medicalRecordId, patientName: patientName);
   }
 
-  /// Confirma y ejecuta la desvinculación de la paciente del doctor de la
-  /// sesión. Es destructiva desde el punto de vista del doctor (deja de ver a
-  /// la paciente), por eso se pide confirmación explícita. El provider quita
-  /// la paciente de la lista, así que la tarjeta desaparece sola al terminar.
-  Future<void> _confirmUnlinkPatient(PatientEntity patient, String patientName) async {
-    final doctorId = context.read<SessionManager>().doctorId;
-    if (doctorId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo identificar al médico de la sesión.')),
-      );
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Desvincular paciente'),
-        content: Text(
-          '¿Seguro que deseas desvincular a $patientName de tu lista de pacientes? '
-          'Dejarás de ver su expediente. Esta acción no elimina a la paciente ni su información.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Desvincular', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    final patientsProvider = context.read<PatientsListProvider>();
-    final messenger = ScaffoldMessenger.of(context);
-
-    final success = await patientsProvider.unlinkPatient(doctorId.toString(), patient.patientId);
-    if (!mounted) return;
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(success
-            ? '$patientName fue desvinculada de tus pacientes.'
-            : patientsProvider.error ?? 'Error al desvincular al paciente'),
-        backgroundColor: success ? null : Colors.red,
-      ),
-    );
-  }
-
   Widget _buildPatientListCard({
     required String name,
     required String id,
@@ -409,40 +357,21 @@ class _PatientsListPageState extends State<PatientsListPage> {
             ],
           ),
           SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _handleNewConsultation(patientEntity, name),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Nueva consulta',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _handleNewConsultation(patientEntity, name),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _confirmUnlinkPatient(patientEntity, name),
-                  icon: Icon(Icons.link_off, size: 16, color: Colors.red),
-                  label: Text(
-                    'Desvincular',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    side: BorderSide(color: Colors.red.withOpacity(0.5)),
-                  ),
-                ),
+              child: Text(
+                'Nueva consulta',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
               ),
-            ],
+            ),
           ),
           SizedBox(height: 12),
           Row(

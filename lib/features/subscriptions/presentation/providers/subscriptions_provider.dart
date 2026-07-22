@@ -3,35 +3,43 @@ import '../../../../core/session/session_manager.dart';
 import '../../domain/entities/subscription_status.dart';
 import '../../domain/usecases/get_subscription_status_use_case.dart';
 import '../../domain/usecases/create_checkout_session_use_case.dart';
+import '../../domain/usecases/create_portal_session_use_case.dart';
 import '../../domain/usecases/refresh_token_use_case.dart';
 import '../pages/subscription_state.dart';
 
 class SubscriptionsProvider with ChangeNotifier {
   final GetSubscriptionStatusUseCase _getSubscriptionStatusUseCase;
   final CreateCheckoutSessionUseCase _createCheckoutSessionUseCase;
+  final CreatePortalSessionUseCase _createPortalSessionUseCase;
   final RefreshTokenUseCase _refreshTokenUseCase;
   final SessionManager _session;
 
   SubscriptionsProvider({
     required GetSubscriptionStatusUseCase getSubscriptionStatusUseCase,
     required CreateCheckoutSessionUseCase createCheckoutSessionUseCase,
+    required CreatePortalSessionUseCase createPortalSessionUseCase,
     required RefreshTokenUseCase refreshTokenUseCase,
     required SessionManager session,
   })  : _getSubscriptionStatusUseCase = getSubscriptionStatusUseCase,
         _createCheckoutSessionUseCase = createCheckoutSessionUseCase,
+        _createPortalSessionUseCase = createPortalSessionUseCase,
         _refreshTokenUseCase = refreshTokenUseCase,
         _session = session;
 
   SubscriptionFetchStatus _fetchStatus = SubscriptionFetchStatus.initial;
   CheckoutStatus _checkoutStatus = CheckoutStatus.initial;
+  PortalStatus _portalStatus = PortalStatus.initial;
   String? _fetchError;
   String? _checkoutError;
+  String? _portalError;
   SubscriptionStatus? _subscription;
 
   SubscriptionFetchStatus get fetchStatus => _fetchStatus;
   CheckoutStatus get checkoutStatus => _checkoutStatus;
+  PortalStatus get portalStatus => _portalStatus;
   String? get fetchError => _fetchError;
   String? get checkoutError => _checkoutError;
+  String? get portalError => _portalError;
   SubscriptionStatus? get subscription => _subscription;
 
   Future<void> loadStatus() async {
@@ -65,6 +73,26 @@ class SubscriptionsProvider with ChangeNotifier {
     } catch (e) {
       _checkoutError = e.toString().replaceAll('Exception: ', '');
       _checkoutStatus = CheckoutStatus.error;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Abre el Portal de Cliente de Stripe (cambiar de plan, actualizar tarjeta,
+  /// cancelar). Devuelve la URL a la que redirigir, o null si falló.
+  Future<String?> openPortal() async {
+    _portalStatus = PortalStatus.loading;
+    _portalError = null;
+    notifyListeners();
+
+    try {
+      final url = await _createPortalSessionUseCase.call();
+      _portalStatus = PortalStatus.success;
+      notifyListeners();
+      return url;
+    } catch (e) {
+      _portalError = e.toString().replaceAll('Exception: ', '');
+      _portalStatus = PortalStatus.error;
       notifyListeners();
       return null;
     }

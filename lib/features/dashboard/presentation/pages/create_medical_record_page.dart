@@ -30,6 +30,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
   final _lmpController = TextEditingController();
   final _educationController = TextEditingController();
   final _maritalStatusController = TextEditingController();
+  final _generalPlanController = TextEditingController();
 
   // Counters for history
   int _previousPregnancies = 0;
@@ -61,6 +62,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
     _lmpController.dispose();
     _educationController.dispose();
     _maritalStatusController.dispose();
+    _generalPlanController.dispose();
     super.dispose();
   }
 
@@ -426,6 +428,31 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
               onChanged: (val) => setState(() => _activeSmoking = val ?? false),
             ),
 
+            SizedBox(height: 28),
+
+            // Section 3: Plan general (mediano/largo plazo, distinto del plan
+            // puntual de cada consulta)
+            Text(
+              'Plan General (opcional)',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
+            SizedBox(height: 12),
+            TextFormField(
+              controller: _generalPlanController,
+              maxLines: 4,
+              minLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Plan general del embarazo',
+                hintText: 'Ej. Control mensual, monitorear presión, suplemento de hierro...',
+                alignLabelWithHint: true,
+                prefixIcon: Icon(Icons.assignment_outlined),
+              ),
+            ),
+
             SizedBox(height: 32),
 
             // Submit Button
@@ -470,6 +497,7 @@ class _CreateMedicalRecordPageState extends State<CreateMedicalRecordPage> {
                         "fetal_growth_restriction": _fetalGrowthRestriction,
                         "family_history_heart_disease": _familyHistoryHeartDisease,
                         "active_smoking": _activeSmoking,
+                        "general_plan": _generalPlanController.text.trim().isEmpty ? null : _generalPlanController.text.trim(),
                         "patient_id": widget.patientId,
                         "doctor_id": docId,
                       };

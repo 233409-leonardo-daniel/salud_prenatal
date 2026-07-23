@@ -11,6 +11,7 @@ import '../../domain/usecases/get_patient_dashboard_usecase.dart';
 import '../../domain/usecases/get_doctor_dashboard_usecase.dart';
 import '../../domain/usecases/get_receptionist_dashboard_usecase.dart';
 import '../../domain/usecases/create_medical_record_usecase.dart';
+import '../../domain/usecases/update_medical_record_usecase.dart';
 import '../../domain/usecases/evaluate_risk_usecase.dart';
 import '../../domain/usecases/create_consultation_usecase.dart';
 import '../pages/dashboard_state.dart';
@@ -25,6 +26,7 @@ class DashboardProvider with ChangeNotifier {
   final GetDoctorDashboardUseCase _getDoctorDashboardUseCase;
   final GetReceptionistDashboardUseCase _getReceptionistDashboardUseCase;
   final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
+  final UpdateMedicalRecordUseCase _updateMedicalRecordUseCase;
   final EvaluateRiskUseCase _evaluateRiskUseCase;
   final CreateConsultationUseCase _createConsultationUseCase;
 
@@ -38,6 +40,7 @@ class DashboardProvider with ChangeNotifier {
     required GetDoctorDashboardUseCase getDoctorDashboardUseCase,
     required GetReceptionistDashboardUseCase getReceptionistDashboardUseCase,
     required CreateMedicalRecordUseCase createMedicalRecordUseCase,
+    required UpdateMedicalRecordUseCase updateMedicalRecordUseCase,
     required EvaluateRiskUseCase evaluateRiskUseCase,
     required CreateConsultationUseCase createConsultationUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
@@ -49,6 +52,7 @@ class DashboardProvider with ChangeNotifier {
         _getDoctorDashboardUseCase = getDoctorDashboardUseCase,
         _getReceptionistDashboardUseCase = getReceptionistDashboardUseCase,
         _createMedicalRecordUseCase = createMedicalRecordUseCase,
+        _updateMedicalRecordUseCase = updateMedicalRecordUseCase,
         _evaluateRiskUseCase = evaluateRiskUseCase,
         _createConsultationUseCase = createConsultationUseCase;
 
@@ -74,6 +78,9 @@ class DashboardProvider with ChangeNotifier {
 
   bool _isCreatingConsultation = false;
   bool get isCreatingConsultation => _isCreatingConsultation;
+
+  bool _isUpdatingGeneralPlan = false;
+  bool get isUpdatingGeneralPlan => _isUpdatingGeneralPlan;
 
   DashboardStatus get status => _status;
   DashboardDetailsStatus get detailsStatus => _detailsStatus;
@@ -376,6 +383,36 @@ class DashboardProvider with ChangeNotifier {
       return false;
     } finally {
       _isCreatingConsultation = false;
+      notifyListeners();
+    }
+  }
+
+  /// Actualiza el plan general del expediente (PUT /medical-records/{id},
+  /// partial update con solo `general_plan`). Distinto del `plan` puntual de
+  /// cada consulta (`createConsultation`). Refresca `_activeMedicalRecord`/
+  /// `_medicalRecord` sin recargar todo el expediente.
+  Future<bool> updateGeneralPlan(int medicalRecordId, String? generalPlan) async {
+    _isUpdatingGeneralPlan = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final updated = await _updateMedicalRecordUseCase.call(
+        medicalRecordId,
+        {'general_plan': generalPlan},
+      );
+      if (_activeMedicalRecord != null && _activeMedicalRecord!.medicalRecordId == medicalRecordId) {
+        _activeMedicalRecord = _activeMedicalRecord!.copyWithGeneralPlan(updated.generalPlan);
+      }
+      if (_medicalRecord != null && _medicalRecord!.medicalRecordId == medicalRecordId) {
+        _medicalRecord = _medicalRecord!.copyWithGeneralPlan(updated.generalPlan);
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isUpdatingGeneralPlan = false;
       notifyListeners();
     }
   }

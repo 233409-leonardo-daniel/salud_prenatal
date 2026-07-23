@@ -147,6 +147,10 @@ class MedicalRecordResponse {
   final int? age;
   final RiskPrediction? riskPrediction;
 
+  /// Plan general del expediente (mediano/largo plazo), distinto del `plan`
+  /// puntual de cada consulta (`ConsultationResponse.plan`).
+  final String? generalPlan;
+
   /// Síntomas nuevos desde la última consulta registrada (misma forma que
   /// GET /patient-diaries/medical-record/{id}/symptoms). Si el expediente
   /// no tiene ninguna consulta todavía, trae TODO el historial. Lista
@@ -188,6 +192,7 @@ class MedicalRecordResponse {
     this.currentGestationalWeeks,
     this.age,
     this.riskPrediction,
+    this.generalPlan,
     this.symptomAlert = const [],
   });
 
@@ -257,6 +262,7 @@ class MedicalRecordResponse {
       currentGestationalWeeks: parseInt(json['current_gestational_weeks']),
       age: parseInt(json['age']),
       riskPrediction: riskPrediction,
+      generalPlan: recordJson['general_plan']?.toString(),
       symptomAlert: symptomAlert,
     );
   }
@@ -300,6 +306,51 @@ class MedicalRecordResponse {
       currentGestationalWeeks: currentGestationalWeeks,
       age: age,
       riskPrediction: riskPrediction,
+      generalPlan: generalPlan,
+      symptomAlert: symptomAlert,
+    );
+  }
+
+  /// Devuelve una copia de este expediente con un nuevo plan general (usado
+  /// tras llamar a PUT /medical-records/{id}, para no tener que recargar
+  /// todo el expediente solo para refrescar este campo).
+  MedicalRecordResponse copyWithGeneralPlan(String? generalPlan) {
+    return MedicalRecordResponse(
+      medicalRecordId: medicalRecordId,
+      patientId: patientId,
+      doctorId: doctorId,
+      bloodType: bloodType,
+      weeksAtRegistration: weeksAtRegistration,
+      lastMenstrualPeriod: lastMenstrualPeriod,
+      residence: residence,
+      educationLevel: educationLevel,
+      maritalStatus: maritalStatus,
+      heightCm: heightCm,
+      initialWeight: initialWeight,
+      initialSystolic: initialSystolic,
+      initialDiastolic: initialDiastolic,
+      previousHypertension: previousHypertension,
+      diabetes: diabetes,
+      familyHistoryHypertension: familyHistoryHypertension,
+      previousPregnancies: previousPregnancies,
+      previousDeliveries: previousDeliveries,
+      previousMiscarriages: previousMiscarriages,
+      previousCesareans: previousCesareans,
+      previousPreeclampsia: previousPreeclampsia,
+      chronicKidneyDisease: chronicKidneyDisease,
+      chronicHypertension: chronicHypertension,
+      multiplePregnancy: multiplePregnancy,
+      fetalDeath: fetalDeath,
+      fetalGrowthRestriction: fetalGrowthRestriction,
+      familyHistoryHeartDisease: familyHistoryHeartDisease,
+      activeSmoking: activeSmoking,
+      userId: userId,
+      name: name,
+      lastName: lastName,
+      currentGestationalWeeks: currentGestationalWeeks,
+      age: age,
+      riskPrediction: riskPrediction,
+      generalPlan: generalPlan,
       symptomAlert: symptomAlert,
     );
   }
@@ -340,6 +391,7 @@ class MedicalRecordResponse {
       if (currentGestationalWeeks != null) 'current_gestational_weeks': currentGestationalWeeks,
       if (age != null) 'age': age,
       if (riskPrediction != null) 'risk_prediction': riskPrediction!.toJson(),
+      if (generalPlan != null) 'general_plan': generalPlan,
     };
   }
 }

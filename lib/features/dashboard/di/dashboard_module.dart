@@ -8,6 +8,7 @@ import '../domain/usecases/get_consultations_by_medical_record_usecase.dart';
 import '../domain/usecases/get_consultations_from_patient_endpoint_usecase.dart';
 import '../domain/usecases/get_patient_dashboard_usecase.dart';
 import '../domain/usecases/create_medical_record_usecase.dart';
+import '../domain/usecases/update_medical_record_usecase.dart';
 import '../domain/usecases/evaluate_risk_usecase.dart';
 import '../domain/usecases/get_doctor_dashboard_usecase.dart';
 import '../domain/usecases/get_receptionist_dashboard_usecase.dart';
@@ -26,6 +27,7 @@ class DashboardModule {
   late final GetDoctorDashboardUseCase getDoctorDashboardUseCase;
   late final GetReceptionistDashboardUseCase getReceptionistDashboardUseCase;
   late final CreateMedicalRecordUseCase createMedicalRecordUseCase;
+  late final UpdateMedicalRecordUseCase updateMedicalRecordUseCase;
   late final EvaluateRiskUseCase evaluateRiskUseCase;
   late final CreateConsultationUseCase createConsultationUseCase;
 
@@ -42,6 +44,7 @@ class DashboardModule {
     getDoctorDashboardUseCase = GetDoctorDashboardUseCase(repository);
     getReceptionistDashboardUseCase = GetReceptionistDashboardUseCase(repository);
     createMedicalRecordUseCase = CreateMedicalRecordUseCase(repository);
+    updateMedicalRecordUseCase = UpdateMedicalRecordUseCase(repository);
     evaluateRiskUseCase = EvaluateRiskUseCase(repository);
     createConsultationUseCase = CreateConsultationUseCase(repository);
   }

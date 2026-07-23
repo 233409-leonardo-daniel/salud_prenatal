@@ -187,6 +187,7 @@ class _MyAppState extends State<MyApp> {
             getDoctorDashboardUseCase: dashboardModule.getDoctorDashboardUseCase,
             getReceptionistDashboardUseCase: dashboardModule.getReceptionistDashboardUseCase,
             createMedicalRecordUseCase: dashboardModule.createMedicalRecordUseCase,
+            updateMedicalRecordUseCase: dashboardModule.updateMedicalRecordUseCase,
             evaluateRiskUseCase: dashboardModule.evaluateRiskUseCase,
             createConsultationUseCase: dashboardModule.createConsultationUseCase,
           ),

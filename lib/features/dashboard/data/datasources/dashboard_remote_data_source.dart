@@ -14,6 +14,7 @@ abstract class DashboardRemoteDataSource {
   Future<Map<String, dynamic>> getDoctorDashboard(int doctorId);
   Future<Map<String, dynamic>> getReceptionistDashboard(int receptionistId);
   Future<MedicalRecordResponse> createMedicalRecord(Map<String, dynamic> recordData);
+  Future<MedicalRecordResponse> updateMedicalRecord(int medicalRecordId, Map<String, dynamic> data);
   Future<RiskPrediction> evaluateRisk(int medicalRecordId);
   Future<ConsultationResponse> createConsultation({
     required int medicalRecordId,
@@ -142,6 +143,37 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     }
 
     String errorMsg = 'Error al crear expediente (Status: ${response.statusCode})';
+    try {
+      final errorJson = jsonDecode(response.body);
+      final detail = errorJson['detail'];
+      if (detail is String) {
+        errorMsg = detail;
+      } else if (detail is List && detail.isNotEmpty) {
+        errorMsg = detail.map((e) {
+          final loc = e['loc'] is List ? e['loc'].join('.') : 'campo';
+          final msg = e['msg'] ?? 'inválido';
+          return "$loc: $msg";
+        }).join('\n');
+      } else if (errorJson['message'] != null) {
+        errorMsg = errorJson['message'];
+      } else {
+        errorMsg = response.body;
+      }
+    } catch (_) {
+      errorMsg = response.body;
+    }
+    throw Exception(errorMsg);
+  }
+
+  @override
+  Future<MedicalRecordResponse> updateMedicalRecord(int medicalRecordId, Map<String, dynamic> data) async {
+    final response = await _apiClient.put('/medical-records/$medicalRecordId', data);
+    if (response.statusCode == 200) {
+      final responseJson = jsonDecode(response.body);
+      return MedicalRecordResponse.fromJson(responseJson);
+    }
+
+    String errorMsg = 'Error al actualizar expediente (Status: ${response.statusCode})';
     try {
       final errorJson = jsonDecode(response.body);
       final detail = errorJson['detail'];

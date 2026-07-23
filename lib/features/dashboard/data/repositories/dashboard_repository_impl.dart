@@ -55,6 +55,11 @@ class DashboardRepositoryImpl implements DashboardRepository {
   }
 
   @override
+  Future<MedicalRecordResponse> updateMedicalRecord(int medicalRecordId, Map<String, dynamic> data) {
+    return remoteDataSource.updateMedicalRecord(medicalRecordId, data);
+  }
+
+  @override
   Future<RiskPrediction> evaluateRisk(int medicalRecordId) {
     return remoteDataSource.evaluateRisk(medicalRecordId);
   }

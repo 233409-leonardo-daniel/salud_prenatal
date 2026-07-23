@@ -11,6 +11,7 @@ import '../../../../core/session/session_manager.dart';
 import '../../../../core/enums/appointment_status.dart';
 import 'create_medical_record_page.dart';
 import 'new_consultation_dialog.dart';
+import 'edit_general_plan_dialog.dart';
 import 'consultation_detail_sheet.dart';
 import 'dashboard_state.dart';
 
@@ -394,6 +395,29 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                 ),
               ),
             ),
+            if (record != null) ...[
+              SizedBox(height: 12),
+              _buildExpansionSection(
+                title: 'Plan General del Expediente',
+                icon: Icons.assignment_outlined,
+                titleAction: isDoctor
+                    ? IconButton(
+                        icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
+                        tooltip: 'Editar plan general',
+                        onPressed: () => _openEditGeneralPlanDialog(context, record.medicalRecordId, record.generalPlan),
+                      )
+                    : null,
+                content: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    (record.generalPlan?.trim().isNotEmpty ?? false)
+                        ? record.generalPlan!
+                        : 'Aún no se ha definido un plan general para esta paciente.',
+                    style: TextStyle(color: AppColors.textDark, height: 1.4),
+                  ),
+                ),
+              ),
+            ],
             SizedBox(height: 12),
             _buildExpansionSection(
               title: 'Plan del Paciente',
@@ -1076,6 +1100,14 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
       context,
       medicalRecordId: medicalRecordId,
       patientName: widget.patientName,
+    );
+  }
+
+  Future<void> _openEditGeneralPlanDialog(BuildContext context, int medicalRecordId, String? currentPlan) async {
+    await showEditGeneralPlanDialog(
+      context,
+      medicalRecordId: medicalRecordId,
+      currentPlan: currentPlan,
     );
   }
 

@@ -19,6 +19,7 @@ import '../../../patient_diaries/presentation/providers/patient_diaries_provider
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../chat/presentation/pages/chat_list_page.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
+import 'doctor_profile_page.dart';
 import '../../../forums/presentation/pages/forums_hub_page.dart';
 import '../../../appointments/presentation/pages/appointment_form_page.dart';
 import '../../../../core/enums/appointment_status.dart';
@@ -27,6 +28,25 @@ import 'new_consultation_dialog.dart';
 import '../../../unlink_requests/presentation/providers/doctor_unlink_provider.dart';
 import '../../../unlink_requests/presentation/providers/patient_unlink_provider.dart';
 import '../../../unlink_requests/presentation/widgets/doctor_unlink_requests_sheet.dart';
+
+/// Empareja al médico asignado (mostrado como texto en la tarjeta) contra la
+/// lista de usuarios ya cargada, para recuperar su [UserProfile] completo.
+/// El backend no entrega el `user_id` del doctor asignado directamente, así que
+/// se compara por nombre; devuelve `null` si no hay coincidencia (para no
+/// inventar un ID).
+UserProfile? _matchAssignedDoctor(Iterable<UserProfile> users, String docNameStr) {
+  final normalized = docNameStr.trim().toLowerCase();
+  if (normalized.isEmpty) return null;
+  final doctors = users.where((u) => u.role.toLowerCase().contains('doctor'));
+  for (final doc in doctors) {
+    final fullName = '${doc.name} ${doc.lastName}'.trim().toLowerCase();
+    if (fullName.isNotEmpty && fullName == normalized) return doc;
+  }
+  for (final doc in doctors) {
+    if (doc.name.isNotEmpty && normalized.contains(doc.name.toLowerCase())) return doc;
+  }
+  return null;
+}
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -1775,14 +1795,23 @@ class _DashboardPageState extends State<DashboardPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          if (nextApp != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AppointmentDetailPage(appointment: nextApp),
+                          // Abre el perfil del médico asignado. Se empareja su
+                          // nombre contra la lista de usuarios ya cargada para
+                          // obtener sus datos completos (correo, teléfono,
+                          // especialidad, cédula); si no hay coincidencia, la
+                          // vista se apoya en el nombre/especialidad del
+                          // dashboard, de modo que el botón siempre muestra algo.
+                          final matchedDoc = _matchAssignedDoctor(dashboardProvider.users, docNameStr);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DoctorProfilePage(
+                                doctor: matchedDoc,
+                                fallbackName: docNameStr,
+                                fallbackSpecialty: docSpecialtyStr,
                               ),
-                            );
-                          }
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white.withAlpha(51),
@@ -1801,24 +1830,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           // directamente; se empareja su nombre contra la lista de
                           // usuarios ya cargada. Si no hay coincidencia, no se
                           // navega con un ID inventado.
-                          UserProfile? matchedDoc;
-                          final normalized = docNameStr.trim().toLowerCase();
-                          final doctors = dashboardProvider.users.where((u) => u.role.toLowerCase().contains('doctor'));
-                          for (final doc in doctors) {
-                            final fullName = '${doc.name} ${doc.lastName}'.trim().toLowerCase();
-                            if (fullName.isNotEmpty && fullName == normalized) {
-                              matchedDoc = doc;
-                              break;
-                            }
-                          }
-                          if (matchedDoc == null) {
-                            for (final doc in doctors) {
-                              if (doc.name.isNotEmpty && normalized.contains(doc.name.toLowerCase())) {
-                                matchedDoc = doc;
-                                break;
-                              }
-                            }
-                          }
+                          final matchedDoc = _matchAssignedDoctor(dashboardProvider.users, docNameStr);
                           final docUserId = matchedDoc?.userId;
                           if (docUserId == null) {
                             ScaffoldMessenger.of(context).showSnackBar(

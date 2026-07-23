@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:screen_protector/screen_protector.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/session/session_manager.dart';
 import '../providers/login_provider.dart';
@@ -20,7 +21,14 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    ScreenProtector.preventScreenshotOn();
+  }
+
+  @override
   void dispose() {
+    ScreenProtector.preventScreenshotOff();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();

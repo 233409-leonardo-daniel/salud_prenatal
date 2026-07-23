@@ -207,9 +207,6 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
       }
     }
 
-    // 5. Patient Plan
-    final planText = consultations.isNotEmpty ? consultations.last.plan : 'Continuar con las indicaciones médicas generales.';
-
     final session = context.watch<SessionManager>();
     final isDoctor = session.role?.toLowerCase() == 'doctor' || session.role?.toLowerCase() == 'doctor(a)';
 
@@ -418,20 +415,6 @@ class _PatientRecordPageState extends State<PatientRecordPage> {
                 ),
               ),
             ],
-            SizedBox(height: 12),
-            _buildExpansionSection(
-              title: 'Plan del Paciente',
-              icon: Icons.next_plan_outlined,
-              content: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(planText, style: TextStyle(color: AppColors.textDark, height: 1.4)),
-                  ],
-                ),
-              ),
-            ),
             SizedBox(height: 40),
           ],
         ),

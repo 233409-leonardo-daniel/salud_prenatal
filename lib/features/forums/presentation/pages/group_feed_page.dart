@@ -109,17 +109,18 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final post = posts[index];
-        // El estilo "De un doctor" (acento rosa) se aplica a TODAS las
-        // publicaciones de un doctor según su rol actual, no según el valor
-        // guardado de `post.isAd` (ver ForumPostCard): así se ven igual de
-        // consistentes aquí que en el feed global/"Para ti".
+        // Solo los ANUNCIOS (is_ad) se destacan en rosa con el sello "De un
+        // doctor" y el pie "Ver más", igual que en el feed global/"Para ti"
+        // (ver ForumPostCard). Una publicación normal de un doctor se ve como
+        // la de cualquier usuario: tarjeta neutra y hora relativa.
         final isDoctor = post.authorRole?.toLowerCase().contains('doctor') ?? false;
+        final isAdPost = post.isAd;
         final authorName = post.authorAlias ?? (isDoctor ? 'Consultorio' : 'Usuario');
         final displayName = isDoctor ? 'Dr. $authorName' : authorName;
         final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
         final accentColor = AppColors.primary;
-        final cardColor = isDoctor ? AppColors.primaryLight : AppColors.cardBackground;
-        final borderColor = isDoctor ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
+        final cardColor = isAdPost ? AppColors.primaryLight : AppColors.cardBackground;
+        final borderColor = isAdPost ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -179,7 +180,7 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                               ),
-                              if (isDoctor)
+                              if (isAdPost)
                                 Row(
                                   children: [
                                     Icon(Icons.campaign_outlined, size: 12, color: accentColor),
@@ -214,7 +215,7 @@ class _GroupFeedPageState extends State<GroupFeedPage> {
                     style: TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.4),
                   ),
                   const SizedBox(height: 12),
-                  if (isDoctor)
+                  if (isAdPost)
                     Row(
                       children: [
                         Icon(Icons.open_in_new, size: 14, color: accentColor),

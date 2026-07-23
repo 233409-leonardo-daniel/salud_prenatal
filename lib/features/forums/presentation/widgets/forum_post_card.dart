@@ -17,18 +17,18 @@ class ForumPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDoctor = post.authorRole?.toLowerCase().contains('doctor') ?? false;
-    // TODA publicación de un médico se muestra en rosa con el sello "De un
-    // doctor". Las que además son anuncios (is_ad) llevan la etiqueta
-    // "Anuncio" y el pie "Ver más".
-    final isDoctorPost = isDoctor;
+    // Solo los ANUNCIOS (is_ad, activable únicamente por un médico premium) se
+    // destacan en rosa con el sello "De un doctor", la etiqueta "Anuncio" y el
+    // pie "Ver más". Una publicación normal de un doctor se ve igual que la de
+    // cualquier otro usuario: tarjeta neutra y hora relativa.
     final isAdPost = post.isAd;
-    final authorName = post.authorAlias ?? (isDoctorPost ? 'Consultorio' : 'Usuario');
+    final authorName = post.authorAlias ?? (isDoctor ? 'Consultorio' : 'Usuario');
     final displayName = isDoctor ? 'Dr. $authorName' : authorName;
     final initials = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'U';
 
     final accentColor = AppColors.primary;
-    final cardColor = isDoctorPost ? AppColors.primaryLight : AppColors.cardBackground;
-    final borderColor = isDoctorPost ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
+    final cardColor = isAdPost ? AppColors.primaryLight : AppColors.cardBackground;
+    final borderColor = isAdPost ? AppColors.primary.withOpacity(0.35) : Colors.transparent;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -78,7 +78,7 @@ class ForumPostCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (isDoctorPost)
+                        if (isAdPost)
                           Row(
                             children: [
                               Icon(Icons.campaign_outlined, size: 12, color: accentColor),

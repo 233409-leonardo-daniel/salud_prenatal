@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:device_preview/device_preview.dart';
 import 'app.dart';
 
 void main() async {
@@ -12,6 +15,11 @@ void main() async {
     originalDebugPrint(message, wrapWidth: wrapWidth);
   };
 
-  runApp(const MyApp());
+  runApp(
+    DevicePreview(
+      enabled: !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isWindows || Platform.isMacOS),
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 

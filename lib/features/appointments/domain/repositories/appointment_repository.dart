@@ -1,5 +1,4 @@
 import '../entities/appointment.dart';
-import '../../../../core/enums/appointment_status.dart';
 
 abstract class AppointmentRepository {
   Future<List<Appointment>> getAppointmentsByUserId(String userId, {bool isDoctor = false});

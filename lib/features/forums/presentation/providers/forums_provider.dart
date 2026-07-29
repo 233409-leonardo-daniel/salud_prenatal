@@ -6,64 +6,64 @@ import '../../domain/entities/community_group.dart';
 import '../../domain/entities/forum_post.dart';
 import '../../domain/entities/forum_comment.dart';
 import '../../domain/entities/forum_report.dart';
-import '../../domain/usecases/get_social_profile_use_case.dart';
-import '../../domain/usecases/create_social_profile_use_case.dart';
-import '../../domain/usecases/update_social_profile_use_case.dart';
-import '../../domain/usecases/get_profile_timeline_use_case.dart';
-import '../../domain/usecases/create_group_use_case.dart';
-import '../../domain/usecases/get_groups_use_case.dart';
-import '../../domain/usecases/get_recommended_groups_use_case.dart';
-import '../../domain/usecases/create_post_use_case.dart';
-import '../../domain/usecases/upload_post_image_use_case.dart';
-import '../../domain/usecases/upload_avatar_use_case.dart';
-import '../../domain/usecases/get_global_feed_use_case.dart';
-import '../../domain/usecases/get_recommended_feed_use_case.dart';
-import '../../domain/usecases/get_group_feed_use_case.dart';
-import '../../domain/usecases/create_comment_use_case.dart';
-import '../../domain/usecases/get_comments_use_case.dart';
-import '../../domain/usecases/create_report_use_case.dart';
+import '../../domain/usecases/get_social_profile_usecase.dart';
+import '../../domain/usecases/create_social_profile_usecase.dart';
+import '../../domain/usecases/update_social_profile_usecase.dart';
+import '../../domain/usecases/get_profile_timeline_usecase.dart';
+import '../../domain/usecases/create_group_usecase.dart';
+import '../../domain/usecases/get_groups_usecase.dart';
+import '../../domain/usecases/get_recommended_groups_usecase.dart';
+import '../../domain/usecases/create_post_usecase.dart';
+import '../../domain/usecases/upload_post_image_usecase.dart';
+import '../../domain/usecases/upload_avatar_usecase.dart';
+import '../../domain/usecases/get_global_feed_usecase.dart';
+import '../../domain/usecases/get_recommended_feed_usecase.dart';
+import '../../domain/usecases/get_group_feed_usecase.dart';
+import '../../domain/usecases/create_comment_usecase.dart';
+import '../../domain/usecases/get_comments_usecase.dart';
+import '../../domain/usecases/create_report_usecase.dart';
 import '../../data/datasources/forums_remote_data_source.dart';
 import '../pages/forums_state.dart';
 import '../../../users/domain/entities/user_entity.dart';
-import '../../../users/domain/usecases/get_user_by_id_use_case.dart';
+import '../../../users/domain/usecases/get_user_by_id_usecase.dart';
 
 class ForumsProvider with ChangeNotifier {
-  final GetSocialProfileUseCase _getSocialProfileUseCase;
-  final CreateSocialProfileUseCase _createSocialProfileUseCase;
-  final UpdateSocialProfileUseCase _updateSocialProfileUseCase;
-  final GetProfileTimelineUseCase _getProfileTimelineUseCase;
-  final CreateGroupUseCase _createGroupUseCase;
-  final GetGroupsUseCase _getGroupsUseCase;
-  final GetRecommendedGroupsUseCase _getRecommendedGroupsUseCase;
-  final CreatePostUseCase _createPostUseCase;
-  final UploadPostImageUseCase _uploadPostImageUseCase;
-  final UploadAvatarUseCase _uploadAvatarUseCase;
-  final GetGlobalFeedUseCase _getGlobalFeedUseCase;
-  final GetRecommendedFeedUseCase _getRecommendedFeedUseCase;
-  final GetGroupFeedUseCase _getGroupFeedUseCase;
-  final CreateCommentUseCase _createCommentUseCase;
-  final GetCommentsUseCase _getCommentsUseCase;
-  final CreateReportUseCase _createReportUseCase;
-  final GetUserByIdUseCase _getUserByIdUseCase;
+  final GetSocialProfileUsecase _getSocialProfileUseCase;
+  final CreateSocialProfileUsecase _createSocialProfileUseCase;
+  final UpdateSocialProfileUsecase _updateSocialProfileUseCase;
+  final GetProfileTimelineUsecase _getProfileTimelineUseCase;
+  final CreateGroupUsecase _createGroupUseCase;
+  final GetGroupsUsecase _getGroupsUseCase;
+  final GetRecommendedGroupsUsecase _getRecommendedGroupsUseCase;
+  final CreatePostUsecase _createPostUseCase;
+  final UploadPostImageUsecase _uploadPostImageUseCase;
+  final UploadAvatarUsecase _uploadAvatarUseCase;
+  final GetGlobalFeedUsecase _getGlobalFeedUseCase;
+  final GetRecommendedFeedUsecase _getRecommendedFeedUseCase;
+  final GetGroupFeedUsecase _getGroupFeedUseCase;
+  final CreateCommentUsecase _createCommentUseCase;
+  final GetCommentsUsecase _getCommentsUseCase;
+  final CreateReportUsecase _createReportUseCase;
+  final GetUserByIdUsecase _getUserByIdUseCase;
 
   ForumsProvider({
-    required GetSocialProfileUseCase getSocialProfileUseCase,
-    required CreateSocialProfileUseCase createSocialProfileUseCase,
-    required UpdateSocialProfileUseCase updateSocialProfileUseCase,
-    required GetProfileTimelineUseCase getProfileTimelineUseCase,
-    required CreateGroupUseCase createGroupUseCase,
-    required GetGroupsUseCase getGroupsUseCase,
-    required GetRecommendedGroupsUseCase getRecommendedGroupsUseCase,
-    required CreatePostUseCase createPostUseCase,
-    required UploadPostImageUseCase uploadPostImageUseCase,
-    required UploadAvatarUseCase uploadAvatarUseCase,
-    required GetGlobalFeedUseCase getGlobalFeedUseCase,
-    required GetRecommendedFeedUseCase getRecommendedFeedUseCase,
-    required GetGroupFeedUseCase getGroupFeedUseCase,
-    required CreateCommentUseCase createCommentUseCase,
-    required GetCommentsUseCase getCommentsUseCase,
-    required CreateReportUseCase createReportUseCase,
-    required GetUserByIdUseCase getUserByIdUseCase,
+    required GetSocialProfileUsecase getSocialProfileUseCase,
+    required CreateSocialProfileUsecase createSocialProfileUseCase,
+    required UpdateSocialProfileUsecase updateSocialProfileUseCase,
+    required GetProfileTimelineUsecase getProfileTimelineUseCase,
+    required CreateGroupUsecase createGroupUseCase,
+    required GetGroupsUsecase getGroupsUseCase,
+    required GetRecommendedGroupsUsecase getRecommendedGroupsUseCase,
+    required CreatePostUsecase createPostUseCase,
+    required UploadPostImageUsecase uploadPostImageUseCase,
+    required UploadAvatarUsecase uploadAvatarUseCase,
+    required GetGlobalFeedUsecase getGlobalFeedUseCase,
+    required GetRecommendedFeedUsecase getRecommendedFeedUseCase,
+    required GetGroupFeedUsecase getGroupFeedUseCase,
+    required CreateCommentUsecase createCommentUseCase,
+    required GetCommentsUsecase getCommentsUseCase,
+    required CreateReportUsecase createReportUseCase,
+    required GetUserByIdUsecase getUserByIdUseCase,
   })  : _getSocialProfileUseCase = getSocialProfileUseCase,
         _createSocialProfileUseCase = createSocialProfileUseCase,
         _updateSocialProfileUseCase = updateSocialProfileUseCase,

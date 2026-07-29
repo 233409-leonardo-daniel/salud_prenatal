@@ -1,7 +1,7 @@
 import 'dart:convert';
 import '../../../../core/network/api_client.dart';
 import '../models/patient_model.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 
 abstract class PatientsRemoteDataSource {
   Future<List<PatientModel>> getPatientsByDoctor(String doctorId);

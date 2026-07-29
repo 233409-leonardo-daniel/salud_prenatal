@@ -1,5 +1,5 @@
 import '../entities/patient.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 
 abstract class PatientsRepository {
   Future<List<PatientEntity>> getPatientsByDoctor(String doctorId);

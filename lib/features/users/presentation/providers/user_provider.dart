@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/user_entity.dart';
-import '../../domain/usecases/get_doctors_use_case.dart';
-import '../../domain/usecases/get_patients_use_case.dart';
+import '../../domain/usecases/get_doctors_usecase.dart';
+import '../../domain/usecases/get_patients_usecase.dart';
 
-import '../../domain/usecases/get_user_by_id_use_case.dart';
+import '../../domain/usecases/get_user_by_id_usecase.dart';
 
 enum UserViewState { initial, loading, success, error }
 
 class UserProvider with ChangeNotifier {
-  final GetDoctorsUseCase _getDoctorsUseCase;
-  final GetPatientsUseCase _getPatientsUseCase;
-  final GetUserByIdUseCase _getUserByIdUseCase;
+  final GetDoctorsUsecase _getDoctorsUseCase;
+  final GetPatientsUsecase _getPatientsUseCase;
+  final GetUserByIdUsecase _getUserByIdUseCase;
 
   UserProvider(
       this._getDoctorsUseCase, this._getPatientsUseCase, this._getUserByIdUseCase);

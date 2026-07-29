@@ -6,7 +6,7 @@ import 'patient_state.dart';
 import '../../domain/entities/patient.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
-import '../../../../core/enums/appointment_status.dart';
+import '../../../appointments/domain/entities/appointment.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/session/session_manager.dart';
 class PatientDetailPage extends StatefulWidget {

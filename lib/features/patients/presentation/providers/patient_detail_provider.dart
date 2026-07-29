@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../domain/usecases/get_patient_details_usecase.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../pages/patient_state.dart';
 import '../../../../core/network/api_client.dart';
 
 class PatientDetailProvider with ChangeNotifier {
-  final GetPatientDetailsUseCase _getPatientDetailsUseCase;
+  final GetPatientDetailsUsecase _getPatientDetailsUseCase;
   final ApiClient _apiClient;
 
   PatientDetailProvider(this._getPatientDetailsUseCase, this._apiClient);

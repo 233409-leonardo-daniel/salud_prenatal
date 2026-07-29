@@ -8,7 +8,7 @@ import '../../../patient_diaries/presentation/providers/patient_diaries_provider
 import '../providers/dashboard_provider.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
 import '../../../../core/session/session_manager.dart';
-import '../../../../core/enums/appointment_status.dart';
+import '../../../appointments/domain/entities/appointment.dart';
 import 'create_medical_record_page.dart';
 import 'new_consultation_dialog.dart';
 import 'edit_general_plan_dialog.dart';

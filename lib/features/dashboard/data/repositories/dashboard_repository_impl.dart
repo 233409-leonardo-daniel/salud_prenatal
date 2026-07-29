@@ -1,4 +1,4 @@
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../domain/repositories/dashboard_repository.dart';
 import '../datasources/dashboard_remote_data_source.dart';
 import '../models/medical_record_response.dart';

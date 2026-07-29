@@ -4,12 +4,12 @@ import '../../domain/usecases/redeem_invitation_code_usecase.dart';
 import '../pages/patient_state.dart';
 
 class InvitationProvider with ChangeNotifier {
-  final GenerateInvitationCodeUseCase _generateInvitationCodeUseCase;
-  final RedeemInvitationCodeUseCase _redeemInvitationCodeUseCase;
+  final GenerateInvitationCodeUsecase _generateInvitationCodeUseCase;
+  final RedeemInvitationCodeUsecase _redeemInvitationCodeUseCase;
 
   InvitationProvider({
-    required GenerateInvitationCodeUseCase generateInvitationCodeUseCase,
-    required RedeemInvitationCodeUseCase redeemInvitationCodeUseCase,
+    required GenerateInvitationCodeUsecase generateInvitationCodeUseCase,
+    required RedeemInvitationCodeUsecase redeemInvitationCodeUseCase,
   })  : _generateInvitationCodeUseCase = generateInvitationCodeUseCase,
         _redeemInvitationCodeUseCase = redeemInvitationCodeUseCase;
 

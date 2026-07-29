@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../domain/entities/subscription_status.dart';
-import '../../domain/usecases/get_subscription_status_use_case.dart';
-import '../../domain/usecases/create_checkout_session_use_case.dart';
-import '../../domain/usecases/create_portal_session_use_case.dart';
-import '../../domain/usecases/refresh_token_use_case.dart';
+import '../../domain/usecases/get_subscription_status_usecase.dart';
+import '../../domain/usecases/create_checkout_session_usecase.dart';
+import '../../domain/usecases/create_portal_session_usecase.dart';
+import '../../domain/usecases/refresh_token_usecase.dart';
 import '../pages/subscription_state.dart';
 
 class SubscriptionsProvider with ChangeNotifier {
-  final GetSubscriptionStatusUseCase _getSubscriptionStatusUseCase;
-  final CreateCheckoutSessionUseCase _createCheckoutSessionUseCase;
-  final CreatePortalSessionUseCase _createPortalSessionUseCase;
-  final RefreshTokenUseCase _refreshTokenUseCase;
+  final GetSubscriptionStatusUsecase _getSubscriptionStatusUseCase;
+  final CreateCheckoutSessionUsecase _createCheckoutSessionUseCase;
+  final CreatePortalSessionUsecase _createPortalSessionUseCase;
+  final RefreshTokenUsecase _refreshTokenUseCase;
   final SessionManager _session;
 
   SubscriptionsProvider({
-    required GetSubscriptionStatusUseCase getSubscriptionStatusUseCase,
-    required CreateCheckoutSessionUseCase createCheckoutSessionUseCase,
-    required CreatePortalSessionUseCase createPortalSessionUseCase,
-    required RefreshTokenUseCase refreshTokenUseCase,
+    required GetSubscriptionStatusUsecase getSubscriptionStatusUseCase,
+    required CreateCheckoutSessionUsecase createCheckoutSessionUseCase,
+    required CreatePortalSessionUsecase createPortalSessionUseCase,
+    required RefreshTokenUsecase refreshTokenUseCase,
     required SessionManager session,
   })  : _getSubscriptionStatusUseCase = getSubscriptionStatusUseCase,
         _createCheckoutSessionUseCase = createCheckoutSessionUseCase,

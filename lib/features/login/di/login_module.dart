@@ -7,9 +7,9 @@ import '../../../../core/network/api_client.dart';
 
 class LoginModule {
   late final LoginRepository loginRepository;
-  late final LoginUseCase loginUseCase;
-  late final GetProfileUseCase getProfileUseCase;
-  late final UpdateProfileUseCase updateProfileUseCase;
+  late final LoginUsecase loginUseCase;
+  late final GetProfileUsecase getProfileUseCase;
+  late final UpdateProfileUsecase updateProfileUseCase;
 
   LoginModule(ApiClient apiClient) {
     _initDependencies(apiClient);
@@ -19,8 +19,8 @@ class LoginModule {
     loginRepository = LoginRepositoryImpl(
       remoteDataSource: LoginRemoteDataSourceImpl(apiClient: apiClient),
     );
-    loginUseCase = LoginUseCase(repository: loginRepository);
-    getProfileUseCase = GetProfileUseCase(repository: loginRepository);
-    updateProfileUseCase = UpdateProfileUseCase(repository: loginRepository);
+    loginUseCase = LoginUsecase(repository: loginRepository);
+    getProfileUseCase = GetProfileUsecase(repository: loginRepository);
+    updateProfileUseCase = UpdateProfileUsecase(repository: loginRepository);
   }
 }

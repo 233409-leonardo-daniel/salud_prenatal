@@ -9,8 +9,7 @@ import 'appointment_detail_page.dart';
 import '../../../../core/session/session_manager.dart';
 import '../providers/create_appointment_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
-import '../../../login/domain/entities/user_profile.dart';
-import '../../../../core/enums/appointment_status.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});

@@ -5,12 +5,12 @@ import '../../domain/usecases/get_accepted_policies_usecase.dart';
 import '../pages/privacy_policy_state.dart';
 
 class PrivacyPolicyProvider with ChangeNotifier {
-  final SaveAcceptedPoliciesUseCase _saveAcceptedPoliciesUseCase;
-  final GetAcceptedPoliciesUseCase _getAcceptedPoliciesUseCase;
+  final SaveAcceptedPoliciesUsecase _saveAcceptedPoliciesUseCase;
+  final GetAcceptedPoliciesUsecase _getAcceptedPoliciesUseCase;
 
   PrivacyPolicyProvider({
-    required SaveAcceptedPoliciesUseCase saveAcceptedPoliciesUseCase,
-    required GetAcceptedPoliciesUseCase getAcceptedPoliciesUseCase,
+    required SaveAcceptedPoliciesUsecase saveAcceptedPoliciesUseCase,
+    required GetAcceptedPoliciesUsecase getAcceptedPoliciesUseCase,
   })  : _saveAcceptedPoliciesUseCase = saveAcceptedPoliciesUseCase,
         _getAcceptedPoliciesUseCase = getAcceptedPoliciesUseCase;
 

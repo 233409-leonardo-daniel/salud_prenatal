@@ -1,10 +1,10 @@
 import '../../data/models/consultation_response.dart';
 import '../repositories/dashboard_repository.dart';
 
-class GetConsultationsByMedicalRecordUseCase {
+class GetConsultationsByMedicalRecordUsecase {
   final DashboardRepository repository;
 
-  GetConsultationsByMedicalRecordUseCase(this.repository);
+  GetConsultationsByMedicalRecordUsecase(this.repository);
 
   Future<List<ConsultationResponse>> call(int medicalRecordId) {
     return repository.getConsultationsByMedicalRecord(medicalRecordId);

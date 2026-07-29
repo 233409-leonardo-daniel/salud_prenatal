@@ -6,9 +6,9 @@ import '../../../../core/network/api_client.dart';
 
 class RegisterModule {
   late final RegisterRepository registerRepository;
-  late final RegisterPatientUseCase registerPatientUseCase;
-  late final RegisterDoctorUseCase registerDoctorUseCase;
-  late final RegisterReceptionistUseCase registerReceptionistUseCase;
+  late final RegisterPatientUsecase registerPatientUseCase;
+  late final RegisterDoctorUsecase registerDoctorUseCase;
+  late final RegisterReceptionistUsecase registerReceptionistUseCase;
 
   RegisterModule(ApiClient apiClient) {
     _initDependencies(apiClient);
@@ -19,10 +19,10 @@ class RegisterModule {
       remoteDataSource: RegisterRemoteDataSourceImpl(apiClient: apiClient),
     );
     registerPatientUseCase =
-        RegisterPatientUseCase(repository: registerRepository);
+        RegisterPatientUsecase(repository: registerRepository);
     registerDoctorUseCase =
-        RegisterDoctorUseCase(repository: registerRepository);
+        RegisterDoctorUsecase(repository: registerRepository);
     registerReceptionistUseCase =
-        RegisterReceptionistUseCase(repository: registerRepository);
+        RegisterReceptionistUsecase(repository: registerRepository);
   }
 }

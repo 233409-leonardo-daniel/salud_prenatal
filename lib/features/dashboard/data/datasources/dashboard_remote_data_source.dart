@@ -1,6 +1,6 @@
 import 'dart:convert';
 import '../../../../core/network/api_client.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../models/medical_record_response.dart';
 import '../models/consultation_response.dart';
 

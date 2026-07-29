@@ -1,10 +1,10 @@
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../repositories/dashboard_repository.dart';
 
-class GetAllUsersUseCase {
+class GetAllUsersUsecase {
   final DashboardRepository repository;
 
-  GetAllUsersUseCase(this.repository);
+  GetAllUsersUsecase(this.repository);
 
   Future<List<UserProfile>> call() {
     return repository.getAllUsers();

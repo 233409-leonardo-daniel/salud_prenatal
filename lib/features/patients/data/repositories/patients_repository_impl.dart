@@ -1,7 +1,7 @@
 import '../../domain/repositories/patients_repository.dart';
 import '../../domain/entities/patient.dart';
 import '../datasources/patients_remote_data_source.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 
 class PatientsRepositoryImpl implements PatientsRepository {
   final PatientsRemoteDataSource remoteDataSource;

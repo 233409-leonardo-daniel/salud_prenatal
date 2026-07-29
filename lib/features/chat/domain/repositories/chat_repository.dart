@@ -1,4 +1,4 @@
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../entities/chat_message.dart';
 import '../entities/conversation_entity.dart';
 

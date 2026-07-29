@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../../../login/domain/entities/user_profile.dart';
-import '../../domain/usecases/get_chat_contacts_use_case.dart';
+import '../../../profile/domain/entities/user_profile.dart';
+import '../../domain/usecases/get_chat_contacts_usecase.dart';
 
 enum ContactsStatus { initial, loading, success, error }
 
@@ -16,7 +16,7 @@ enum ContactsStatus { initial, loading, success, error }
 /// de un `Future` guardado aparte, que es lo que causaba la pantalla en
 /// negro al abrir el diálogo directamente.
 class ContactsProvider with ChangeNotifier {
-  final GetChatContactsUseCase _getChatContactsUseCase;
+  final GetChatContactsUsecase _getChatContactsUseCase;
 
   ContactsProvider(this._getChatContactsUseCase);
 

@@ -4,7 +4,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../dashboard/presentation/pages/dashboard_state.dart';
 import '../../../../core/session/session_manager.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../providers/conversations_provider.dart';

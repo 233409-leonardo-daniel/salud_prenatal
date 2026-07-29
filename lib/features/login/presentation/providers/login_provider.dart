@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../data/models/login_request.dart';
-import '../../domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../pages/login_state.dart';
 import '../../../../core/session/session_manager.dart';
@@ -21,11 +21,11 @@ import '../../../../core/session/session_manager.dart';
 ///   ApiClient) -> ya no existen; su efecto lo cubren
 ///   `SessionManager.saveFromLogin` / `SessionManager.clear`.
 class LoginProvider with ChangeNotifier {
-  final LoginUseCase _loginUseCase;
+  final LoginUsecase _loginUseCase;
   final SessionManager _session;
 
   LoginProvider({
-    required LoginUseCase loginUseCase,
+    required LoginUsecase loginUseCase,
     required SessionManager session,
   })  : _loginUseCase = loginUseCase,
         _session = session {

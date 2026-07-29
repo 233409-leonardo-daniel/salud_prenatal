@@ -1,9 +1,9 @@
 import '../repositories/invitation_repository.dart';
 
-class GenerateInvitationCodeUseCase {
+class GenerateInvitationCodeUsecase {
   final InvitationRepository repository;
 
-  GenerateInvitationCodeUseCase(this.repository);
+  GenerateInvitationCodeUsecase(this.repository);
 
   Future<Map<String, dynamic>> call(int doctorId) async {
     return await repository.generateInvitationCode(doctorId);

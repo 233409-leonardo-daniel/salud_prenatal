@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/appointment.dart';
 import '../../domain/usecases/get_appointments_usecase.dart';
-import '../../domain/usecases/get_appointments_use_case.dart';
-import '../../domain/usecases/update_appointment_status_use_case.dart';
-import '../../../../core/enums/appointment_status.dart';
+import '../../domain/usecases/get_filtered_appointments_usecase.dart';
+import '../../domain/usecases/update_appointment_status_usecase.dart';
 import '../pages/appointment_state.dart';
 
 class AppointmentsProvider with ChangeNotifier {
   final GetAppointmentsByUserIdUsecase _getAppointmentsByUserIdUsecase;
-  final GetAppointmentsUseCase _getAppointmentsUseCase;
-  final UpdateAppointmentStatusUseCase _updateAppointmentStatusUseCase;
+  final GetFilteredAppointmentsUsecase _getAppointmentsUseCase;
+  final UpdateAppointmentStatusUsecase _updateAppointmentStatusUseCase;
 
   AppointmentsProvider(
     this._getAppointmentsByUserIdUsecase,

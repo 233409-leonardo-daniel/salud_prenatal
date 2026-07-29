@@ -4,7 +4,7 @@ import '../../domain/usecases/get_doctor_patients_usecase.dart';
 import '../pages/patient_state.dart';
 
 class PatientsListProvider with ChangeNotifier {
-  final GetDoctorPatientsUseCase _getDoctorPatientsUseCase;
+  final GetDoctorPatientsUsecase _getDoctorPatientsUseCase;
 
   PatientsListProvider(this._getDoctorPatientsUseCase);
 

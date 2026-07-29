@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../login/domain/entities/user_profile.dart';
+import '../../domain/entities/user_profile.dart';
 import '../../../login/domain/usecases/update_profile_usecase.dart';
 import '../../../../core/session/session_manager.dart';
 
@@ -12,11 +12,11 @@ import '../../../../core/session/session_manager.dart';
 /// SIEMPRE con `password: null`, por lo que `UserProfile.toJson` omite la clave
 /// y un update de perfil nunca toca la credencial.
 class ProfileProvider with ChangeNotifier {
-  final UpdateProfileUseCase _updateProfileUseCase;
+  final UpdateProfileUsecase _updateProfileUseCase;
   final SessionManager _session;
 
   ProfileProvider({
-    required UpdateProfileUseCase updateProfileUseCase,
+    required UpdateProfileUsecase updateProfileUseCase,
     required SessionManager session,
   })  : _updateProfileUseCase = updateProfileUseCase,
         _session = session;

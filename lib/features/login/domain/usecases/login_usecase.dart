@@ -1,22 +1,22 @@
 import '../../data/models/login_request.dart';
 import '../entities/login_response.dart';
-import '../entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../repositories/login_repository.dart';
 
-class LoginUseCase {
+class LoginUsecase {
   final LoginRepository repository;
 
-  const LoginUseCase({required this.repository});
+  const LoginUsecase({required this.repository});
 
   Future<LoginResponse> execute(LoginRequest request) {
     return repository.login(request);
   }
 }
 
-class GetProfileUseCase {
+class GetProfileUsecase {
   final LoginRepository repository;
 
-  const GetProfileUseCase({required this.repository});
+  const GetProfileUsecase({required this.repository});
 
   Future<UserProfile> execute(int userId, {int? doctorId}) {
     return repository.getUserProfile(userId, doctorId: doctorId);

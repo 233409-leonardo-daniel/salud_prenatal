@@ -1,10 +1,10 @@
 import '../../data/models/medical_record_response.dart';
 import '../repositories/dashboard_repository.dart';
 
-class UpdateMedicalRecordUseCase {
+class UpdateMedicalRecordUsecase {
   final DashboardRepository repository;
 
-  UpdateMedicalRecordUseCase(this.repository);
+  UpdateMedicalRecordUsecase(this.repository);
 
   Future<MedicalRecordResponse> call(int medicalRecordId, Map<String, dynamic> data) {
     return repository.updateMedicalRecord(medicalRecordId, data);

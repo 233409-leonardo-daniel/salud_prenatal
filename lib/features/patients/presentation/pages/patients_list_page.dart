@@ -6,7 +6,7 @@ import 'patient_state.dart';
 import '../../domain/entities/patient.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/session/session_manager.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../../dashboard/presentation/pages/patient_progress_page.dart';
 import '../../../dashboard/presentation/pages/patient_record_page.dart';
 import '../../../dashboard/presentation/pages/new_consultation_dialog.dart';

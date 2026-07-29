@@ -3,7 +3,6 @@ import '../../domain/repositories/appointment_repository.dart';
 import '../datasources/appointment_remote_data_source.dart';
 import '../mappers/appointment_mapper.dart';
 import '../models/appointment_dto.dart';
-import '../../../../core/enums/appointment_status.dart';
 
 class AppointmentRepositoryImpl implements AppointmentRepository {
   final AppointmentRemoteDataSource remoteDataSource;

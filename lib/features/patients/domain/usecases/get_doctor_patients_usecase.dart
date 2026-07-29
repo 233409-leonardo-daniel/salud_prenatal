@@ -1,10 +1,10 @@
 import '../repositories/patients_repository.dart';
 import '../entities/patient.dart';
 
-class GetDoctorPatientsUseCase {
+class GetDoctorPatientsUsecase {
   final PatientsRepository repository;
 
-  GetDoctorPatientsUseCase(this.repository);
+  GetDoctorPatientsUsecase(this.repository);
 
   Future<List<PatientEntity>> call(String doctorId) async {
     return await repository.getPatientsByDoctor(doctorId);

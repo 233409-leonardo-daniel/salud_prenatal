@@ -42,9 +42,8 @@ import 'features/forums/presentation/pages/forums_hub_page.dart';
 import 'features/subscriptions/di/subscriptions_module.dart';
 import 'features/subscriptions/presentation/providers/subscriptions_provider.dart';
 import 'features/subscriptions/presentation/pages/subscription_plan_page.dart';
-import 'features/unlink_requests/di/unlink_requests_module.dart';
-import 'features/unlink_requests/presentation/providers/patient_unlink_provider.dart';
-import 'features/unlink_requests/presentation/providers/doctor_unlink_provider.dart';
+import 'features/patients/presentation/providers/patient_unlink_provider.dart';
+import 'features/patients/presentation/providers/doctor_unlink_provider.dart';
 
 import 'core/widgets/subscription_gate_listener.dart';
 import 'features/profile/presentation/providers/receptionist_provider.dart';
@@ -78,7 +77,6 @@ class _MyAppState extends State<MyApp> {
   late final DashboardModule dashboardModule;
   late final ForumsModule forumsModule;
   late final SubscriptionsModule subscriptionsModule;
-  late final UnlinkRequestsModule unlinkRequestsModule;
 
   @override
   void initState() {
@@ -111,7 +109,6 @@ class _MyAppState extends State<MyApp> {
     dashboardModule = DashboardModule(apiClient);
     forumsModule = ForumsModule(apiClient);
     subscriptionsModule = SubscriptionsModule(apiClient);
-    unlinkRequestsModule = UnlinkRequestsModule(apiClient);
 
     // Fase 2 del wiring: adjunta el cargador de perfil al SessionManager para
     // romper el ciclo (se hace tras construir loginModule).
@@ -277,15 +274,15 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => PatientUnlinkProvider(
-            unlinkRequestsModule.createUnlinkRequestUseCase,
-            unlinkRequestsModule.getPatientUnlinkRequestsUseCase,
-            unlinkRequestsModule.cancelUnlinkRequestUseCase,
+            patientsModule.createUnlinkRequestUseCase,
+            patientsModule.getPatientUnlinkRequestsUseCase,
+            patientsModule.cancelUnlinkRequestUseCase,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => DoctorUnlinkProvider(
-            unlinkRequestsModule.getDoctorUnlinkRequestsUseCase,
-            unlinkRequestsModule.resolveUnlinkRequestUseCase,
+            patientsModule.getDoctorUnlinkRequestsUseCase,
+            patientsModule.resolveUnlinkRequestUseCase,
           ),
         ),
       ],

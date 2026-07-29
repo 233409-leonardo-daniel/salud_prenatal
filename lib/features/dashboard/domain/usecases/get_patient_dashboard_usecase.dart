@@ -1,9 +1,9 @@
 import '../repositories/dashboard_repository.dart';
 
-class GetPatientDashboardUseCase {
+class GetPatientDashboardUsecase {
   final DashboardRepository repository;
 
-  GetPatientDashboardUseCase(this.repository);
+  GetPatientDashboardUsecase(this.repository);
 
   Future<Map<String, dynamic>> call(int patientId) {
     return repository.getPatientDashboard(patientId);

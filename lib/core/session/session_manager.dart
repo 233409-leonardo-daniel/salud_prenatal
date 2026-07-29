@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/login/domain/entities/login_response.dart';
-import '../../features/login/domain/entities/user_profile.dart';
+import '../../features/profile/domain/entities/user_profile.dart';
 import '../services/notification_service.dart';
 
 /// Dueño único del estado de sesión de la app.

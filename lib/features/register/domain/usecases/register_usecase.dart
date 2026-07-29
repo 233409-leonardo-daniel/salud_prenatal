@@ -1,30 +1,30 @@
 import '../../data/models/register_request.dart';
 import '../repositories/register_repository.dart';
 
-class RegisterPatientUseCase {
+class RegisterPatientUsecase {
   final RegisterRepository repository;
 
-  const RegisterPatientUseCase({required this.repository});
+  const RegisterPatientUsecase({required this.repository});
 
   Future<Map<String, dynamic>> execute(PatientRegisterRequest request) {
     return repository.registerPatient(request);
   }
 }
 
-class RegisterDoctorUseCase {
+class RegisterDoctorUsecase {
   final RegisterRepository repository;
 
-  const RegisterDoctorUseCase({required this.repository});
+  const RegisterDoctorUsecase({required this.repository});
 
   Future<String> execute(DoctorRegisterRequest request) {
     return repository.registerDoctor(request);
   }
 }
 
-class RegisterReceptionistUseCase {
+class RegisterReceptionistUsecase {
   final RegisterRepository repository;
 
-  const RegisterReceptionistUseCase({required this.repository});
+  const RegisterReceptionistUsecase({required this.repository});
 
   Future<String> execute(ReceptionistRegisterRequest request, int doctorId) {
     return repository.registerReceptionist(request, doctorId);

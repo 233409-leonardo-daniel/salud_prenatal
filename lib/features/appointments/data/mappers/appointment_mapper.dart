@@ -1,6 +1,5 @@
 import '../../domain/entities/appointment.dart';
 import '../models/appointment_dto.dart';
-import '../../../../core/enums/appointment_status.dart';
 
 class AppointmentMapper {
   static Appointment dtoToEntity(AppointmentDto dto) {

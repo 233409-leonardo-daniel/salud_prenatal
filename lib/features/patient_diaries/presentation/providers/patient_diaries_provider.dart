@@ -12,20 +12,20 @@ import '../../domain/usecases/get_medical_record_symptom_history_usecase.dart';
 enum PatientDiariesStatus { initial, loading, success, error }
 
 class PatientDiariesProvider with ChangeNotifier {
-  final GetDiariesByMedicalRecordUseCase _getDiariesUseCase;
-  final CreatePatientDiaryUseCase _createDiaryUseCase;
-  final UpdatePatientDiaryUseCase _updateDiaryUseCase;
-  final DeletePatientDiaryUseCase _deleteDiaryUseCase;
-  final GetDiarySymptomsUseCase _getDiarySymptomsUseCase;
-  final GetMedicalRecordSymptomHistoryUseCase _getSymptomHistoryUseCase;
+  final GetDiariesByMedicalRecordUsecase _getDiariesUseCase;
+  final CreatePatientDiaryUsecase _createDiaryUseCase;
+  final UpdatePatientDiaryUsecase _updateDiaryUseCase;
+  final DeletePatientDiaryUsecase _deleteDiaryUseCase;
+  final GetDiarySymptomsUsecase _getDiarySymptomsUseCase;
+  final GetMedicalRecordSymptomHistoryUsecase _getSymptomHistoryUseCase;
 
   PatientDiariesProvider({
-    required GetDiariesByMedicalRecordUseCase getDiariesUseCase,
-    required CreatePatientDiaryUseCase createDiaryUseCase,
-    required UpdatePatientDiaryUseCase updateDiaryUseCase,
-    required DeletePatientDiaryUseCase deleteDiaryUseCase,
-    required GetDiarySymptomsUseCase getDiarySymptomsUseCase,
-    required GetMedicalRecordSymptomHistoryUseCase getSymptomHistoryUseCase,
+    required GetDiariesByMedicalRecordUsecase getDiariesUseCase,
+    required CreatePatientDiaryUsecase createDiaryUseCase,
+    required UpdatePatientDiaryUsecase updateDiaryUseCase,
+    required DeletePatientDiaryUsecase deleteDiaryUseCase,
+    required GetDiarySymptomsUsecase getDiarySymptomsUseCase,
+    required GetMedicalRecordSymptomHistoryUsecase getSymptomHistoryUseCase,
   })  : _getDiariesUseCase = getDiariesUseCase,
         _createDiaryUseCase = createDiaryUseCase,
         _updateDiaryUseCase = updateDiaryUseCase,

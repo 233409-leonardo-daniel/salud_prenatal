@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../../core/enums/appointment_status.dart';
 import '../../domain/entities/appointment.dart';
 import '../../../../core/session/session_manager.dart';
 import '../providers/appointment_provider.dart';

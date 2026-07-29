@@ -12,21 +12,21 @@ import '../../../../core/network/api_client.dart';
 class PatientDiariesModule {
   late final PatientDiaryRemoteDataSource remoteDataSource;
   late final PatientDiaryRepository repository;
-  late final GetDiariesByMedicalRecordUseCase getDiariesUseCase;
-  late final CreatePatientDiaryUseCase createDiaryUseCase;
-  late final UpdatePatientDiaryUseCase updateDiaryUseCase;
-  late final DeletePatientDiaryUseCase deleteDiaryUseCase;
-  late final GetDiarySymptomsUseCase getDiarySymptomsUseCase;
-  late final GetMedicalRecordSymptomHistoryUseCase getSymptomHistoryUseCase;
+  late final GetDiariesByMedicalRecordUsecase getDiariesUseCase;
+  late final CreatePatientDiaryUsecase createDiaryUseCase;
+  late final UpdatePatientDiaryUsecase updateDiaryUseCase;
+  late final DeletePatientDiaryUsecase deleteDiaryUseCase;
+  late final GetDiarySymptomsUsecase getDiarySymptomsUseCase;
+  late final GetMedicalRecordSymptomHistoryUsecase getSymptomHistoryUseCase;
 
   PatientDiariesModule(ApiClient apiClient) {
     remoteDataSource = PatientDiaryRemoteDataSourceImpl(apiClient: apiClient);
     repository = PatientDiaryRepositoryImpl(remoteDataSource: remoteDataSource);
-    getDiariesUseCase = GetDiariesByMedicalRecordUseCase(repository);
-    createDiaryUseCase = CreatePatientDiaryUseCase(repository);
-    updateDiaryUseCase = UpdatePatientDiaryUseCase(repository);
-    deleteDiaryUseCase = DeletePatientDiaryUseCase(repository);
-    getDiarySymptomsUseCase = GetDiarySymptomsUseCase(repository);
-    getSymptomHistoryUseCase = GetMedicalRecordSymptomHistoryUseCase(repository);
+    getDiariesUseCase = GetDiariesByMedicalRecordUsecase(repository);
+    createDiaryUseCase = CreatePatientDiaryUsecase(repository);
+    updateDiaryUseCase = UpdatePatientDiaryUsecase(repository);
+    deleteDiaryUseCase = DeletePatientDiaryUsecase(repository);
+    getDiarySymptomsUseCase = GetDiarySymptomsUsecase(repository);
+    getSymptomHistoryUseCase = GetMedicalRecordSymptomHistoryUsecase(repository);
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors_ext.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 
 /// Perfil (solo lectura) del médico asignado a la paciente.

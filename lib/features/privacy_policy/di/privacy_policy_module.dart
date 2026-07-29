@@ -6,8 +6,8 @@ import '../domain/usecases/get_accepted_policies_usecase.dart';
 
 class PrivacyPolicyModule {
   late final PrivacyPolicyRepository repository;
-  late final SaveAcceptedPoliciesUseCase saveAcceptedPoliciesUseCase;
-  late final GetAcceptedPoliciesUseCase getAcceptedPoliciesUseCase;
+  late final SaveAcceptedPoliciesUsecase saveAcceptedPoliciesUseCase;
+  late final GetAcceptedPoliciesUsecase getAcceptedPoliciesUseCase;
 
   PrivacyPolicyModule() {
     _initDependencies();
@@ -17,8 +17,8 @@ class PrivacyPolicyModule {
     final localDataSource = PrivacyPolicyLocalDataSourceImpl();
     repository = PrivacyPolicyRepositoryImpl(localDataSource: localDataSource);
     saveAcceptedPoliciesUseCase =
-        SaveAcceptedPoliciesUseCase(repository: repository);
+        SaveAcceptedPoliciesUsecase(repository: repository);
     getAcceptedPoliciesUseCase =
-        GetAcceptedPoliciesUseCase(repository: repository);
+        GetAcceptedPoliciesUsecase(repository: repository);
   }
 }

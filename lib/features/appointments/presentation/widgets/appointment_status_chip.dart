@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/enums/appointment_status.dart';
+import '../../domain/entities/appointment.dart';
 
 class AppointmentStatusChip extends StatelessWidget {
   final AppointmentStatus status;

@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/repositories/chat_repository.dart';
-import '../../domain/usecases/get_conversations_use_case.dart';
+import '../../domain/usecases/get_conversations_usecase.dart';
 
 enum ConversationsViewState { initial, loading, success, error }
 
 class ConversationsProvider with ChangeNotifier {
-  final GetConversationsUseCase _getConversationsUseCase;
+  final GetConversationsUsecase _getConversationsUseCase;
   // Interfaz de dominio (no un datasource/módulo concreto) usada únicamente
   // para escuchar el stream de mensajes entrantes y refrescar la bandeja de
   // entrada en tiempo real. Las páginas ya no necesitan instanciar su propio

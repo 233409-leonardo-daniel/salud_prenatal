@@ -1,10 +1,10 @@
 import '../entities/patient_diary.dart';
 import '../repositories/patient_diary_repository.dart';
 
-class UpdatePatientDiaryUseCase {
+class UpdatePatientDiaryUsecase {
   final PatientDiaryRepository _repository;
 
-  UpdatePatientDiaryUseCase(this._repository);
+  UpdatePatientDiaryUsecase(this._repository);
 
   Future<PatientDiary> execute({
     required int patientDiaryId,

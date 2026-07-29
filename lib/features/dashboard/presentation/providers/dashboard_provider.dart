@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../data/models/medical_record_response.dart';
 import '../../data/models/consultation_response.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../domain/usecases/get_all_users_usecase.dart';
 import '../../domain/usecases/get_patients_by_doctor_usecase.dart';
 import '../../domain/usecases/get_medical_record_by_patient_usecase.dart';
@@ -17,32 +17,32 @@ import '../../domain/usecases/create_consultation_usecase.dart';
 import '../pages/dashboard_state.dart';
 
 class DashboardProvider with ChangeNotifier {
-  final GetAllUsersUseCase _getAllUsersUseCase;
-  final GetPatientsByDoctorUseCase _getPatientsByDoctorUseCase;
-  final GetMedicalRecordByPatientUseCase _getMedicalRecordByPatientUseCase;
-  final GetConsultationsByMedicalRecordUseCase _getConsultationsByMedicalRecordUseCase;
-  final GetConsultationsFromPatientEndpointUseCase _getConsultationsFromPatientEndpointUseCase;
-  final GetPatientDashboardUseCase _getPatientDashboardUseCase;
-  final GetDoctorDashboardUseCase _getDoctorDashboardUseCase;
-  final GetReceptionistDashboardUseCase _getReceptionistDashboardUseCase;
-  final CreateMedicalRecordUseCase _createMedicalRecordUseCase;
-  final UpdateMedicalRecordUseCase _updateMedicalRecordUseCase;
-  final EvaluateRiskUseCase _evaluateRiskUseCase;
-  final CreateConsultationUseCase _createConsultationUseCase;
+  final GetAllUsersUsecase _getAllUsersUseCase;
+  final GetPatientsByDoctorUsecase _getPatientsByDoctorUseCase;
+  final GetMedicalRecordByPatientUsecase _getMedicalRecordByPatientUseCase;
+  final GetConsultationsByMedicalRecordUsecase _getConsultationsByMedicalRecordUseCase;
+  final GetConsultationsFromPatientEndpointUsecase _getConsultationsFromPatientEndpointUseCase;
+  final GetPatientDashboardUsecase _getPatientDashboardUseCase;
+  final GetDoctorDashboardUsecase _getDoctorDashboardUseCase;
+  final GetReceptionistDashboardUsecase _getReceptionistDashboardUseCase;
+  final CreateMedicalRecordUsecase _createMedicalRecordUseCase;
+  final UpdateMedicalRecordUsecase _updateMedicalRecordUseCase;
+  final EvaluateRiskUsecase _evaluateRiskUseCase;
+  final CreateConsultationUsecase _createConsultationUseCase;
 
   DashboardProvider({
-    required GetAllUsersUseCase getAllUsersUseCase,
-    required GetPatientsByDoctorUseCase getPatientsByDoctorUseCase,
-    required GetMedicalRecordByPatientUseCase getMedicalRecordByPatientUseCase,
-    required GetConsultationsByMedicalRecordUseCase getConsultationsByMedicalRecordUseCase,
-    required GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase,
-    required GetPatientDashboardUseCase getPatientDashboardUseCase,
-    required GetDoctorDashboardUseCase getDoctorDashboardUseCase,
-    required GetReceptionistDashboardUseCase getReceptionistDashboardUseCase,
-    required CreateMedicalRecordUseCase createMedicalRecordUseCase,
-    required UpdateMedicalRecordUseCase updateMedicalRecordUseCase,
-    required EvaluateRiskUseCase evaluateRiskUseCase,
-    required CreateConsultationUseCase createConsultationUseCase,
+    required GetAllUsersUsecase getAllUsersUseCase,
+    required GetPatientsByDoctorUsecase getPatientsByDoctorUseCase,
+    required GetMedicalRecordByPatientUsecase getMedicalRecordByPatientUseCase,
+    required GetConsultationsByMedicalRecordUsecase getConsultationsByMedicalRecordUseCase,
+    required GetConsultationsFromPatientEndpointUsecase getConsultationsFromPatientEndpointUseCase,
+    required GetPatientDashboardUsecase getPatientDashboardUseCase,
+    required GetDoctorDashboardUsecase getDoctorDashboardUseCase,
+    required GetReceptionistDashboardUsecase getReceptionistDashboardUseCase,
+    required CreateMedicalRecordUsecase createMedicalRecordUseCase,
+    required UpdateMedicalRecordUsecase updateMedicalRecordUseCase,
+    required EvaluateRiskUsecase evaluateRiskUseCase,
+    required CreateConsultationUsecase createConsultationUseCase,
   })  : _getAllUsersUseCase = getAllUsersUseCase,
         _getPatientsByDoctorUseCase = getPatientsByDoctorUseCase,
         _getMedicalRecordByPatientUseCase = getMedicalRecordByPatientUseCase,

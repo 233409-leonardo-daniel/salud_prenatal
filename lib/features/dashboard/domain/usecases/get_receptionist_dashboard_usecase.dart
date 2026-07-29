@@ -1,9 +1,9 @@
 import '../repositories/dashboard_repository.dart';
 
-class GetReceptionistDashboardUseCase {
+class GetReceptionistDashboardUsecase {
   final DashboardRepository repository;
 
-  GetReceptionistDashboardUseCase(this.repository);
+  GetReceptionistDashboardUsecase(this.repository);
 
   Future<Map<String, dynamic>> call(int receptionistId) {
     return repository.getReceptionistDashboard(receptionistId);

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/login_response.dart';
-import '../../domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../models/login_request.dart';
 
 abstract class LoginRemoteDataSource {

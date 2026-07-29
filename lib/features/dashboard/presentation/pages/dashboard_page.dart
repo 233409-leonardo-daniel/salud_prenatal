@@ -9,7 +9,7 @@ import '../providers/dashboard_provider.dart';
 import 'dashboard_state.dart';
 import '../../data/models/medical_record_response.dart';
 import '../../../appointments/presentation/providers/appointment_provider.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../../appointments/presentation/pages/appointment_detail_page.dart';
 import '../../../patients/presentation/pages/patients_list_page.dart';
 import '../../../patients/presentation/pages/invitation_code_page.dart';
@@ -22,12 +22,20 @@ import '../../../chat/presentation/pages/chat_room_page.dart';
 import 'doctor_profile_page.dart';
 import '../../../forums/presentation/pages/forums_hub_page.dart';
 import '../../../appointments/presentation/pages/appointment_form_page.dart';
-import '../../../../core/enums/appointment_status.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import 'new_consultation_dialog.dart';
-import '../../../unlink_requests/presentation/providers/doctor_unlink_provider.dart';
-import '../../../unlink_requests/presentation/providers/patient_unlink_provider.dart';
-import '../../../unlink_requests/presentation/widgets/doctor_unlink_requests_sheet.dart';
+import '../../../patients/presentation/providers/doctor_unlink_provider.dart';
+import '../../../patients/presentation/providers/patient_unlink_provider.dart';
+import '../../../patients/presentation/widgets/doctor_unlink_requests_sheet.dart';
+import '../widgets/placeholder_view.dart';
+import '../widgets/receptionist_action_card.dart';
+import '../widgets/receptionist_info_card.dart';
+import '../widgets/doctor_stat_card.dart';
+import '../widgets/doctor_appointment_item.dart';
+import '../widgets/new_consultation_card.dart';
+import '../widgets/patient_nav_action.dart';
+import '../widgets/patient_tab_item.dart';
+import '../widgets/risk_prediction_banner.dart';
 
 /// Empareja al médico asignado (mostrado como texto en la tarjeta) contra la
 /// lista de usuarios ya cargada, para recuperar su [UserProfile] completo.
@@ -588,28 +596,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildPlaceholderView(String description) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.construction_outlined, size: 64, color: AppColors.primary),
-            SizedBox(height: 16),
-            Text(
-              'En Construcción',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
-            ),
-            SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted),
-            ),
-          ],
-        ),
-      ),
-    );
+    return PlaceholderView(description: description);
   }
 
   // --- RECEPTIONIST VIEWS ---
@@ -682,24 +669,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildReceptionistActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 32),
-            SizedBox(height: 12),
-            Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
-          ],
-        ),
-      ),
-    );
+    return ReceptionistActionCard(title: title, icon: icon, color: color, onTap: onTap);
   }
 
   // --- DOCTOR VIEWS ---
@@ -856,48 +826,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildNewConsultationCard() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
-            child: Icon(Icons.note_add_outlined, color: AppColors.primary),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Registrar consulta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
-                SizedBox(height: 2),
-                Text(
-                  'Elige una paciente y añade una nueva consulta',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _openPatientPickerForConsultation,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: Text('Nueva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+    return NewConsultationCard(onPressed: _openPatientPickerForConsultation);
   }
 
   /// Modal que carga a los pacientes del doctor (mismo patrón que el
@@ -1008,214 +937,13 @@ class _DashboardPageState extends State<DashboardPage> {
   /// correo), en lugar de un simple conteo. Muestra la primera; si hay más de
   /// una, lo indica con "(+N más)". Si no hay ninguna, invita a crear una.
   Widget _buildReceptionistInfoCard(List<dynamic> receptionists) {
-    final bool has = receptionists.isNotEmpty;
-    final Map<String, dynamic>? r =
-        has ? Map<String, dynamic>.from(receptionists.first as Map) : null;
-    final String name = r == null
-        ? ''
-        : '${r['name'] ?? ''} ${r['last_name'] ?? ''}'.trim();
-    final String email = r?['email']?.toString() ?? '';
-    final String initials = name.isNotEmpty ? name[0].toUpperCase() : 'R';
-    final String extra =
-        receptionists.length > 1 ? ' (+${receptionists.length - 1} más)' : '';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: AppColors.primaryLight,
-            child: has
-                ? Text(
-                    initials,
-                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
-                  )
-                : Icon(Icons.support_agent_outlined, color: AppColors.primary),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.support_agent_outlined, size: 14, color: AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Mi Recepcionista$extra',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  has ? name : 'Aún no tienes recepcionista asignada',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (has && email.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Icon(Icons.email_outlined, size: 13, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          email,
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return ReceptionistInfoCard(receptionists: receptionists);
   }
 
   Widget _buildDoctorStatCard(String title, String count, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 28),
-            SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-            SizedBox(height: 4),
-            Text(
-              count,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
-            ),
-          ],
-        ),
-      ),
-    );
+    return DoctorStatCard(title: title, count: count, icon: icon, color: color);
   }
 
-  Widget _buildAlertCard(String name, String alert, String initials, {VoidCallback? onDetailPressed}) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(3),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Red curve container border decoration
-          Container(
-            width: 4,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(4),
-                bottomLeft: Radius.circular(4),
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          CircleAvatar(
-            backgroundColor: AppColors.isDarkMode ? const Color(0xFF3A1F1F) : const Color(0xFFFFEBEA),
-            radius: 20,
-            child: Text(
-              initials,
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                ),
-                SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
-                    SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        alert,
-                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: onDetailPressed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      minimumSize: Size.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: Text(
-                      'Detalle',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Antes el chevron de "Próximas Citas" (dashboard del doctor) no hacía
   /// nada (`onPressed: () {}`), a diferencia de la recepcionista, que sí
@@ -1257,60 +985,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildDoctorAppointmentItem(String time, String name, String subtitle, bool isUrgent, {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        color: AppColors.cardBackground,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 60,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    time.split(' ')[0],
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                  ),
-                  Text(
-                    time.split(' ')[1],
-                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 1,
-              height: 30,
-              color: AppColors.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.pink.shade50,
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isUrgent ? Colors.red.shade700 : AppColors.textMuted,
-                      fontWeight: isUrgent ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppColors.textMuted),
-          ],
-        ),
-      ),
-    );
+    return DoctorAppointmentItem(time: time, name: name, subtitle: subtitle, isUrgent: isUrgent, onTap: onTap);
   }
 
   // --- OLD METHODS REMOVED ---
@@ -1937,28 +1612,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildBar(double heightPercentage, bool isActive) {
-    return Container(
-      width: 8,
-      height: heightPercentage,
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.primary : (AppColors.isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-
-  Widget _buildDayLabel(String label, bool isActive) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
-        color: isActive ? AppColors.primary : AppColors.textMuted,
-      ),
-    );
-  }
-
   // --- BOTTOM NAV BAR BUILDER ---
 
   Widget _buildBottomNavBar() {
@@ -2084,147 +1737,21 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildPatientTabItem(int index, IconData outlineIcon, IconData filledIcon, String label) {
-    final isSelected = _currentTab == index;
-    final colors = Theme.of(context).extension<AppColorsExt>()!;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentTab = index;
-        });
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isSelected ? filledIcon : outlineIcon,
-            color: isSelected ? AppColors.primary : colors.textMuted,
-            size: 24,
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? AppColors.primary : colors.textMuted,
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
+    return PatientTabItem(
+      outlineIcon: outlineIcon,
+      filledIcon: filledIcon,
+      label: label,
+      isSelected: _currentTab == index,
+      onTap: () => setState(() => _currentTab = index),
     );
   }
 
-  /// Ítem del nav de paciente que dispara una acción (ej. abrir la Bitácora en
-  /// otra ruta) en vez de cambiar de pestaña. Usa exactamente el mismo layout
-  /// e estilo "no seleccionado" que `_buildPatientTabItem` para que se vea igual
-  /// que el resto de los botones.
   Widget _buildPatientNavAction(IconData outlineIcon, String label, VoidCallback onTap) {
-    final colors = Theme.of(context).extension<AppColorsExt>()!;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(outlineIcon, color: colors.textMuted, size: 24),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: colors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
+    return PatientNavAction(outlineIcon: outlineIcon, label: label, onTap: onTap);
   }
 
   Widget _buildRiskPredictionBanner(RiskPrediction prediction) {
-    final clusterName = prediction.diagnosis ?? 'Riesgo indeterminado';
-    final lower = clusterName.toLowerCase();
-    final isHigh = lower.contains('alto') || lower.contains('crítico') || lower.contains('critico');
-    final isMedium = lower.contains('medio') || lower.contains('moderado');
-
-    final Color bgColor = isHigh
-        ? AppColors.riskHighBg
-        : (isMedium ? AppColors.riskMediumBg : AppColors.riskLowBg);
-    final Color textColor = isHigh
-        ? AppColors.riskHighText
-        : (isMedium ? AppColors.riskMediumText : AppColors.riskLowText);
-    final Color iconColor = isHigh
-        ? Colors.red
-        : (isMedium ? Colors.orange : Colors.teal);
-    final IconData icon = isHigh
-        ? Icons.warning_amber_rounded
-        : (isMedium ? Icons.info_outline : Icons.check_circle_outline);
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: iconColor.withOpacity(0.3), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Predicción de Riesgo IA',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    if (prediction.riskCluster != null)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: textColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'C${prediction.riskCluster}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                SizedBox(height: 4),
-                Text(
-                  clusterName,
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return RiskPredictionBanner(prediction: prediction);
   }
 }
 

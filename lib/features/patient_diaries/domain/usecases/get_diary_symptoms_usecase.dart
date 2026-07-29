@@ -1,10 +1,10 @@
 import '../entities/extracted_symptom.dart';
 import '../repositories/patient_diary_repository.dart';
 
-class GetDiarySymptomsUseCase {
+class GetDiarySymptomsUsecase {
   final PatientDiaryRepository repository;
 
-  GetDiarySymptomsUseCase(this.repository);
+  GetDiarySymptomsUsecase(this.repository);
 
   Future<List<ExtractedSymptom>> execute(int patientDiaryId) {
     return repository.getDiarySymptoms(patientDiaryId);

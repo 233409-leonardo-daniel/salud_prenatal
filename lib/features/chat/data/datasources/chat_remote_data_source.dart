@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/certificate_pinning.dart';
 import '../../../../core/config/api_config.dart';
-import '../../../login/domain/entities/user_profile.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../models/chat_message_model.dart';
 import '../models/inbox_item_model.dart';
 

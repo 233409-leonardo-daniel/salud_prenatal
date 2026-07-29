@@ -1,9 +1,9 @@
 import '../repositories/patient_diary_repository.dart';
 
-class DeletePatientDiaryUseCase {
+class DeletePatientDiaryUsecase {
   final PatientDiaryRepository _repository;
 
-  DeletePatientDiaryUseCase(this._repository);
+  DeletePatientDiaryUsecase(this._repository);
 
   Future<void> execute(int patientDiaryId) {
     return _repository.deletePatientDiary(patientDiaryId);

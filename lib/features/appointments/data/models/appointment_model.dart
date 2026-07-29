@@ -1,5 +1,4 @@
 import '../../domain/entities/appointment.dart';
-import '../../../../core/enums/appointment_status.dart';
 
 class AppointmentModel extends Appointment {
   AppointmentModel({

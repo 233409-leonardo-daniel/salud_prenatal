@@ -18,34 +18,34 @@ import '../../../../core/network/api_client.dart';
 class DashboardModule {
   late final DashboardRemoteDataSource remoteDataSource;
   late final DashboardRepository repository;
-  late final GetAllUsersUseCase getAllUsersUseCase;
-  late final GetPatientsByDoctorUseCase getPatientsByDoctorUseCase;
-  late final GetMedicalRecordByPatientUseCase getMedicalRecordByPatientUseCase;
-  late final GetConsultationsByMedicalRecordUseCase getConsultationsByMedicalRecordUseCase;
-  late final GetConsultationsFromPatientEndpointUseCase getConsultationsFromPatientEndpointUseCase;
-  late final GetPatientDashboardUseCase getPatientDashboardUseCase;
-  late final GetDoctorDashboardUseCase getDoctorDashboardUseCase;
-  late final GetReceptionistDashboardUseCase getReceptionistDashboardUseCase;
-  late final CreateMedicalRecordUseCase createMedicalRecordUseCase;
-  late final UpdateMedicalRecordUseCase updateMedicalRecordUseCase;
-  late final EvaluateRiskUseCase evaluateRiskUseCase;
-  late final CreateConsultationUseCase createConsultationUseCase;
+  late final GetAllUsersUsecase getAllUsersUseCase;
+  late final GetPatientsByDoctorUsecase getPatientsByDoctorUseCase;
+  late final GetMedicalRecordByPatientUsecase getMedicalRecordByPatientUseCase;
+  late final GetConsultationsByMedicalRecordUsecase getConsultationsByMedicalRecordUseCase;
+  late final GetConsultationsFromPatientEndpointUsecase getConsultationsFromPatientEndpointUseCase;
+  late final GetPatientDashboardUsecase getPatientDashboardUseCase;
+  late final GetDoctorDashboardUsecase getDoctorDashboardUseCase;
+  late final GetReceptionistDashboardUsecase getReceptionistDashboardUseCase;
+  late final CreateMedicalRecordUsecase createMedicalRecordUseCase;
+  late final UpdateMedicalRecordUsecase updateMedicalRecordUseCase;
+  late final EvaluateRiskUsecase evaluateRiskUseCase;
+  late final CreateConsultationUsecase createConsultationUseCase;
 
   DashboardModule(ApiClient apiClient) {
     remoteDataSource = DashboardRemoteDataSourceImpl(apiClient: apiClient);
     repository = DashboardRepositoryImpl(remoteDataSource: remoteDataSource);
 
-    getAllUsersUseCase = GetAllUsersUseCase(repository);
-    getPatientsByDoctorUseCase = GetPatientsByDoctorUseCase(repository);
-    getMedicalRecordByPatientUseCase = GetMedicalRecordByPatientUseCase(repository);
-    getConsultationsByMedicalRecordUseCase = GetConsultationsByMedicalRecordUseCase(repository);
-    getConsultationsFromPatientEndpointUseCase = GetConsultationsFromPatientEndpointUseCase(repository);
-    getPatientDashboardUseCase = GetPatientDashboardUseCase(repository);
-    getDoctorDashboardUseCase = GetDoctorDashboardUseCase(repository);
-    getReceptionistDashboardUseCase = GetReceptionistDashboardUseCase(repository);
-    createMedicalRecordUseCase = CreateMedicalRecordUseCase(repository);
-    updateMedicalRecordUseCase = UpdateMedicalRecordUseCase(repository);
-    evaluateRiskUseCase = EvaluateRiskUseCase(repository);
-    createConsultationUseCase = CreateConsultationUseCase(repository);
+    getAllUsersUseCase = GetAllUsersUsecase(repository);
+    getPatientsByDoctorUseCase = GetPatientsByDoctorUsecase(repository);
+    getMedicalRecordByPatientUseCase = GetMedicalRecordByPatientUsecase(repository);
+    getConsultationsByMedicalRecordUseCase = GetConsultationsByMedicalRecordUsecase(repository);
+    getConsultationsFromPatientEndpointUseCase = GetConsultationsFromPatientEndpointUsecase(repository);
+    getPatientDashboardUseCase = GetPatientDashboardUsecase(repository);
+    getDoctorDashboardUseCase = GetDoctorDashboardUsecase(repository);
+    getReceptionistDashboardUseCase = GetReceptionistDashboardUsecase(repository);
+    createMedicalRecordUseCase = CreateMedicalRecordUsecase(repository);
+    updateMedicalRecordUseCase = UpdateMedicalRecordUsecase(repository);
+    evaluateRiskUseCase = EvaluateRiskUsecase(repository);
+    createConsultationUseCase = CreateConsultationUsecase(repository);
   }
 }

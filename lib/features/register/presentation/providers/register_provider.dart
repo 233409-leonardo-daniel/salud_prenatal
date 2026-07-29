@@ -4,14 +4,14 @@ import '../../domain/usecases/register_usecase.dart';
 import '../pages/register_state.dart';
 
 class RegisterProvider with ChangeNotifier {
-  final RegisterPatientUseCase _registerPatientUseCase;
-  final RegisterDoctorUseCase _registerDoctorUseCase;
-  final RegisterReceptionistUseCase _registerReceptionistUseCase;
+  final RegisterPatientUsecase _registerPatientUseCase;
+  final RegisterDoctorUsecase _registerDoctorUseCase;
+  final RegisterReceptionistUsecase _registerReceptionistUseCase;
 
   RegisterProvider({
-    required RegisterPatientUseCase registerPatientUseCase,
-    required RegisterDoctorUseCase registerDoctorUseCase,
-    required RegisterReceptionistUseCase registerReceptionistUseCase,
+    required RegisterPatientUsecase registerPatientUseCase,
+    required RegisterDoctorUsecase registerDoctorUseCase,
+    required RegisterReceptionistUsecase registerReceptionistUseCase,
   })  : _registerPatientUseCase = registerPatientUseCase,
         _registerDoctorUseCase = registerDoctorUseCase,
         _registerReceptionistUseCase = registerReceptionistUseCase;

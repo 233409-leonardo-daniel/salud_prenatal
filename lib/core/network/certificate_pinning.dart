@@ -1,9 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
+
+// dart:io solo está disponible en plataformas nativas
+import 'dart:io' if (dart.library.html) 'dart:async' as io;
+import 'package:http/io_client.dart' if (dart.library.html) 'dart:async' as io_client;
 
 /// SSL/TLS pinning de Salud Prenatal.
 ///
@@ -93,7 +95,13 @@ bool get isPinningConfigured =>
 
 /// Crea un [HttpClient] (dart:io) que SOLO confía en el certificado pineado.
 /// Se usa tanto para el cliente HTTP como para el WebSocket del chat.
-HttpClient createPinnedHttpClient() {
+/// En web, retorna null porque dart:io no está disponible.
+dynamic createPinnedHttpClient() {
+  if (kIsWeb) {
+    debugPrint('[PINNING] Web no soporta dart:io; usando cliente HTTP normal.');
+    return null;
+  }
+
   if (!isPinningConfigured) {
     // Fallback de desarrollo: mientras no se pegue el certificado real, la app
     // sigue funcionando con un cliente normal (sin pinning). Al pegar el PEM
@@ -102,18 +110,18 @@ HttpClient createPinnedHttpClient() {
       '[PINNING] Certificado no configurado: usando cliente SIN pinning. '
       'Pega el PEM real en kPinnedServerCertPem para activarlo.',
     );
-    return HttpClient();
+    return io.HttpClient();
   }
 
-  final context = SecurityContext(withTrustedRoots: false)
+  final context = io.SecurityContext(withTrustedRoots: false)
     ..setTrustedCertificatesBytes(utf8.encode(kPinnedServerCertPem));
 
-  final client = HttpClient(context: context);
+  final client = io.HttpClient(context: context);
 
   // Solo se invoca cuando la validación contra el ancla pineada FALLA
   // (p. ej. un proxy presenta su propio certificado). Se registra la huella
   // del intruso —útil como evidencia en la PoC— y se RECHAZA la conexión.
-  client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+  client.badCertificateCallback = (io.X509Certificate cert, String host, int port) {
     debugPrint(
       '[PINNING] Certificado NO confiable en $host:$port. '
       'Sujeto: ${cert.subject}. SHA1: ${cert.sha1}. Conexión RECHAZADA.',
@@ -125,4 +133,10 @@ HttpClient createPinnedHttpClient() {
 }
 
 /// Cliente de `package:http` con pinning, listo para inyectar en `ApiClient`.
-http.Client createPinnedClient() => IOClient(createPinnedHttpClient());
+/// En web, retorna un cliente HTTP normal.
+http.Client createPinnedClient() {
+  if (kIsWeb) {
+    return http.Client();
+  }
+  return io_client.IOClient(createPinnedHttpClient());
+}

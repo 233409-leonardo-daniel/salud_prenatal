@@ -114,9 +114,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     try {
       // customClient aplica el mismo SSL/TLS pinning que el resto de la app:
       // si un proxy intercepta el handshake wss, la conexión falla.
-      _webSocket = await WebSocket.connect(
-        socketUri.toString(),
-        customClient: createPinnedHttpClient(),
+      // En web, customClient no se soporta, así que solo se pasa en plataformas nativas.
+      final pinnedClient = createPinnedHttpClient();
+      _webSocket = await (pinnedClient != null
+          ? WebSocket.connect(
+              socketUri.toString(),
+              customClient: pinnedClient,
+            )
+          : WebSocket.connect(socketUri.toString())
       ).timeout(const Duration(seconds: 5));
       _isConnected = true;
       _connectionController.add(true);
